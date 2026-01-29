@@ -1,7 +1,11 @@
 import re
+from typing import List
 
 import httpx, json
 from bs4 import BeautifulSoup, Tag
+
+def get_tags(soup: BeautifulSoup) -> List[str]:
+    return [tag.text for tag in soup.select_one('div[class="p-tags"]').find_all('a') if tag.text != "看影片學做菜"]
 
 def get_steps(soup: BeautifulSoup) -> list:
     steps_tag = soup.select_one('section[class="l-single-recipe"]')
@@ -68,7 +72,9 @@ def get_recipe_info(soup: BeautifulSoup) -> dict:
         recipe_info["groups"] = [ingredient, seasoning]
     else:
         recipe_info["groups"] = [ingredient]
+
     recipe_info["steps"] = get_steps(soup)
+    recipe_info["tag"] = get_tags(soup)
 
     return recipe_info
 
@@ -84,5 +90,5 @@ def scrape_recipe(url):
 
 
 if __name__ == "__main__":
-    scrape_recipe("https://tasty-note.com/teriyaki-tofu-stake-2/")
+    recipe = scrape_recipe("https://tasty-note.com/teriyaki-tofu-stake-2/")
     # scrape_recipe("https://tasty-note.com/orinishi-shio-kombu-cabbage/")
