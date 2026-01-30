@@ -8,9 +8,9 @@ load_dotenv()
 
 import os
 
-from sqlalchemy import create_engine, Column, Integer, String, Text, DateTime
+from sqlalchemy import create_engine, Column, Integer, String, Text, DateTime, ForeignKey
 from sqlalchemy.dialects.postgresql import ARRAY
-from sqlalchemy.orm import sessionmaker, declarative_base
+from sqlalchemy.orm import sessionmaker, declarative_base, relationship
 from sqlalchemy_utils import database_exists, create_database
 from sqlalchemy import select
 import datetime
@@ -41,6 +41,8 @@ class RecipeModel(Base):
     tags = Column(ARRAY(String))
     created_at = Column(DateTime, default=datetime.datetime.now)
 
+    chunks = relationship("RecipeChunkModel", back_populates="recipe", cascade="all, delete-orphan")
+
     def to_dict(self) -> dict[str, Any]:
         return {
             "id": self.id,
@@ -51,18 +53,26 @@ class RecipeModel(Base):
             "tags": self.tags,
         }
 
+class RecipeChunkModel(Base):
+    __tablename__ = 'recipe_chunks'
 
-# 5. 建立資料表 (將定義好的 Model 映射到資料庫)
-# Base.metadata.create_all(engine)
-# print("資料表已同步完成！")
+    id = Column(String(100), primary_key=True)
+    parent_id = Column(String(100), ForeignKey('recipes.id', ondelete="CASCADE"), nullable=False)
+    chunk_type = Column(String(30))
+    content = Column(Text)
+
+    recipe = relationship("RecipeModel", back_populates="chunks")
 
 class PostgreDB:
     def __init__(self):
         self.session = sessionmaker(bind=create_engine(DB_URL))()
         self.stmt = select(RecipeModel)
 
-    def add(self, recipe: dict[str, Any]):
-        self.session.add(RecipeModel(**recipe))
+    def add_recipe(self, recipe: RecipeModel):
+        self.session.add(recipe)
+
+    def add_chunk(self, chunk: RecipeChunkModel):
+        self.session.add(chunk)
 
     def commit(self):
         self.session.commit()
@@ -71,7 +81,11 @@ class PostgreDB:
         self.session.close()
 
     def select_all(self):
-        return self.session.execute(self.stmt).scalars().all()
+        return self.session.execute(self.stmt).scalars(select(RecipeChunkModel)).all()
+
+# 5. 建立資料表 (將定義好的 Model 映射到資料庫)
+# Base.metadata.create_all(engine)
+# print("資料表已同步完成！")
 
 if __name__ == "__main__":
     try:

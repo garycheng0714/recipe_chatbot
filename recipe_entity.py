@@ -8,6 +8,14 @@ class RecipeChunk(BaseModel):
     chunk_type: Literal["overview", "ingredients", "instruction"]
     content: str
 
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "parent_id": self.parent_id,
+            "chunk_type": self.chunk_type,
+            "content": self.content,
+        }
+
 class OverviewRecipeChunk(RecipeChunk):
     chunk_type: Literal["overview"] = "overview"
 
@@ -66,7 +74,7 @@ class RecipeEntity:
         ingredients_chunk = IngredientsRecipeChunk(
             id=f"{self.id}_ingredients",
             parent_id=self.id,
-            content="".join([item["name"] for item in self.data["ingredients"]])
+            content=",".join([item["name"] for item in self.data["ingredients"]])
         )
 
         instruction_chunk = InstructionRecipeChunk(
