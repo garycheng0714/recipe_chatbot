@@ -19,9 +19,6 @@ class RecipeChunk(BaseModel):
 class OverviewRecipeChunk(RecipeChunk):
     chunk_type: Literal["overview"] = "overview"
 
-class IngredientsRecipeChunk(RecipeChunk):
-    chunk_type: Literal["ingredients"] = "ingredients"
-
 class InstructionRecipeChunk(RecipeChunk):
     chunk_type: Literal["instruction"] = "instruction"
 
@@ -71,16 +68,10 @@ class RecipeEntity:
             content=self.data["description"]
         )
 
-        ingredients_chunk = IngredientsRecipeChunk(
-            id=f"{self.id}_ingredients",
-            parent_id=self.id,
-            content=",".join([item["name"] for item in self.data["ingredients"]])
-        )
-
         instruction_chunk = InstructionRecipeChunk(
             id=f"{self.id}_instruction",
             parent_id=self.id,
             content="".join([s["step"] for s in self.data["steps"]])
         )
 
-        return [overview_chunk, ingredients_chunk, instruction_chunk]
+        return [overview_chunk, instruction_chunk]
