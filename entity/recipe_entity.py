@@ -43,6 +43,14 @@ class RecipeDocument(BaseModel):
             "tags": self.tags,
         }
 
+    def to_semantics(self):
+        return (
+            f"食譜名稱：{self.name}\n"
+            f"材料：{', '.join(self.ingredients)}\n"
+            f"分類：{self.category}\n"
+            f"tags：{self.tags}\n"
+    )
+
 
 class RecipeEntity:
     def __init__(self, id, data: dict[str, Any]):

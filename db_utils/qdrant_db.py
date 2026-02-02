@@ -1,7 +1,7 @@
 import uuid
 
 from qdrant_client import QdrantClient
-from qdrant_client.http.models import PointStruct
+from qdrant_client.http.models import PointStruct, Filter, FieldCondition, MatchValue
 from qdrant_client.models import (
     VectorParams,
     Distance
@@ -9,7 +9,7 @@ from qdrant_client.models import (
 
 from FlagEmbedding import BGEM3FlagModel
 
-from entity import RecipeChunk
+from entity import RecipeChunk, RecipeDocument
 
 
 class QdrantVectorStore:
@@ -64,6 +64,30 @@ class QdrantVectorStore:
             ]
         )
 
+    def upsert_recipe(self, entity: RecipeDocument):
+        point_id = str(uuid.uuid5(uuid.NAMESPACE_DNS, entity.id))
+        semantics = entity.to_semantics()
+
+        self.client.upsert(
+            collection_name=self.collection_name,
+            points=[
+                PointStruct(
+                    id=point_id,
+                    vector={
+                        "dense": self.embed(semantics),
+                    },
+                    payload={
+                        "id": entity.id,
+                        "name": entity.name,
+                        "quantity": entity.quantity,
+                        "ingredients": entity.ingredients,
+                        "category": entity.category,
+                        "tags": entity.tags
+                    }
+                )
+            ]
+        )
+
     async def search(self, query_text: str, k: int = 5):
         output = self.model.encode(query_text, return_dense=True)
 
@@ -78,6 +102,18 @@ class QdrantVectorStore:
             limit=k,
             # query=models.FusionQuery(fusion=models.Fusion.RRF),  # 使用 RRF 融合
         )
+
+    def delete(self):
+        for value in ["overview", "instruction"]:
+            self.client.delete(
+                collection_name=self.collection_name,
+                points_selector=Filter(
+                    must=[FieldCondition(
+                        key="chunk_type",
+                        match=MatchValue(value=value)
+                    )]
+                )
+            )
 
     # def create_index(self):
     #     # 1. 針對食材建立關鍵字索引 (支援：我有板豆腐，我想看能做什麼)
@@ -117,5 +153,6 @@ if __name__ == "__main__":
     # for point in info:
     #     print(point)
 
-    result = db.search("省錢的料理")
-    print(result)
+    # result = db.search("省錢的料理")
+    # print(result)
+    db.delete()

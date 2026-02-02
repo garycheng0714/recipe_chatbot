@@ -51,6 +51,7 @@ async def hybrid_search(query_text, top_n=10):
 
     # 處理 Qdrant 結果
     qd_ids = [str(point.payload["id"]) for point in qd_res.points]
+    print(f"Vector: {qd_ids}\n")
 
     # --- Step 4: 套用 RRF ---
     fused_results = reciprocal_rank_fusion([es_ids, qd_ids], k=60)
@@ -61,8 +62,12 @@ async def hybrid_search(query_text, top_n=10):
     return final_top_ids
 
 if __name__ == '__main__':
+    from db_utils import PostgreDB
+    db = PostgreDB()
+
     result = asyncio.run(
         hybrid_search(query_text="鹽昆布奶油烤飯糰", top_n=5)
     )
 
     print(result)
+

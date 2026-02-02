@@ -52,7 +52,15 @@ class ElasticSearchHelper:
                     "id": {
                         "type": "keyword"
                     },
-                    "parent": {
+                    "parent_id": {
+                        "type": "keyword"
+                    },
+                    "content": {
+                        "type": "text",
+                        "analyzer": "zh_analyzer",
+                        "search_analyzer": "zh_analyzer"
+                    },
+                    "chunk_type": {
                         "type": "keyword"
                     }
                 }
@@ -84,7 +92,7 @@ class ElasticSearchHelper:
                         {
                             "multi_match": {
                                 "query": query_text,
-                                "fields": ["name^3", "ingredients^5", "content"]
+                                "fields": ["name^5", "ingredients^3", "content"]
                             }
                         }
                     ],
