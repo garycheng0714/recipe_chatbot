@@ -72,7 +72,7 @@ class ElasticSearchHelper:
     def index_chunk(self, chunk: dict[str, Any]):
         self.es.index(index=self.index_name, document=chunk)
 
-    def search(self, query: str):
+    async def search(self, query_text: str, size: int = 5):
         return self.es.search(
             index=self.index_name,
             query={
@@ -83,7 +83,7 @@ class ElasticSearchHelper:
                     "must": [
                         {
                             "multi_match": {
-                                "query": query,
+                                "query": query_text,
                                 "fields": ["name^3", "ingredients^5", "content"]
                             }
                         }
@@ -95,7 +95,7 @@ class ElasticSearchHelper:
                     #     }
                 }
             },
-            size=5
+            size=size
         )
 
 

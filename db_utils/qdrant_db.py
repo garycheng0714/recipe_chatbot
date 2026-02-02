@@ -55,6 +55,7 @@ class QdrantVectorStore:
                         "dense": self.embed(entity.content),
                     },
                     payload={
+                        "id": entity.id,
                         "parent_id": entity.parent_id,
                         "chunk_type": entity.chunk_type,
                         "content": entity.content,
@@ -63,7 +64,7 @@ class QdrantVectorStore:
             ]
         )
 
-    def search(self, query_text: str, k: int = 3):
+    async def search(self, query_text: str, k: int = 5):
         output = self.model.encode(query_text, return_dense=True)
 
         # 1. 處理 Dense 向量 (轉成普通 list)
