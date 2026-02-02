@@ -1,10 +1,11 @@
-from typing import Union
+from typing import Union, Any
 
 from fastapi import FastAPI, Depends, HTTPException, status
 from sqlalchemy.orm import Session, selectinload, joinedload
 from sqlalchemy import select
 from models import RecipeChunkModel, RecipeModel
 import models, database
+from schemas import RecipeRead, RecipeReadFlatten
 
 # 自動建立資料表 (如果不存在的話)
 models.Base.metadata.create_all(bind=database.engine)
@@ -25,21 +26,9 @@ def get_db():
 def read_root():
     return {"Hello": "World"}
 
-def convert_recipe_to_dict(obj: Union[models.RecipeModel, models.RecipeChunkModel]):
-    if isinstance(obj, RecipeChunkModel):
-        recipe = obj.recipe
-    else:
-        recipe = obj
-
-    recipe_dict = recipe.to_dict()
-
-    for chunk in recipe.chunks:
-        recipe_dict[chunk.chunk_type] = chunk.content
-
-    return recipe_dict
 
 # 3. 定義一個帶有參數的路徑
-@app.get("/recipe/{recipe_id}")
+@app.get("/recipe/{recipe_id}", response_model=RecipeRead)
 def read_item(recipe_id: str, db: Session = Depends(get_db)):
     if any(word in recipe_id for word in ["overview", "instruction"]):
         stmt = (
@@ -61,9 +50,10 @@ def read_item(recipe_id: str, db: Session = Depends(get_db)):
 
     # 安全檢查：找不到就報 404，不要讓後續程式碼崩潰
     if result is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Recipe or Chunk not found"
-        )
+        raise HTTPException(status_code=404, detail="Recipe not found")
 
-    return convert_recipe_to_dict(result)
+    # 如果查詢結果是 Chunk，則取其 recipe 父物件
+    target_obj = result.recipe if isinstance(result, models.RecipeChunkModel) else result
+
+    # 使用 RecipeRead 進行轉換與攤平
+    return RecipeReadFlatten.model_validate(target_obj).model_dump()
