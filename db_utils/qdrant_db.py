@@ -4,13 +4,12 @@ from qdrant_client import QdrantClient
 from qdrant_client.http.models import PointStruct
 from qdrant_client.models import (
     VectorParams,
-    SparseVectorParams,
     Distance
 )
 
 from FlagEmbedding import BGEM3FlagModel
 
-from recipe_entity import RecipeEntity, RecipeChunk
+from entity import RecipeChunk
 
 
 class QdrantVectorStore:
@@ -112,8 +111,8 @@ class QdrantVectorStore:
 if __name__ == "__main__":
     db = QdrantVectorStore()
 
-    # db.search()
-    # info = db.client.scroll(collection_name="recipes")
+    # db_utils.search()
+    # info = db_utils.client.scroll(collection_name="recipes")
     # for point in info:
     #     print(point)
 

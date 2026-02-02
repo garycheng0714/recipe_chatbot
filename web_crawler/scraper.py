@@ -1,8 +1,9 @@
-import re
-from typing import List
-
-import httpx, json
+from entity import RecipeEntity
 from bs4 import BeautifulSoup, Tag
+from db_utils import PostgreDB, RecipeModel, RecipeChunkModel
+from typing import List
+import httpx, re
+
 
 def get_tags(soup: BeautifulSoup) -> List[str]:
     return [tag.text for tag in soup.select_one('div[class="p-tags"]').find_all('a') if tag.text != "看影片學做菜"]
@@ -17,13 +18,11 @@ def get_steps(soup: BeautifulSoup) -> list:
         for step in steps_tag.select('dl')
     ]
 
-def get_seasoning(ingredients_content_tag: Tag) -> dict:
-    seasoning = {}
+def get_seasoning(ingredients_content_tag: Tag) -> list:
+    seasoning = []
 
     if ingredients_content_tag.select_one('dd[class="p-meet-dd u-bg-white"]'):
-        seasoning = {
-            "group": "seasonings",
-            "items": [
+        seasoning = [
                 {
                     "name": items.select_one('p').get_text(strip=True),
                     "amount": items.select_one('div').get_text(strip=True)
@@ -31,22 +30,18 @@ def get_seasoning(ingredients_content_tag: Tag) -> dict:
                 for items in
                 ingredients_content_tag.select_one('dd[class="p-meet-dd u-bg-white"]').select('div[class="list"]')
             ]
-        }
 
     return seasoning
 
 
-def get_ingredients(ingredients_content_tag: Tag) -> dict:
-    return {
-        "group": "ingredients",
-        "items": [
+def get_ingredients(ingredients_content_tag: Tag) -> list:
+    return [
             {
                 "name": items.select('p')[0].get_text(strip=True),
                 "amount": items.select('p')[1].get_text(strip=True)
             }
             for items in ingredients_content_tag.select_one('dd[class="p-meet-dd"]').select('div[class="list"]')
         ]
-    }
 
 def get_recipe_info(soup: BeautifulSoup) -> dict:
     recipe_info = {}
@@ -65,16 +60,14 @@ def get_recipe_info(soup: BeautifulSoup) -> dict:
 
     recipe_info["quantity"] = quantity
 
-    ingredient = get_ingredients(ingredients_content)
+    recipe_info["ingredients"] = get_ingredients(ingredients_content)
     seasoning = get_seasoning(ingredients_content)
 
     if seasoning:
-        recipe_info["groups"] = [ingredient, seasoning]
-    else:
-        recipe_info["groups"] = [ingredient]
+        recipe_info["seasoning"] = seasoning
 
     recipe_info["steps"] = get_steps(soup)
-    recipe_info["tag"] = get_tags(soup)
+    recipe_info["tags"] = get_tags(soup)
 
     return recipe_info
 
@@ -84,11 +77,43 @@ def scrape_recipe(url):
 
     recipe = get_recipe_info(soup)
 
-    print(json.dumps(recipe, ensure_ascii=False, indent=2))
+    # print(json.dumps(recipe, ensure_ascii=False, indent=2))
 
     return recipe
 
+def fetch_recipes(url):
+    # with open("cookies.json", "r") as file:
+    #     file = file.read()
+
+    # soup = BeautifulSoup(file, "html.parser")
+
+    page = httpx.get(url)
+    soup = BeautifulSoup(page.content, "html.parser")
+
+    recipes_tags = soup.select_one('main[class="p-main p-archive"]').select('article')
+
+    return [
+        recipe.select_one('a[class="u-loader"]')['href']
+        for recipe in recipes_tags
+    ]
+
+
+def save_to_postgre(id, data):
+    recipe = RecipeEntity(id, data)
+    chunks = recipe.to_chunks()
+
+    db = PostgreDB()
+    db.add_recipe(RecipeModel(**recipe.to_document().to_dict()))
+    for chunk in chunks:
+        db.add_chunk(RecipeChunkModel(**chunk.to_dict()))
+
+    db.commit()
+    db.close()
 
 if __name__ == "__main__":
-    recipe = scrape_recipe("https://tasty-note.com/teriyaki-tofu-stake-2/")
-    # scrape_recipe("https://tasty-note.com/orinishi-shio-kombu-cabbage/")
+
+    url = "https://tasty-note.com/teriyaki-tofu-stake-2/"
+    data = scrape_recipe(url)
+
+    # id = urlparse(url).path.split("/")[1]
+    # fetch_recipes("https://tasty-note.com/tag/ten-minutes/1")

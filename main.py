@@ -1,11 +1,17 @@
 from time import sleep
 from urllib.parse import urlparse
 
-from postgre_db import PostgreDB, RecipeModel, RecipeChunkModel
-from recipe_entity import RecipeEntity
-from scraper import scrape_recipe, fetch_recipes
-from elastic_search import ElasticSearchHelper
-from qdrant_db import QdrantVectorStore
+from db_utils import (
+    PostgreDB, RecipeModel, RecipeChunkModel,
+    ElasticSearchHelper,
+    QdrantVectorStore
+)
+
+from web_crawler import (
+    scrape_recipe,
+    fetch_recipes
+)
+from entity import RecipeEntity
 
 
 if __name__ == "__main__":

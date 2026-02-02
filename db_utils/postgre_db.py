@@ -2,16 +2,13 @@ from typing import Any
 
 from dotenv import load_dotenv
 
-from recipe_entity import RecipeDocument
-
 load_dotenv()
 
 import os
 
-from sqlalchemy import create_engine, Column, Integer, String, Text, DateTime, ForeignKey
+from sqlalchemy import create_engine, Column, String, Text, DateTime, ForeignKey
 from sqlalchemy.dialects.postgresql import ARRAY
 from sqlalchemy.orm import sessionmaker, declarative_base, relationship
-from sqlalchemy_utils import database_exists, create_database
 from sqlalchemy import select
 import datetime
 
