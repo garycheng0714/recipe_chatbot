@@ -110,7 +110,7 @@ class PostgreDB:
 
         recipe_dict = recipe.to_dict()
 
-        for chunk in result.recipe.chunks:
+        for chunk in recipe.chunks:
             recipe_dict[chunk.chunk_type] = chunk.content
 
         # print(json.dumps(recipe_dict, ensure_ascii=False, indent=2))
