@@ -1,6 +1,6 @@
-from typing import Literal
+from typing import Union
 
-from fastapi import FastAPI, Depends
+from fastapi import FastAPI, Depends, HTTPException, status
 from sqlalchemy.orm import Session, selectinload, joinedload
 from sqlalchemy import select
 from models import RecipeChunkModel, RecipeModel
@@ -25,11 +25,11 @@ def get_db():
 def read_root():
     return {"Hello": "World"}
 
-def convert_recipe_to_dict(model: Literal["RecipeModel", "RecipeChunkModel"]):
-    if isinstance(model, RecipeChunkModel):
-        recipe = model.recipe
+def convert_recipe_to_dict(obj: Union[models.RecipeModel, models.RecipeChunkModel]):
+    if isinstance(obj, RecipeChunkModel):
+        recipe = obj.recipe
     else:
-        recipe = model
+        recipe = obj
 
     recipe_dict = recipe.to_dict()
 
@@ -57,6 +57,13 @@ def read_item(recipe_id: str, db: Session = Depends(get_db)):
             .where(RecipeModel.id == recipe_id)
         )
 
-    result_model = db.execute(stmt).scalar_one_or_none()
+    result = db.execute(stmt).scalar_one_or_none()
 
-    return convert_recipe_to_dict(result_model)
+    # 安全檢查：找不到就報 404，不要讓後續程式碼崩潰
+    if result is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Recipe or Chunk not found"
+        )
+
+    return convert_recipe_to_dict(result)
