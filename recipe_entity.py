@@ -5,7 +5,7 @@ from typing import Literal
 class RecipeChunk(BaseModel):
     id: str
     parent_id: str
-    chunk_type: Literal["overview", "ingredients", "instruction"]
+    chunk_type: Literal["overview", "instruction"]
     content: str
 
     def to_dict(self):
