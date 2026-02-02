@@ -2,6 +2,7 @@ import json
 
 from db_utils import ElasticSearchHelper, RecipeChunkModel
 from db_utils import QdrantVectorStore
+from db_utils import PostgreDB
 from entity import EsPointsModel
 import asyncio
 
@@ -49,11 +50,11 @@ async def hybrid_search(query_text, top_n=10):
     # 處理 Elasticsearch 結果
     es_points = EsPointsModel(**es_res)
     es_ids = [hit.field_source.id for hit in es_points.hits.hits]
-    print(f"BM25: {es_ids}\n")
+    # print(f"BM25: {es_ids}\n")
 
     # 處理 Qdrant 結果
     qd_ids = [str(point.payload["id"]) for point in qd_res.points]
-    print(f"Vector: {qd_ids}\n")
+    # print(f"Vector: {qd_ids}\n")
 
     # --- Step 4: 套用 RRF ---
     fused_results = reciprocal_rank_fusion([es_ids, qd_ids], k=60)
@@ -63,16 +64,25 @@ async def hybrid_search(query_text, top_n=10):
 
     return final_top_ids
 
-if __name__ == '__main__':
-    from db_utils import PostgreDB
+async def retrival_recipe(query_text) -> dict:
     db = PostgreDB()
+    candidates = await hybrid_search(query_text, top_n=5)
+    result = db.fetch_recipe(candidates[0])
 
-    # result = asyncio.run(
-    #     hybrid_search(query_text="鹽昆布奶油烤飯糰", top_n=5)
-    # )
-    id = "beef-shigureni_instruction"
+    # print(result)
+
+    return result
+
+
+if __name__ == '__main__':
+
+    result = asyncio.run(
+        retrival_recipe(query_text="鹽昆布奶油烤飯糰怎麼製作？")
+    )
+
+    # id = "beef-shigureni_instruction"
     # result = db.get_recipe("salt-kelp-butter-onigiri")
-    result = db.fetch_recipe(id)
+    # result = db.fetch_recipe(id)
 
     print(json.dumps(result, ensure_ascii=False, indent=2))
     # result = db.select_all()
