@@ -1,4 +1,6 @@
-from db_utils import ElasticSearchHelper
+import json
+
+from db_utils import ElasticSearchHelper, RecipeChunkModel
 from db_utils import QdrantVectorStore
 from entity import EsPointsModel
 import asyncio
@@ -65,9 +67,16 @@ if __name__ == '__main__':
     from db_utils import PostgreDB
     db = PostgreDB()
 
-    result = asyncio.run(
-        hybrid_search(query_text="鹽昆布奶油烤飯糰", top_n=5)
-    )
+    # result = asyncio.run(
+    #     hybrid_search(query_text="鹽昆布奶油烤飯糰", top_n=5)
+    # )
+    id = "beef-shigureni_instruction"
+    # result = db.get_recipe("salt-kelp-butter-onigiri")
+    result = db.fetch_recipe(id)
 
-    print(result)
+    print(json.dumps(result, ensure_ascii=False, indent=2))
+    # result = db.select_all()
+
+    # for record in result:
+    #     print(record.id)
 
