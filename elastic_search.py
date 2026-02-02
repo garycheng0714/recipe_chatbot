@@ -8,14 +8,18 @@ import os, json
 
 from elasticsearch import Elasticsearch
 
+# docker exec -it es bash
+# bin/elasticsearch-reset-password -u elastic
+# docker cp es:/usr/share/elasticsearch/config/certs/http_ca.crt ./http_ca.crt
+# elasticsearch-plugin install https://get.infini.cloud/elasticsearch/analysis-ik/9.1.4
 
 class ElasticSearchHelper:
     def __init__(self):
         self.es = Elasticsearch(
-            "https://localhost:9200",
-            basic_auth=("elastic", os.getenv("OPENAI_API_KEY")),
-            verify_certs=True,  # 如果是自簽證書，這行相當於 curl 的 --insecure
-            ca_certs="./http_ca.crt"
+            "http://localhost:9200",
+            # basic_auth=("elastic", "qpkgNiebYob6ggC-2H+m"),
+            # verify_certs=True,  # 如果是自簽證書，這行相當於 curl 的 --insecure
+            # ca_certs="./certs/http_ca.crt"
         )
         self.index_name = "recipes"
         self.index_body = {
@@ -97,11 +101,17 @@ class ElasticSearchHelper:
 
 if __name__ == "__main__":
     es = ElasticSearchHelper()
-    # print(es.es.info())
     # es.create_index()
-    result = es.search("廚房紙巾")
+    # es.es.security.change_password(
+    # username="elastic",
+    # password="rul 2u03"
+# )
+#     print(es.es.info())
+    es.create_index()
+    # result = es.search("豆腐")
 
-    for r in result["hits"]["hits"]:
-        print(r["_source"])
-        print("\n")
+
+    # for r in result["hits"]["hits"]:
+    #     print(r["_source"])
+    #     print("\n")
     # print(json.dumps(result, ensure_ascii=False, indent=2))
