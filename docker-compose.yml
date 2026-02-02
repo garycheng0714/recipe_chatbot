@@ -1,0 +1,47 @@
+services:
+  elasticsearch:
+#    build:
+#      context: ./elasticsearch
+    image: elasticsearch:9.1.4
+    container_name: es
+    environment:
+      - discovery.type=single-node
+      - ES_JAVA_OPTS=-Xms1g -Xmx1g
+      - xpack.security.enabled=false
+      - xpack.security.http.ssl.enabled=false
+    ports:
+      - "9200:9200"
+    volumes:
+      - es_data:/usr/share/elasticsearch/data
+
+  kibana:
+    image: kibana:9.1.4
+    container_name: kibana
+    environment:
+      - ELASTICSEARCH_HOSTS=http://es:9200 # 使用服務名稱連線
+      - xpack.encryptedSavedObjects.encryptionKey=verylongrandomstringthatnooneknows
+#      - ELASTICSEARCH_SSL_VERIFICATIONMODE=none
+#      - ELASTICSEARCH_CA=/usr/share/kibana/config/http_ca.crt
+    ports:
+      - "5601:5601"
+    volumes:
+      - kibana_data:/usr/share/kibana/data
+    depends_on:
+      - elasticsearch
+
+  qdrant:
+    image: qdrant/qdrant:latest
+    container_name: qdrant
+    ports:
+      - "6333:6333"   # REST API + Web Console
+      - "6334:6334"   # gRPC
+    volumes:
+      - qdrant_data:/qdrant/storage
+    environment:
+      - QDRANT__SERVICE__GRPC_PORT=6334
+      - QDRANT__SERVICE__WEB_PORT=6333  # 明確指定 Web Console 端口
+
+volumes:
+  es_data:
+  kibana_data:
+  qdrant_data:
