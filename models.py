@@ -4,7 +4,7 @@ from sqlalchemy import Column, String, Text, DateTime, ForeignKey
 from sqlalchemy.dialects.postgresql import ARRAY
 from sqlalchemy.orm import relationship, selectinload, joinedload
 import datetime
-from database import Base
+from client import Base
 
 # 4. 定義資料模型 (對應資料表)
 class RecipeModel(Base):
