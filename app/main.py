@@ -1,12 +1,15 @@
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, Depends, HTTPException
-
-from app.repositories.es_repository import ElasticSearchRepository
-from app.models.es_model import EsPointsModel
 from schemas import RecipeRead, RecipeReadFlatten
 from app.client import get_db, get_es
-from app.models.orm_model import RecipeChunkModel
-from app.repositories import PgRepository
+from app.models import (
+    RecipeChunkModel,
+    EsPointsModel
+)
+from app.repositories import (
+    PgRepository,
+    ElasticSearchRepository
+)
 import app.database as database
 
 
