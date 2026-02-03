@@ -2,10 +2,10 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio.session import AsyncSession
 from sqlalchemy.orm import selectinload, joinedload
 
-from app.models import RecipeModel, RecipeChunkModel
+from app.models.orm_model import RecipeModel, RecipeChunkModel
 
 
-class PgService:
+class PgRepository:
     def __init__(self, async_session: AsyncSession):
         self.async_session = async_session
 

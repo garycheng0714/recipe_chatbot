@@ -1,9 +1,12 @@
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, Depends, HTTPException
+
+from app.repositories.es_repository import ElasticSearchRepository
+from app.models.es_model import EsPointsModel
 from schemas import RecipeRead, RecipeReadFlatten
-from app.client import get_db
-from app.models import RecipeChunkModel
-from app.services import PgService
+from app.client import get_db, get_es
+from app.models.orm_model import RecipeChunkModel
+from app.repositories import PgRepository
 import app.database as database
 
 
@@ -29,7 +32,7 @@ def read_root():
 
 # 3. 定義一個帶有參數的路徑
 @app.get("/recipe/{recipe_id}", response_model=RecipeRead)
-async def read_item(recipe_id: str, pg_service: PgService = Depends(get_db)):
+async def read_item(recipe_id: str, pg_service: PgRepository = Depends(get_db)):
     obj = await pg_service.fetch_recipe(recipe_id)
 
     # 安全檢查：找不到就報 404，不要讓後續程式碼崩潰
@@ -41,3 +44,9 @@ async def read_item(recipe_id: str, pg_service: PgService = Depends(get_db)):
 
     # 使用 RecipeRead 進行轉換與攤平
     return RecipeReadFlatten.model_validate(target_obj).model_dump()
+
+@app.get("/es/{query}")
+async def es_search(query: str, es: ElasticSearchRepository = Depends(get_es)):
+    result = await es.search(query)
+    points = EsPointsModel(**result)
+    return points
