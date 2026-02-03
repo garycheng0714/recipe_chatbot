@@ -2,9 +2,9 @@ from typing import Any
 
 from sqlalchemy import Column, String, Text, DateTime, ForeignKey
 from sqlalchemy.dialects.postgresql import ARRAY
-from sqlalchemy.orm import relationship, selectinload, joinedload
+from sqlalchemy.orm import relationship
 import datetime
-from client import Base
+from app.database import Base
 
 # 4. 定義資料模型 (對應資料表)
 class RecipeModel(Base):

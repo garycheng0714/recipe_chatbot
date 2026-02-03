@@ -5,11 +5,13 @@ load_dotenv()
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.ext.asyncio import async_sessionmaker
 from sqlalchemy.ext.asyncio import create_async_engine
-from typing import AsyncGenerator
 import os
+
 
 # 資料庫連線位置 (SQLite)
 POSTGRES_URL = f"postgresql+asyncpg://postgres:{os.getenv("OPENAI_API_KEY")}@localhost:5432/recipe_orm_db"
+ES_URL = os.getenv("ES_URL", "http://localhost:9200")
+QDRANT_URL = os.getenv("QDRANT_URL", "http://localhost:6333")
 
 # 建立連線引擎
 engine = create_async_engine(
@@ -24,7 +26,3 @@ AsyncSessionLocal = async_sessionmaker(bind=engine, expire_on_commit=False)
 
 # 所有的資料表模型都會繼承這個 Base
 Base = declarative_base()
-
-async def get_db() -> AsyncGenerator:
-    async with AsyncSessionLocal() as session:
-        yield session
