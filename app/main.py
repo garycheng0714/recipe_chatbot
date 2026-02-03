@@ -1,6 +1,8 @@
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, Depends, HTTPException
-from schemas import RecipeRead, RecipeReadFlatten
+
+from app.services.retriever import Retriever
+from app.schemas import RecipeRead, RecipeReadFlatten
 
 from qdrant_client.models import (
     VectorParams,
@@ -68,7 +70,6 @@ app = FastAPI(lifespan=lifespan)
 def read_root():
     return {"Hello": "World"}
 
-
 # 3. 定義一個帶有參數的路徑
 @app.get("/recipe/{recipe_id}", response_model=RecipeRead)
 async def read_item(recipe_id: str, pg_service: PgRepository = Depends(get_db)):
@@ -94,3 +95,14 @@ async def es_search(query: str, es: ElasticSearchRepository = Depends(get_es)):
 async def semantic_search(query: str, qdr: QdrantRepository = Depends(get_qdrant)):
     qdr_res = await qdr.search(query)
     return [str(point.payload["id"]) for point in qdr_res.points]
+
+# 輔助函式：建立 Service
+async def get_search_service(
+    es=Depends(get_es),
+    qdr=Depends(get_qdrant)
+):
+    return Retriever(es, qdr)
+
+@app.get("/hybrid/{query}")
+async def hybrid_search(query: str, retriever: Retriever = Depends(get_search_service)):
+    return await retriever.hybrid_search(query, 2)
