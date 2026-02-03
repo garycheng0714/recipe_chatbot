@@ -1,5 +1,6 @@
 from .pg_repository import PgRepository
 from .es_repository import ElasticSearchRepository
+from .qdr_repository import QdrantRepository
 
 """
 Repository

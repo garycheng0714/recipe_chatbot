@@ -6,27 +6,27 @@ from qdrant_client.models import (
     Distance
 )
 
-from entity.recipe_entity import RecipeChunk, RecipeDocument
+from app.models.qdr_model import RecipeChunk, RecipeDocument
 import uuid
 
 
 class QdrantRepository:
-    def __init__(self, client: AsyncQdrantClient, model: BGEM3FlagModel):
+    def __init__(self, client: AsyncQdrantClient, model: BGEM3FlagModel, collection_name: str):
         self.client = client
         self.model = model
-        self.collection_name = "recipes"
+        self.collection_name = collection_name
 
         # 建立 Collection，同時定義稠密與稀疏向量配置
-        if not self.client.collection_exists(self.collection_name):
-            self.client.create_collection(
-                collection_name=self.collection_name,
-                vectors_config={
-                    "dense": VectorParams(
-                        size=1024,  # BGE-M3 的維度
-                        distance=Distance.COSINE
-                    )
-                }
-            )
+        # if not self.client.collection_exists(self.collection_name):
+        #     self.client.create_collection(
+        #         collection_name=self.collection_name,
+        #         vectors_config={
+        #             "dense": VectorParams(
+        #                 size=1024,  # BGE-M3 的維度
+        #                 distance=Distance.COSINE
+        #             )
+        #         }
+        #     )
 
     def embed(self, text: str) -> list[float]:
         output = self.model.encode(
@@ -36,10 +36,10 @@ class QdrantRepository:
 
         return output["dense_vecs"].tolist()
 
-    def upsert(self, entity: RecipeChunk):
+    async def upsert(self, entity: RecipeChunk):
         point_id = str(uuid.uuid5(uuid.NAMESPACE_DNS, entity.id))
 
-        self.client.upsert(
+        await self.client.upsert(
             collection_name=self.collection_name,
             points=[
                 PointStruct(
@@ -57,11 +57,11 @@ class QdrantRepository:
             ]
         )
 
-    def upsert_recipe(self, entity: RecipeDocument):
+    async def upsert_recipe(self, entity: RecipeDocument):
         point_id = str(uuid.uuid5(uuid.NAMESPACE_DNS, entity.id))
         semantics = entity.to_semantics()
 
-        self.client.upsert(
+        await self.client.upsert(
             collection_name=self.collection_name,
             points=[
                 PointStruct(
@@ -88,7 +88,7 @@ class QdrantRepository:
         query_dense = output['dense_vecs'].tolist()
 
         # 同樣取得 query 的 dense 與 sparse 向量
-        return self.client.query_points(
+        return await self.client.query_points(
             collection_name=self.collection_name,
             query=query_dense,
             using="dense",
