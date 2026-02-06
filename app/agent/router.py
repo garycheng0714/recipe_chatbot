@@ -6,7 +6,7 @@ from app.agent.prompts import router_prompt
 from app.schema.ai_schemas import IntentResult
 
 _assistant_model = OpenAIChatModel(
-    model_name='qwen2.5:1.5b',
+    model_name='qwen3:0.6b',
     provider=OllamaProvider(base_url='http://localhost:11434/v1'),
     settings=ModelSettings(
         temperature=0,
