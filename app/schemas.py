@@ -11,6 +11,7 @@ class RecipeChunkInternal(BaseModel):
 
 class RecipeRead(BaseModel):
     id: str
+    score: Optional[float] = None
     name: str
     quantity: str
     ingredients: List[str]
@@ -20,6 +21,9 @@ class RecipeRead(BaseModel):
     instruction: Optional[str] = None
 
     model_config = ConfigDict(from_attributes=True)
+
+    def set_score(self, score: float):
+        self.score = score
 
 class RecipeReadFlatten(RecipeRead):
     # 1. 明確定義 chunks，Pydantic 才會去 SQLAlchemy 物件裡抓這份資料

@@ -70,10 +70,18 @@ app = FastAPI(lifespan=lifespan)
 def read_root():
     return {"Hello": "World"}
 
+# 輔助函式：建立 Service
+async def get_search_service(
+    es=Depends(get_es),
+    qdr=Depends(get_qdrant),
+    db=Depends(get_db)
+):
+    return Retriever(es, qdr, db)
+
 # 3. 定義一個帶有參數的路徑
-@app.get("/recipe/{recipe_id}", response_model=RecipeRead)
-async def read_item(recipe_id: str, pg_service: PgRepository = Depends(get_db)):
-    obj = await pg_service.fetch_recipe(recipe_id)
+@app.get("/recipe/{query_text}", response_model=RecipeRead)
+async def read_item(query_text: str, retriever: Retriever = Depends(get_search_service)):
+    obj, score = await retriever.search_recipe(query_text)
 
     # 安全檢查：找不到就報 404，不要讓後續程式碼崩潰
     if obj is None:
@@ -83,7 +91,10 @@ async def read_item(recipe_id: str, pg_service: PgRepository = Depends(get_db)):
     target_obj = obj.recipe if isinstance(obj, RecipeChunkModel) else obj
 
     # 使用 RecipeRead 進行轉換與攤平
-    return RecipeReadFlatten.model_validate(target_obj).model_dump()
+    recipe_read = RecipeReadFlatten.model_validate(target_obj)
+    recipe_read.set_score(score)
+
+    return recipe_read.model_dump()
 
 @app.get("/es/{query}")
 async def es_search(query: str, es: ElasticSearchRepository = Depends(get_es)):
@@ -95,14 +106,3 @@ async def es_search(query: str, es: ElasticSearchRepository = Depends(get_es)):
 async def semantic_search(query: str, qdr: QdrantRepository = Depends(get_qdrant)):
     qdr_res = await qdr.search(query)
     return [str(point.payload["id"]) for point in qdr_res.points]
-
-# 輔助函式：建立 Service
-async def get_search_service(
-    es=Depends(get_es),
-    qdr=Depends(get_qdrant)
-):
-    return Retriever(es, qdr)
-
-@app.get("/hybrid/{query}")
-async def hybrid_search(query: str, retriever: Retriever = Depends(get_search_service)):
-    return await retriever.hybrid_search(query, 2)

@@ -1,11 +1,12 @@
 from app.models import EsPointsModel
-from app.repositories import ElasticSearchRepository, QdrantRepository
+from app.repositories import ElasticSearchRepository, QdrantRepository, PgRepository
 import asyncio
 
 class Retriever:
-    def __init__(self, es: ElasticSearchRepository, qdr: QdrantRepository):
+    def __init__(self, es: ElasticSearchRepository, qdr: QdrantRepository, db: PgRepository):
         self.es = es
         self.qdr = qdr
+        self.db = db
 
     def reciprocal_rank_fusion(self, search_results_list, k=60):
         """
@@ -47,16 +48,18 @@ class Retriever:
         # 處理 Elasticsearch 結果
         es_points = EsPointsModel(**es_res)
         es_ids = [hit.field_source.id for hit in es_points.hits.hits]
-        # print(f"BM25: {es_ids}\n")
 
         # 處理 Qdrant 結果
         qd_ids = [str(point.payload["id"]) for point in qd_res.points]
-        # print(f"Vector: {qd_ids}\n")
 
         # --- Step 4: 套用 RRF ---
         fused_results = self.reciprocal_rank_fusion([es_ids, qd_ids], k=60)
 
         # 取出前 N 名的 ID
-        final_top_ids = [doc_id for doc_id, score in fused_results[:top_n]]
+        # final_top_ids = [doc_id for doc_id, score in fused_results[:top_n]]
 
-        return final_top_ids
+        return fused_results[:top_n]
+
+    async def search_recipe(self, query_text, top_n=10):
+        hybrid_result = await self.hybrid_search(query_text, top_n)
+        return await self.db.fetch_recipe(hybrid_result[0][0]), hybrid_result[0][1]

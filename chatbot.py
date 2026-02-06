@@ -1,45 +1,89 @@
-import asyncio
+import asyncio, httpx, os
 
 from pydantic_ai import ModelSettings, Agent
 from pydantic_ai.models.openai import OpenAIChatModel
 from pydantic_ai.providers.ollama import OllamaProvider
 
-from retriever import retrival_recipe
-
-ollama_model = OpenAIChatModel(
-    model_name='qwen3:1.7b',
+main_model = OpenAIChatModel(
+    model_name='qwen3:0.6b',
     provider=OllamaProvider(base_url='http://localhost:11434/v1'),
-    settings=ModelSettings(temperature=0)
+    settings=ModelSettings(
+        temperature=0,
+    )
+)
+
+assistant_model = OpenAIChatModel(
+    model_name='qwen2.5:0.5b',
+    provider=OllamaProvider(base_url='http://localhost:11434/v1'),
+    settings=ModelSettings(
+        temperature=0,
+    )
 )
 
 agent = Agent(
-    model=ollama_model,
+    model=main_model,
     model_settings=ModelSettings(temperature=0),
     retries=0,
-    # output_type=Answer,
+    # output_type=STEP,
     # deps_type=RagContextTracker,
     system_prompt="""
     1. 你是一個食譜聊天機器人
-    2. 將搜尋到的內容語意化
-    3. 回覆內容的範例如下：
-        【菜品名稱】食譜名稱
-        【類別】料理類別
-        【份量】幾人份
-        【食材明细】食材清單
-        【推薦理由】推薦原因
-        【料理步驟】烹煮步驟
-    4. 與食譜無關的主題請不要回答
+    2. 使用工具 search_recipe 問答食譜問題
+    3. 根據獲得的資料回答問題 
     """
 )
 
-# 【菜品名稱】、【類別】、【份量】、【食材明细】、【推薦理由】，
+classify_question_agent = Agent(
+    model=assistant_model,
+    model_settings=ModelSettings(temperature=0),
+    retries=0,
+    system_prompt="""
+    你是問題歸類者
+    1. 戶問題為料理、食譜問題請回應 True，否則回 False
+    """
+)
 
 @agent.tool_plain
-async def search_recipe(query_text: str) -> dict:
-    """用來搜尋食譜的工具"""
-    print(f"Search recipe: {query_text}")
-    return await retrival_recipe(query_text)
+async def search_recipe(query_text: str) -> str:
+    """Get recipe information."""
+    resp = httpx.get("http://127.0.0.1:8000/recipe/{}".format(query_text))
+    data = resp.json()
+    # return resp.json()
+    return (f"料理: {data["name"]}\n"
+            f"食材: {", ".join(data["ingredients"])}\n"
+            f"步驟:\n{data["instruction"]}")
+
+
+async def search_recipe_law_data(query_text: str) -> dict:
+    resp = httpx.get("http://127.0.0.1:8000/recipe/{}".format(query_text))
+    return resp.json()
+
+
+async def call_main_agent(query_text: str):
+    async with agent.run_stream(query_text) as result:
+        async for text in result.stream_text(delta=True):  # stream_text 預設通常只會抓 text 內容
+            print(text, end='')
+
+async def main(query_text: str):
+    is_recipe_question = await classify_question_agent.run(query_text)
+    if is_recipe_question.output == "True":
+        search_result = await search_recipe_law_data(query_text)
+        if search_result["score"] > 0.03:
+            print(f"料理: {search_result["name"]}\n"
+                  f"食材: {", ".join(search_result["ingredients"])}\n"
+                  f"步驟:\n{search_result["instruction"]}")
+        else:
+            await call_main_agent(query_text)
+    else:
+        await call_main_agent(query_text)
 
 if __name__ == '__main__':
-    result = asyncio.run(agent.run("鹽昆布奶油烤飯糰怎麼製作？"))
-    print(result.output)
+    response = asyncio.run(main("鹽昆布奶油烤飯糰需要哪些食材?"))
+    # response = asyncio.run(agent2.run("鹽昆布奶油烤飯糰怎麼製作?"))
+    # if response.output == 'True':
+    #     print("!!!!")
+    # else:
+    #     print("????")
+    # for meg in response.all_messages():
+    #     print(meg)
+    #     print("\n")
