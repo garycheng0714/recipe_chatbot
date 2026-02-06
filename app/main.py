@@ -2,7 +2,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, Depends, HTTPException
 
 from app.services.retriever import Retriever
-from app.schemas import RecipeRead, RecipeReadFlatten
+from app.schema.api_schemas import RecipeRead, RecipeReadFlatten
 
 from qdrant_client.models import (
     VectorParams,
@@ -25,7 +25,6 @@ from app.models import (
 )
 
 from app.repositories import (
-    PgRepository,
     ElasticSearchRepository,
     QdrantRepository
 )

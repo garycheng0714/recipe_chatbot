@@ -1,1 +1,1 @@
-from .schemas import RecipeRead, RecipeReadFlatten
+from app.schema.api_schemas import RecipeRead, RecipeReadFlatten
