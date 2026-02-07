@@ -36,14 +36,11 @@ async def get_es():
 
 # --- 3. Qdrant 設定 ---
 qdr_client = AsyncQdrantClient(url=QDRANT_URL)
-qdr_collection_name = "recipes"
+
 # 載入 BGE-M3 模型
 model = BGEM3FlagModel('BAAI/bge-m3',use_fp16=False)
 # Setting use_fp16 to True speeds up computation with a slight performance degradation
 # reranker = FlagReranker('BAAI/bge-reranker-v2-m3', use_fp16=False)
 
 async def get_qdrant():
-    return QdrantRepository(qdr_client, model, collection_name="recipes")
-
-async def get_user_intent_qdrant():
-    return QdrantRepository(qdr_client, model, collection_name="user_question_intent")
+    return QdrantRepository(qdr_client, model)

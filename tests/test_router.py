@@ -51,4 +51,4 @@ from app.client import model
 @pytest.mark.asyncio
 async def test_hybrid_router_performance():
     db = QdrantRepository(qdr_client, model, "user_question_intent")
-    await db.search("如何做佛跳牆")
+    await db.search_recipe("如何做佛跳牆")

@@ -13,10 +13,8 @@ from app.client import (
     get_db,
     get_es,
     get_qdrant,
-    get_user_intent_qdrant,
     es_client,
     qdr_client,
-    qdr_collection_name,
     model
 )
 
@@ -44,16 +42,16 @@ async def lifespan(app: FastAPI):
     model.encode(["startup warm-up"])
 
     # --- Startup: 建立 Qdrant collection ---
-    if not await qdr_client.collection_exists(qdr_collection_name):
-        await qdr_client.create_collection(
-            collection_name=qdr_collection_name,
-            vectors_config={
-                "dense": VectorParams(
-                    size=1024,  # BGE-M3 的維度
-                    distance=Distance.COSINE
-                )
-            }
-        )
+    # if not await qdr_client.collection_exists(qdr_collection_name):
+    #     await qdr_client.create_collection(
+    #         collection_name=qdr_collection_name,
+    #         vectors_config={
+    #             "dense": VectorParams(
+    #                 size=1024,  # BGE-M3 的維度
+    #                 distance=Distance.COSINE
+    #             )
+    #         }
+    #     )
 
     yield
     # Shutdown: 可以在這裡釋放資源、關閉連線池
@@ -81,8 +79,18 @@ async def get_search_service(
 
 # 3. 定義一個帶有參數的路徑
 @app.get("/recipe/{query_text}", response_model=RecipeRead)
-async def search_recipe(query_text: str, retriever: Retriever = Depends(get_search_service)):
-    obj, score = await retriever.search_recipe(query_text)
+async def search_recipe(
+        query_text: str,
+        retriever: Retriever = Depends(get_search_service)
+):
+    intent_point = await retriever.search_intent(query_text)
+
+    if intent_point.score < 0.6:
+        raise HTTPException(status_code=404, detail="Recipe not found")
+
+    intent = intent_point.payload["intent"]
+
+    obj, score = await retriever.search_recipe(query_text, intent)
 
     # 安全檢查：找不到就報 404，不要讓後續程式碼崩潰
     if obj is None:
@@ -104,7 +112,7 @@ async def es_search(query: str, es: ElasticSearchRepository = Depends(get_es)):
     return points
 
 @app.get("/semantic/{query}")
-async def semantic_search(query: str, qdr: QdrantRepository = Depends(get_user_intent_qdrant)):
-    qdr_res = await qdr.search(query)
+async def semantic_search(query: str, qdr: QdrantRepository = Depends(get_qdrant)):
+    qdr_res = await qdr.search_intent(query)
     # return [str(point.payload["id"]) for point in qdr_res.points]
     return qdr_res.points[0]

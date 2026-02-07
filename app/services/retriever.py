@@ -1,5 +1,6 @@
 from app.models import EsPointsModel
 from app.repositories import ElasticSearchRepository, QdrantRepository, PgRepository
+from app.schema import RRFResult
 import asyncio
 
 class Retriever:
@@ -8,7 +9,7 @@ class Retriever:
         self.qdr = qdr
         self.db = db
 
-    def reciprocal_rank_fusion(self, search_results_list, k=60):
+    def reciprocal_rank_fusion(self, search_results_list, k=60) -> list[RRFResult]:
         """
         search_results_list: 一個列表的列表，例如 [[doc_id1, doc_id2], [doc_id2, doc_id3]]
         k: 平滑常數，預設 60
@@ -28,18 +29,22 @@ class Retriever:
         用分數做排序，分數愈高越前面
         """
         sorted_results = sorted(fused_scores.items(), key=lambda x: x[1], reverse=True)
-        return sorted_results
+
+        return [
+            RRFResult(id=idx, score=score)
+            for idx, score in sorted_results
+        ]
 
 
-    async def hybrid_search(self, query_text, top_n=10):
+    async def hybrid_search(self, query_text, top_k=10) -> list[RRFResult]:
         # --- Step 1 & 2: 同時發送請求 (Parallel Execution) ---
         # 使用 asyncio.gather 同時啟動 ES 和 Qdrant 的搜尋
         # 這裡建議把檢索數量 (k) 放大一點，例如 top_n * 2，RRF 的效果會更好
-        search_k = top_n * 2
+        search_k = top_k * 2
 
         # 同時執行兩個 task
         es_res = self.es.search(query_text=query_text, size=search_k)
-        qd_res = self.qdr.search(query_text=query_text, k=search_k)
+        qd_res = self.qdr.search_recipe(query_text=query_text, k=search_k)
 
         # 等待兩者完成
         es_res, qd_res = await asyncio.gather(es_res, qd_res)
@@ -58,8 +63,24 @@ class Retriever:
         # 取出前 N 名的 ID
         # final_top_ids = [doc_id for doc_id, score in fused_results[:top_n]]
 
-        return fused_results[:top_n]
+        return fused_results[:top_k]
 
-    async def search_recipe(self, query_text, top_n=10):
-        hybrid_result = await self.hybrid_search(query_text, top_n)
-        return await self.db.fetch_recipe(hybrid_result[0][0]), hybrid_result[0][1]
+    async def search_recipe(self, query_text, intent):
+        top_k = self.get_search_params(intent)["top_k"]
+        hybrid_results = await self.hybrid_search(query_text, top_k)
+
+        return await self.db.fetch_recipe(hybrid_results[0].id), hybrid_results[0].score
+
+    async def search_intent(self, query_text):
+        intent_result = await self.qdr.search_intent(query_text, 1)
+        return intent_result.points[0]
+
+    def get_search_params(self, intent: str):
+        # 定義意圖對應的 Alpha 與 Top-K
+        configs = {
+            "get_recipe_by_name": {"alpha": 0.25, "top_k": 3},
+            "find_recipes_by_ingredients": {"alpha": 0.75, "top_k": 10},
+            "find_ingredients_by_recipe": {"alpha": 0.1, "top_k": 1},
+        }
+        # 預設值處理 (避免 Unknown 意圖報錯)
+        return configs.get(intent, {"alpha": 0.5, "top_k": 5})

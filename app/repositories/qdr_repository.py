@@ -9,18 +9,20 @@ from qdrant_client.models import (
 from app.models.qdr_model import RecipeChunk, RecipeDocument
 import uuid
 
+RECIPE_COLLECTION_NAME = "recipes"
+INTENT_COLLECTION_NAME = "user_question_intent"
+
 
 class QdrantRepository:
-    def __init__(self, client: AsyncQdrantClient, model: BGEM3FlagModel, collection_name: str):
+    def __init__(self, client: AsyncQdrantClient, model: BGEM3FlagModel):
         self.client = client
         self.model = model
-        self.collection_name = collection_name
 
-    async def create_collection(self):
+    async def create_collection(self, collection_name):
         # 建立 Collection，同時定義稠密與稀疏向量配置
-        if not await self.client.collection_exists(self.collection_name):
+        if not await self.client.collection_exists(collection_name):
             await self.client.create_collection(
-                collection_name=self.collection_name,
+                collection_name=collection_name,
                 vectors_config={
                     "dense": VectorParams(
                         size=1024,  # BGE-M3 的維度
@@ -37,11 +39,11 @@ class QdrantRepository:
 
         return output["dense_vecs"].tolist()
 
-    async def upsert(self, entity: RecipeChunk):
+    async def upsert_recipe_chunk(self, entity: RecipeChunk):
         point_id = str(uuid.uuid5(uuid.NAMESPACE_DNS, entity.id))
 
         await self.client.upsert(
-            collection_name=self.collection_name,
+            collection_name=RECIPE_COLLECTION_NAME,
             points=[
                 PointStruct(
                     id=point_id,
@@ -63,7 +65,7 @@ class QdrantRepository:
         semantics = entity.to_semantics()
 
         await self.client.upsert(
-            collection_name=self.collection_name,
+            collection_name=RECIPE_COLLECTION_NAME,
             points=[
                 PointStruct(
                     id=point_id,
@@ -82,13 +84,19 @@ class QdrantRepository:
             ]
         )
 
-    async def upsert_points(self, points: list[PointStruct]):
+    async def upsert_points(self, points: list[PointStruct], collection_name: str):
         await self.client.upsert(
-            collection_name=self.collection_name,
+            collection_name=collection_name,
             points=points
         )
 
-    async def search(self, query_text: str, k: int = 5):
+    async def search_recipe(self, query_text: str, k: int = 5):
+        return await self.query_points(query_text, k, RECIPE_COLLECTION_NAME)
+
+    async def search_intent(self, query_text: str, k: int = 5):
+        return await self.query_points(query_text, k, INTENT_COLLECTION_NAME)
+
+    async def query_points(self, query_text, k: int, collection_name: str):
         output = self.model.encode(query_text, return_dense=True)
 
         # 1. 處理 Dense 向量 (轉成普通 list)
@@ -96,7 +104,7 @@ class QdrantRepository:
 
         # 同樣取得 query 的 dense 與 sparse 向量
         return await self.client.query_points(
-            collection_name=self.collection_name,
+            collection_name=collection_name,
             query=query_dense,
             using="dense",
             limit=k,
@@ -106,7 +114,7 @@ class QdrantRepository:
     def delete(self):
         for value in ["overview", "instruction"]:
             self.client.delete(
-                collection_name=self.collection_name,
+                collection_name=RECIPE_COLLECTION_NAME,
                 points_selector=Filter(
                     must=[FieldCondition(
                         key="chunk_type",
