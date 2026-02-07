@@ -1,5 +1,6 @@
 import pytest
 from app.agent.router import router_agent
+from app.repositories import QdrantRepository
 from app.schema.ai_schemas import IntentResult
 
 GOLDEN_DATASET = [
@@ -42,3 +43,12 @@ async def test_router_benchmark(query, expected_intent, min_confidence):
 #     print(response.output.confidence)
 #     print(response.output.reason)
 #     assert response.output.intent == "UNKNOWN"
+
+
+from app.client import qdr_client
+from app.client import model
+
+@pytest.mark.asyncio
+async def test_hybrid_router_performance():
+    db = QdrantRepository(qdr_client, model, "user_question_intent")
+    await db.search("如何做佛跳牆")

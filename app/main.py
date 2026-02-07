@@ -13,6 +13,7 @@ from app.client import (
     get_db,
     get_es,
     get_qdrant,
+    get_user_intent_qdrant,
     es_client,
     qdr_client,
     qdr_collection_name,
@@ -60,6 +61,7 @@ async def lifespan(app: FastAPI):
     # await qdr_client.close()  Qdrant client 不需要手動 shutdown，因為它的 async request 是輕量且短暫的。
     await es_client.close()     #Elasticsearch async client 因為長期維持連線池，所以必須在 lifespan shutdown 時關閉
 
+# uvicorn app.main:app
 # 1. 建立一個 FastAPI 實例
 app = FastAPI(lifespan=lifespan)
 
@@ -79,7 +81,7 @@ async def get_search_service(
 
 # 3. 定義一個帶有參數的路徑
 @app.get("/recipe/{query_text}", response_model=RecipeRead)
-async def read_item(query_text: str, retriever: Retriever = Depends(get_search_service)):
+async def search_recipe(query_text: str, retriever: Retriever = Depends(get_search_service)):
     obj, score = await retriever.search_recipe(query_text)
 
     # 安全檢查：找不到就報 404，不要讓後續程式碼崩潰
@@ -101,7 +103,8 @@ async def es_search(query: str, es: ElasticSearchRepository = Depends(get_es)):
     points = EsPointsModel(**result)
     return points
 
-@app.get("/qdr/{query}")
-async def semantic_search(query: str, qdr: QdrantRepository = Depends(get_qdrant)):
+@app.get("/semantic/{query}")
+async def semantic_search(query: str, qdr: QdrantRepository = Depends(get_user_intent_qdrant)):
     qdr_res = await qdr.search(query)
-    return [str(point.payload["id"]) for point in qdr_res.points]
+    # return [str(point.payload["id"]) for point in qdr_res.points]
+    return qdr_res.points[0]

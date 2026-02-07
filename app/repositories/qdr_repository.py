@@ -16,17 +16,18 @@ class QdrantRepository:
         self.model = model
         self.collection_name = collection_name
 
+    async def create_collection(self):
         # 建立 Collection，同時定義稠密與稀疏向量配置
-        # if not self.client.collection_exists(self.collection_name):
-        #     self.client.create_collection(
-        #         collection_name=self.collection_name,
-        #         vectors_config={
-        #             "dense": VectorParams(
-        #                 size=1024,  # BGE-M3 的維度
-        #                 distance=Distance.COSINE
-        #             )
-        #         }
-        #     )
+        if not await self.client.collection_exists(self.collection_name):
+            await self.client.create_collection(
+                collection_name=self.collection_name,
+                vectors_config={
+                    "dense": VectorParams(
+                        size=1024,  # BGE-M3 的維度
+                        distance=Distance.COSINE
+                    )
+                }
+            )
 
     def embed(self, text: str) -> list[float]:
         output = self.model.encode(
@@ -79,6 +80,12 @@ class QdrantRepository:
                     }
                 )
             ]
+        )
+
+    async def upsert_points(self, points: list[PointStruct]):
+        await self.client.upsert(
+            collection_name=self.collection_name,
+            points=points
         )
 
     async def search(self, query_text: str, k: int = 5):
@@ -136,3 +143,57 @@ class QdrantRepository:
     #         field_name="category",
     #         field_schema="keyword",
     #     )
+
+if __name__ == "__main__":
+    from app.client import qdr_client
+    from sentence_transformers import CrossEncoder
+    import asyncio
+
+
+
+
+    async def main():
+        model = BGEM3FlagModel('BAAI/bge-m3', use_fp16=False)
+        db = QdrantRepository(qdr_client, model, "user_question_intent")
+        # await db.create_collection()
+        # fast_match = await db.search(user_query)
+
+        # scores = reranker.compute_score([user_query, "紅燒肉怎麼做"], normalize=True)
+
+        # print(scores)
+
+        # points = []
+        # for intent, sentences in INTENT_SEEDS.items():
+        #     for text in sentences:
+        #         dense = db.embed(text)
+        #
+        #         points.append(
+        #             PointStruct(
+        #                 id=str(uuid.uuid4()),
+        #                 vector={
+        #                     "dense": dense,
+        #                 },
+        #                 payload={
+        #                     "intent": intent,
+        #                     "original_text": text,
+        #                 }
+        #             )
+        #         )
+        #
+        text = "高麗菜可以做什麼料理"
+
+        await db.upsert_points([
+            PointStruct(
+                id=str(uuid.uuid4()),
+                vector={
+                    "dense": db.embed(text)
+                },
+                payload={
+                    "intent": "find_recipes_by_ingredients",
+                    "original_text": text
+                }
+            )
+        ])
+
+
+    asyncio.run(main())
