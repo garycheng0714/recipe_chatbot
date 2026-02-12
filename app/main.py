@@ -78,7 +78,7 @@ async def get_search_service(
     return Retriever(es, qdr, db)
 
 # 3. 定義一個帶有參數的路徑
-@app.get("/recipe/{query_text}", response_model=RecipeRead)
+@app.get("/recipe/{query_text}")
 async def search_recipe(
         query_text: str,
         retriever: Retriever = Depends(get_search_service)
@@ -90,20 +90,24 @@ async def search_recipe(
 
     intent = intent_point.payload["intent"]
 
-    obj, score = await retriever.search_recipe(query_text, intent)
+    obj_list, score_list = await retriever.search_recipe(query_text, intent)
 
     # 安全檢查：找不到就報 404，不要讓後續程式碼崩潰
-    if obj is None:
+    if obj_list is None:
         raise HTTPException(status_code=404, detail="Recipe not found")
 
-    # 如果查詢結果是 Chunk，則取其 recipe 父物件
-    target_obj = obj.recipe if isinstance(obj, RecipeChunkModel) else obj
+    result = []
 
-    # 使用 RecipeRead 進行轉換與攤平
-    recipe_read = RecipeReadFlatten.model_validate(target_obj)
-    recipe_read.set_score(score)
+    for idx, obj in enumerate(obj_list):
+        # 如果查詢結果是 Chunk，則取其 recipe 父物件
+        target_obj = obj.recipe if isinstance(obj, RecipeChunkModel) else obj
 
-    return recipe_read.model_dump()
+        # 使用 RecipeRead 進行轉換與攤平
+        recipe_read = RecipeReadFlatten.model_validate(target_obj)
+        recipe_read.set_score(score_list[idx])
+        result.append(recipe_read.model_dump())
+
+    return result
 
 @app.get("/es/{query}")
 async def es_search(query: str, es: ElasticSearchRepository = Depends(get_es)):

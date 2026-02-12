@@ -69,7 +69,7 @@ class Retriever:
         top_k = self.get_search_params(intent)["top_k"]
         hybrid_results = await self.hybrid_search(query_text, top_k)
 
-        return await self.db.fetch_recipe(hybrid_results[0].id), hybrid_results[0].score
+        return await self.db.fetch_recipe(hybrid_results), [r.score for r in hybrid_results]
 
     async def search_intent(self, query_text):
         intent_result = await self.qdr.search_intent(query_text, 1)
@@ -78,8 +78,8 @@ class Retriever:
     def get_search_params(self, intent: str):
         # 定義意圖對應的 Alpha 與 Top-K
         configs = {
-            "get_recipe_by_name": {"alpha": 0.25, "top_k": 3},
-            "find_recipes_by_ingredients": {"alpha": 0.75, "top_k": 10},
+            "get_recipe_by_name": {"alpha": 0.25, "top_k": 1},
+            "find_recipes_by_ingredients": {"alpha": 0.75, "top_k": 5},
             "find_ingredients_by_recipe": {"alpha": 0.1, "top_k": 1},
         }
         # 預設值處理 (避免 Unknown 意圖報錯)

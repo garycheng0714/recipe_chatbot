@@ -3,6 +3,7 @@ from sqlalchemy.ext.asyncio.session import AsyncSession
 from sqlalchemy.orm import selectinload, joinedload
 
 from app.models.orm_model import RecipeModel, RecipeChunkModel
+from app.schema import RRFResult
 
 
 class PgRepository:
@@ -26,24 +27,27 @@ class PgRepository:
         result = await self.async_session.execute(stmt)
         return result.scalars().all()
 
-    async def fetch_recipe(self, recipe_id: str):
-        if any(word in recipe_id for word in ["overview", "instruction"]):
-            stmt = (
-                select(RecipeChunkModel)
-                .where(RecipeChunkModel.id == recipe_id)
-                .options(
-                    joinedload(RecipeChunkModel.recipe)
-                    .selectinload(RecipeModel.chunks)
+    async def fetch_recipe(self, recipe: list[RRFResult]):
+        obj_list = []
+
+        for r in recipe:
+            if any(word in r.id for word in ["overview", "instruction"]):
+                stmt = (
+                    select(RecipeChunkModel)
+                    .where(RecipeChunkModel.id == r.id)
+                    .options(
+                        joinedload(RecipeChunkModel.recipe)
+                        .selectinload(RecipeModel.chunks)
+                    )
                 )
-            )
-        else:
-            stmt = (
-                select(RecipeModel)
-                .options(selectinload(RecipeModel.chunks))
-                .where(RecipeModel.id == recipe_id)
-            )
+            else:
+                stmt = (
+                    select(RecipeModel)
+                    .options(selectinload(RecipeModel.chunks))
+                    .where(RecipeModel.id == r.id)
+                )
 
-        result = await self.async_session.execute(stmt)
-        obj = result.scalar_one_or_none()
+            result = await self.async_session.execute(stmt)
+            obj_list.append(result.scalar_one_or_none())
 
-        return obj
+        return obj_list
