@@ -1,11 +1,7 @@
 from web_crawler.list_crawler import TastyNoteListCrawler
 
-def read_mock_data(filename: str) -> str:
-    with open("web_crawler/tests/mocks/{}".format(filename), "r") as f:
-        html = f.read()
-    return html
 
-def test_tasty_note_list_crawler(data_regression):
+def test_tasty_note_list_crawler(data_regression, read_mock_data):
     html = read_mock_data("tasty_note_list_page.html")
     crawler = TastyNoteListCrawler()
     results = crawler.crawl(html)

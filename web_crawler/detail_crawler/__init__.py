@@ -1,0 +1,2 @@
+from .base_detail_crawler import BaseDetailCrawler
+from .tasty_note_detail_crawler import TastyNoteDetailCrawler

@@ -1,1 +1,2 @@
 from .crawler_schema import DetailUrl
+from .tasty_note_detail_schema import TastyNoteDetail
