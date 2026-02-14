@@ -23,6 +23,7 @@ class Step(BaseModel):
 
 
 class TastyNoteDetail(BaseModel):
+    id: str
     name: str
     category: str
     description: str

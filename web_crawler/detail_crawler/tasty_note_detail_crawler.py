@@ -1,5 +1,5 @@
 from typing import List
-
+from urllib.parse import urlparse
 from bs4 import BeautifulSoup, Tag
 
 from web_crawler.detail_crawler import BaseDetailCrawler
@@ -14,6 +14,10 @@ class TastyNoteDetailCrawler(BaseDetailCrawler):
         recipe = self._get_recipe_info(soup)
         return TastyNoteDetail(**recipe)
 
+    def _get_id(self, soup: BeautifulSoup) -> str:
+        link = soup.select_one('link[rel="canonical"]')['href']
+        id = urlparse(link).path.split("/")[1]
+        return id
 
     def _get_tags(self, soup: BeautifulSoup) -> List[str]:
         return [tag.text for tag in soup.select_one('div[class="p-tags"]').find_all('a') if tag.text != "看影片學做菜"]
@@ -58,6 +62,7 @@ class TastyNoteDetailCrawler(BaseDetailCrawler):
     def _get_recipe_info(self, soup: BeautifulSoup) -> dict:
         recipe_info = {}
 
+        recipe_info["id"] = self._get_id(soup)
         recipe_info["name"] = soup.select_one('h1[class="l-single-header__title"]').text.strip()
         recipe_info["category"] = soup.select_one('span[class="l-single-header__tag"]').text.strip()
         recipe_info["description"] = soup.select_one('section[class="l-single-content"]').text.strip()
