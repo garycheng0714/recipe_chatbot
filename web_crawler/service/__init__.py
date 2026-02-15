@@ -1,0 +1,1 @@
+from .tasty_note_service import get_tasty_note_crawler_service

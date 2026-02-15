@@ -29,6 +29,6 @@ class TastyNoteDetail(BaseModel):
     description: str
     quantity: str
     ingredients: list[Ingredient]
-    seasoning: list[SeasoningItem]
+    seasoning: list[SeasoningItem] | None = None
     steps: list[Step]
     tags: list[str]
