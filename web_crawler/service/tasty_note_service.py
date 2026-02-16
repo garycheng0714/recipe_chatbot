@@ -48,7 +48,7 @@ class TastyNoteService:
         async def get_detail_urls(list_url, url_queue: asyncio.Queue):
             async with sem:
                 html = await self._requester.request(list_url)
-                for detail in await self._list_crawler.crawl(html):
+                for detail in self._list_crawler.crawl(html):
                     await url_queue.put(detail.get_url())
                     print("Added {} to queue".format(detail.get_url()))
 

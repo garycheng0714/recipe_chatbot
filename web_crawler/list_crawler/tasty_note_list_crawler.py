@@ -6,7 +6,7 @@ from web_crawler.schema import DetailUrl
 
 class TastyNoteListCrawler(BaseListCrawler):
 
-    async def crawl(self, html: str) -> List[DetailUrl]:
+    def crawl(self, html: str) -> List[DetailUrl]:
         soup = self.get_soup(html)
 
         recipes_tags = soup.select_one('main[class="p-main p-archive"]').select('article')

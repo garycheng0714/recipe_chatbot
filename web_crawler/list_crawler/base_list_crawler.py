@@ -6,7 +6,7 @@ from bs4 import BeautifulSoup
 
 class BaseListCrawler(ABC):
     @abstractmethod
-    async def crawl(self, html: str) -> List[DetailUrl]:
+    def crawl(self, html: str) -> List[DetailUrl]:
         pass
 
     def get_soup(self, html: str) -> BeautifulSoup:
