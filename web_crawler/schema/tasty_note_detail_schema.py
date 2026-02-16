@@ -22,7 +22,7 @@ class Step(BaseModel):
     step: str
 
 
-class TastyNoteDetail(BaseModel):
+class TastyNoteRecipe(BaseModel):
     id: str
     name: str
     category: str

@@ -2,11 +2,11 @@ from abc import ABC, abstractmethod
 
 from bs4 import BeautifulSoup
 
-from web_crawler.schema import TastyNoteDetail
+from web_crawler.schema import TastyNoteRecipe
 
 class BaseDetailCrawler(ABC):
     @abstractmethod
-    def crawl(self, html) -> TastyNoteDetail:
+    def crawl(self, html) -> TastyNoteRecipe:
         pass
 
     def get_soup(self, html) -> BeautifulSoup:

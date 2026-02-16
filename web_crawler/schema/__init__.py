@@ -1,2 +1,2 @@
 from .list_crawler_schema import DetailUrl
-from .tasty_note_detail_schema import TastyNoteDetail
+from .tasty_note_detail_schema import TastyNoteRecipe

@@ -3,16 +3,16 @@ from urllib.parse import urlparse
 from bs4 import BeautifulSoup, Tag
 
 from web_crawler.detail_crawler import BaseDetailCrawler
-from web_crawler.schema import TastyNoteDetail
+from web_crawler.schema import TastyNoteRecipe
 import re
 
 
 class TastyNoteDetailCrawler(BaseDetailCrawler):
 
-    def crawl(self, html) -> TastyNoteDetail:
+    def crawl(self, html) -> TastyNoteRecipe:
         soup = self.get_soup(html)
         recipe = self._get_recipe_info(soup)
-        return TastyNoteDetail(**recipe)
+        return TastyNoteRecipe(**recipe)
 
     def _get_id(self, soup: BeautifulSoup) -> str:
         link = soup.select_one('link[rel="canonical"]')['href']

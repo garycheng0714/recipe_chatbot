@@ -3,7 +3,7 @@ from typing import AsyncGenerator
 from web_crawler.list_crawler import TastyNoteListCrawler
 from web_crawler.detail_crawler import TastyNoteDetailCrawler
 from web_crawler.requester import HttpxRequester
-from web_crawler.schema import TastyNoteDetail
+from web_crawler.schema import TastyNoteRecipe
 import asyncio
 
 
@@ -61,7 +61,7 @@ class TastyNoteService:
 
     async def _consumer(self, url_queue: asyncio.Queue, result_queue: asyncio.Queue):
 
-        async def get_recipe(url: str) -> TastyNoteDetail:
+        async def get_recipe(url: str) -> TastyNoteRecipe:
             html = await self._requester.request(url)
             return self._detail_crawler.crawl(html)
 
