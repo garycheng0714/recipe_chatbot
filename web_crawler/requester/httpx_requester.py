@@ -2,5 +2,7 @@ from web_crawler.requester import BaseRequester
 import httpx
 
 class HttpxRequester(BaseRequester):
-    def request(self, url: str) -> str:
-        return httpx.get(url).text
+    async def request(self, url: str) -> str:
+        async with httpx.AsyncClient() as client:
+            response = await client.get(url)
+            return response.text
