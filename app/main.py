@@ -19,7 +19,7 @@ from app.client import (
 )
 
 from app.models import (
-    RecipeChunkModel,
+    PgRecipeChunkModel,
     EsPointsModel
 )
 
@@ -100,7 +100,7 @@ async def search_recipe(
 
     for idx, obj in enumerate(obj_list):
         # 如果查詢結果是 Chunk，則取其 recipe 父物件
-        target_obj = obj.recipe if isinstance(obj, RecipeChunkModel) else obj
+        target_obj = obj.recipe if isinstance(obj, PgRecipeChunkModel) else obj
 
         # 使用 RecipeRead 進行轉換與攤平
         recipe_read = RecipeReadFlatten.model_validate(target_obj)

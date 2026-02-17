@@ -6,7 +6,7 @@ from qdrant_client.models import (
     Distance
 )
 
-from app.models.qdr_model import RecipeChunk, RecipeDocument
+from app.models.qdr_model import RecipeChunk, RecipeMainChunk
 import uuid
 
 RECIPE_COLLECTION_NAME = "recipes"
@@ -39,8 +39,8 @@ class QdrantRepository:
 
         return output["dense_vecs"].tolist()
 
-    async def upsert_recipe_chunk(self, entity: RecipeChunk):
-        point_id = str(uuid.uuid5(uuid.NAMESPACE_DNS, entity.id))
+    async def upsert_recipe_chunk(self, model: RecipeChunk):
+        point_id = str(uuid.uuid5(uuid.NAMESPACE_DNS, model.id))
 
         await self.client.upsert(
             collection_name=RECIPE_COLLECTION_NAME,
@@ -48,19 +48,19 @@ class QdrantRepository:
                 PointStruct(
                     id=point_id,
                     vector={
-                        "dense": self.embed(entity.content),
+                        "dense": self.embed(model.content),
                     },
                     payload={
-                        "id": entity.id,
-                        "parent_id": entity.parent_id,
-                        "chunk_type": entity.chunk_type,
-                        "content": entity.content,
+                        "id": model.id,
+                        "parent_id": model.parent_id,
+                        "chunk_type": model.chunk_type,
+                        "content": model.content,
                     }
                 )
             ]
         )
 
-    async def upsert_recipe(self, entity: RecipeDocument):
+    async def upsert_recipe(self, entity: RecipeMainChunk):
         point_id = str(uuid.uuid5(uuid.NAMESPACE_DNS, entity.id))
         semantics = entity.to_semantics()
 
@@ -83,6 +83,8 @@ class QdrantRepository:
                 )
             ]
         )
+
+
 
     async def upsert_points(self, points: list[PointStruct], collection_name: str):
         await self.client.upsert(
