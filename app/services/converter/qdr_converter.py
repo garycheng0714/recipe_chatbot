@@ -1,6 +1,4 @@
-from app.models import PgRecipeModel, PgRecipeChunkModel
 from app.models.qdr_model import (
-    RecipeMainChunk,
     RecipeChunk,
     OverviewRecipeChunk,
     InstructionRecipeChunk,
@@ -9,21 +7,10 @@ from app.models.qdr_model import (
 from web_crawler.schema import TastyNoteRecipe
 
 
-class ModelConverter:
+class QdrantConverter:
 
     @staticmethod
-    def to_es_parent_chunk(model: TastyNoteRecipe) -> RecipeMainChunk:
-        return RecipeMainChunk(
-            id=model.id,
-            name=model.name,
-            quantity=model.quantity,
-            ingredients=[i.name for i in model.ingredients],
-            category=model.category,
-            tags=model.tags
-        )
-
-    @staticmethod
-    def to_qdr_parent_chunk(model: TastyNoteRecipe) -> RecipeMainChunkWithSemantics:
+    def to_parent_chunk(model: TastyNoteRecipe) -> RecipeMainChunkWithSemantics:
         return RecipeMainChunkWithSemantics(
             id=model.id,
             name=model.name,
@@ -55,17 +42,3 @@ class ModelConverter:
 
         return [overview_chunk, instruction_chunk]
 
-    @staticmethod
-    def to_pg_parent_chunk(model: TastyNoteRecipe) -> PgRecipeModel:
-        return PgRecipeModel(
-            id=model.id,
-            name=model.name,
-            quantity=model.quantity,
-            ingredients=model.ingredients,
-            category=model.category,
-            tags=model.tags
-        )
-
-    @staticmethod
-    def to_pg_child_chunk(model: RecipeChunk) -> PgRecipeChunkModel:
-        return PgRecipeChunkModel(**model.model_dump())
