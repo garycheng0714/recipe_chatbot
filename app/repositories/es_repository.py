@@ -2,6 +2,8 @@ from typing import Any
 
 from elasticsearch import AsyncElasticsearch
 
+from app.models.qdr_model import RecipeMainChunk, RecipeChunk
+
 
 class ElasticSearchRepository:
     def __init__(self, es_client: AsyncElasticsearch):
@@ -64,6 +66,11 @@ class ElasticSearchRepository:
 
     async def index_chunk(self, chunk: dict[str, Any]):
         await self.client.index(index=self.index_name, document=chunk)
+
+    async def index_recipe(self, parent: RecipeMainChunk, children: list[RecipeChunk]):
+        await self.index_chunk(parent.model_dump())
+        for chunk in children:
+            await self.index_chunk(chunk.model_dump())
 
     async def search(self, query_text: str, size: int = 5):
         return await self.client.search(

@@ -2,7 +2,11 @@ from contextlib import asynccontextmanager
 
 from app.repositories import PgRepository, ElasticSearchRepository, QdrantRepository
 from app.client import get_es, get_qdrant, get_db
-from app.services import ModelConverter
+from app.services.converter import (
+    EsConverter,
+    QdrantConverter,
+    PgConverter
+)
 
 from web_crawler.schema import TastyNoteRecipe
 
@@ -14,24 +18,20 @@ class IngestionService:
         self.qdr = qdr
 
     async def ingest_recipe(self, recipe: TastyNoteRecipe):
-        es_parent_chunk = ModelConverter.to_es_parent_chunk(recipe)
-        chunks = ModelConverter.to_child_chunks(recipe)
-
-        pg_parent_chunk = ModelConverter.to_pg_parent_chunk(recipe)
-
         await self.qdr.upsert_recipe(
-            ModelConverter.to_qdr_parent_chunk(recipe)
+            QdrantConverter.to_parent_chunk(recipe),
+            QdrantConverter.to_child_chunks(recipe),
         )
-        await self.es.index_chunk(es_parent_chunk.model_dump())
-        await self.db.add_recipe(pg_parent_chunk)
 
-        for chunk in chunks:
-            await self.qdr.upsert_recipe_chunk(chunk)
-            await self.es.index_chunk(chunk.model_dump())
+        await self.es.index_recipe(
+            EsConverter.to_parent_chunk(recipe),
+            EsConverter.to_child_chunks(recipe)
+        )
 
-            await self.db.add_chunk(
-                ModelConverter.to_pg_child_chunk(chunk)
-            )
+        await self.db.add_recipe(
+            PgConverter.to_parent_chunk(recipe),
+            PgConverter.to_child_chunks(recipe)
+        )
 
 
 @asynccontextmanager

@@ -10,11 +10,16 @@ class PgRepository:
     def __init__(self, async_session: AsyncSession):
         self.async_session = async_session
 
-    async def add_recipe(self, recipe: PgRecipeModel):
+    async def add_main_chunk(self, recipe: PgRecipeModel):
         self.async_session.add(recipe)
 
     async def add_chunk(self, chunk: PgRecipeChunkModel):
         self.async_session.add(chunk)
+
+    async def add_recipe(self, main: PgRecipeModel, children: list[PgRecipeChunkModel]):
+        await self.add_main_chunk(main)
+        for chunk in children:
+            await self.add_chunk(chunk)
 
     async def commit(self):
         await self.async_session.commit()

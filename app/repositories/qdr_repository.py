@@ -60,9 +60,9 @@ class QdrantRepository:
             ]
         )
 
-    async def upsert_recipe(self, entity: RecipeMainChunk):
-        point_id = str(uuid.uuid5(uuid.NAMESPACE_DNS, entity.id))
-        semantics = entity.to_semantics()
+    async def upsert_recipe_main_chunk(self, model: RecipeMainChunk):
+        point_id = str(uuid.uuid5(uuid.NAMESPACE_DNS, model.id))
+        semantics = model.to_semantics()
 
         await self.client.upsert(
             collection_name=RECIPE_COLLECTION_NAME,
@@ -73,18 +73,21 @@ class QdrantRepository:
                         "dense": self.embed(semantics),
                     },
                     payload={
-                        "id": entity.id,
-                        "name": entity.name,
-                        "quantity": entity.quantity,
-                        "ingredients": entity.ingredients,
-                        "category": entity.category,
-                        "tags": entity.tags
+                        "id": model.id,
+                        "name": model.name,
+                        "quantity": model.quantity,
+                        "ingredients": model.ingredients,
+                        "category": model.category,
+                        "tags": model.tags
                     }
                 )
             ]
         )
 
-
+    async def upsert_recipe(self, parent_chunk: RecipeMainChunk, child_chunks: list[RecipeChunk]):
+        await self.upsert_recipe_main_chunk(parent_chunk)
+        for chunk in child_chunks:
+            await self.upsert_recipe_chunk(chunk)
 
     async def upsert_points(self, points: list[PointStruct], collection_name: str):
         await self.client.upsert(
