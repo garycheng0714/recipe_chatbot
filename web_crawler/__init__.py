@@ -1,1 +1,0 @@
-from web_crawler.list_crawler.scraper import fetch_recipes, scrape_recipe
