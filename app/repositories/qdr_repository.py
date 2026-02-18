@@ -7,29 +7,15 @@ from qdrant_client.models import (
 )
 
 from app.models.qdr_model import RecipeChunk, RecipeMainChunk
+from app.infrastructure.qdrant.config import qdrant_settings
 import uuid
 
-RECIPE_COLLECTION_NAME = "recipes"
-INTENT_COLLECTION_NAME = "user_question_intent"
 
 
 class QdrantRepository:
     def __init__(self, client: AsyncQdrantClient, model: BGEM3FlagModel):
         self.client = client
         self.model = model
-
-    async def create_collection(self, collection_name):
-        # 建立 Collection，同時定義稠密與稀疏向量配置
-        if not await self.client.collection_exists(collection_name):
-            await self.client.create_collection(
-                collection_name=collection_name,
-                vectors_config={
-                    "dense": VectorParams(
-                        size=1024,  # BGE-M3 的維度
-                        distance=Distance.COSINE
-                    )
-                }
-            )
 
     def embed(self, text: str) -> list[float]:
         output = self.model.encode(
@@ -43,12 +29,12 @@ class QdrantRepository:
         point_id = str(uuid.uuid5(uuid.NAMESPACE_DNS, model.id))
 
         await self.client.upsert(
-            collection_name=RECIPE_COLLECTION_NAME,
+            collection_name=qdrant_settings.recipe_collection_name,
             points=[
                 PointStruct(
                     id=point_id,
                     vector={
-                        "dense": self.embed(model.content),
+                        qdrant_settings.vectors_name: self.embed(model.content),
                     },
                     payload={
                         "id": model.id,
@@ -65,12 +51,12 @@ class QdrantRepository:
         semantics = model.to_semantics()
 
         await self.client.upsert(
-            collection_name=RECIPE_COLLECTION_NAME,
+            collection_name=qdrant_settings.recipe_collection_name,
             points=[
                 PointStruct(
                     id=point_id,
                     vector={
-                        "dense": self.embed(semantics),
+                        qdrant_settings.vectors_name: self.embed(semantics),
                     },
                     payload={
                         "id": model.id,
@@ -96,10 +82,10 @@ class QdrantRepository:
         )
 
     async def search_recipe(self, query_text: str, k: int = 5):
-        return await self.query_points(query_text, k, RECIPE_COLLECTION_NAME)
+        return await self.query_points(query_text, k, qdrant_settings.recipe_collection_name)
 
     async def search_intent(self, query_text: str, k: int = 5):
-        return await self.query_points(query_text, k, INTENT_COLLECTION_NAME)
+        return await self.query_points(query_text, k, qdrant_settings.intent_collection_name)
 
     async def query_points(self, query_text, k: int, collection_name: str):
         output = self.model.encode(query_text, return_dense=True)
@@ -111,7 +97,7 @@ class QdrantRepository:
         return await self.client.query_points(
             collection_name=collection_name,
             query=query_dense,
-            using="dense",
+            using=qdrant_settings.vectors_name,
             limit=k,
             # query=models.FusionQuery(fusion=models.Fusion.RRF),  # 使用 RRF 融合
         )
@@ -119,7 +105,7 @@ class QdrantRepository:
     def delete(self):
         for value in ["overview", "instruction"]:
             self.client.delete(
-                collection_name=RECIPE_COLLECTION_NAME,
+                collection_name=qdrant_settings.recipe_collection_name,
                 points_selector=Filter(
                     must=[FieldCondition(
                         key="chunk_type",
@@ -199,7 +185,7 @@ if __name__ == "__main__":
             PointStruct(
                 id=str(uuid.uuid4()),
                 vector={
-                    "dense": db.embed(text)
+                    qdrant_settings.vectors_name: db.embed(text)
                 },
                 payload={
                     "intent": "find_recipes_by_ingredients",
