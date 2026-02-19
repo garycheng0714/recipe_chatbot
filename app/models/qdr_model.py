@@ -1,10 +1,6 @@
-from typing import Any
 from pydantic import BaseModel
 from typing import Literal
 
-"""
-
-"""
 
 class RecipeChunk(BaseModel):
     id: str
@@ -34,3 +30,11 @@ class RecipeMainChunk(BaseModel):
 
 class RecipeMainChunkWithSemantics(RecipeMainChunk):
     semantics: str
+
+    def to_semantics(self):
+        return (
+            f"食譜名稱：{self.name}\n"
+            f"材料：{', '.join(self.ingredients)}\n"
+            f"分類：{self.category}\n"
+            f"tags：{self.tags}\n"
+    )
