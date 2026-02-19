@@ -15,11 +15,12 @@ class PgRecipeModel(Base):
     name = Column(String(100), nullable=False)
     quantity = Column(String(50))
     ingredients = Column(JSONB)
+    seasoning = Column(JSONB, nullable=True)
     category = Column(Text)
     tags = Column(ARRAY(String))
     created_at = Column(DateTime, default=datetime.datetime.now)
 
-    chunks = relationship("RecipeChunkModel", back_populates="recipe", cascade="all, delete-orphan")
+    chunks = relationship("PgRecipeChunkModel", back_populates="recipe", cascade="all, delete-orphan")
 
 
 class PgRecipeChunkModel(Base):
@@ -30,4 +31,4 @@ class PgRecipeChunkModel(Base):
     chunk_type = Column(String(30))
     content = Column(Text)
 
-    recipe = relationship("RecipeModel", back_populates="chunks")
+    recipe = relationship("PgRecipeModel", back_populates="chunks")

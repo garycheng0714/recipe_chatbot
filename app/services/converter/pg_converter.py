@@ -11,7 +11,8 @@ class PgConverter:
             id=model.id,
             name=model.name,
             quantity=model.quantity,
-            ingredients=model.ingredients,
+            ingredients=[ingredient.model_dump() for ingredient in model.ingredients],
+            seasoning=[seasoning.model_dump() for seasoning in model.seasoning] if model.seasoning else None,
             category=model.category,
             tags=model.tags
         )
