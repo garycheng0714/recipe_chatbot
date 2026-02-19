@@ -7,6 +7,13 @@ class InfrastructureInitializer:
         self.es_client = es_client
         self.qdrant_client = qdrant_client
 
+    async def __aenter__(self):
+        return self
+
+    async def __aexit__(self, exc_type, exc, tb):
+        await self.es_client.close()
+        await self.qdrant_client.close()
+
     async def run_all(self):
         print("🚀 開始初始化基礎設施...")
         await self.init_postgresql()
@@ -19,7 +26,7 @@ class InfrastructureInitializer:
         from app.database import Base
         async with self.engine.begin() as conn:
             await conn.run_sync(Base.metadata.create_all)
-        print("- PostgreSQL: 資料表建立完成")
+        print("  - PostgreSQL: 資料表建立完成")
 
     async def init_elasticsearch(self):
         # 建立 Index 並設定 Mapping (例如將 ingredients 設為 nested)
@@ -50,3 +57,10 @@ class InfrastructureInitializer:
                 }
             )
         print("  - Qdrant: Collection 建立完成")
+
+
+def get_infra_initializer():
+    from app.client import es_client, qdr_client
+    from app.database import engine
+
+    return InfrastructureInitializer(engine, es_client, qdr_client)
