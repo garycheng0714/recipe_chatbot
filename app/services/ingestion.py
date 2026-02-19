@@ -1,7 +1,8 @@
 from contextlib import asynccontextmanager
 
+from app.database import AsyncSessionLocal
 from app.repositories import PgRepository, ElasticSearchRepository, QdrantRepository
-from app.client import get_es, get_qdrant, get_db
+from app.client import get_es, get_qdrant
 from app.services.converter import (
     EsConverter,
     QdrantConverter,
@@ -18,30 +19,32 @@ class IngestionService:
         self.qdr = qdr
 
     async def ingest_recipe(self, recipe: TastyNoteRecipe):
-        await self.qdr.upsert_recipe(
-            QdrantConverter.to_parent_chunk(recipe),
-            QdrantConverter.to_child_chunks(recipe),
-        )
+        try:
+            await self.db.add_recipe(
+                PgConverter.to_parent_chunk(recipe),
+                PgConverter.to_child_chunks(recipe)
+            )
 
-        await self.es.index_recipe(
-            EsConverter.to_parent_chunk(recipe),
-            EsConverter.to_child_chunks(recipe)
-        )
+            await self.db.commit()
 
-        await self.db.add_recipe(
-            PgConverter.to_parent_chunk(recipe),
-            PgConverter.to_child_chunks(recipe)
-        )
+            await self.qdr.upsert_recipe(
+                QdrantConverter.to_parent_chunk(recipe),
+                QdrantConverter.to_child_chunks(recipe),
+            )
 
+            await self.es.index_recipe(
+                EsConverter.to_parent_chunk(recipe),
+                EsConverter.to_child_chunks(recipe)
+            )
+        except Exception as e:
+            print(e)
 
 @asynccontextmanager
 async def get_ingestion_service():
-    # 1. 透過原本的 get_db 取得 pg_repo (已注入 session)
-    async for db in get_db():
+    async with AsyncSessionLocal() as session:
         try:
             es_repo = await get_es()
             qdr_repo = await get_qdrant()
-            yield IngestionService(db=db, es=es_repo, qdr=qdr_repo)
+            yield IngestionService(db=PgRepository(session), es=es_repo, qdr=qdr_repo)
         finally:
-            # get_db 的 finally 會處理 session.close()
-            pass
+            await session.close()

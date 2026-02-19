@@ -71,7 +71,7 @@ class TastyNoteService:
             try:
                 recipe = await get_recipe(url)
                 await result_queue.put(recipe)
-                print("Added {}".format(recipe.name))
+                print("Fetched {}".format(recipe.name))
             finally:
                 # 這是關鍵！不論成功失敗，都要告訴 queue「這件事我做完了」
                 # 這樣最外層的 await url_queue.join() 才會通過
