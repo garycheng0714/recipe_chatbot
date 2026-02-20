@@ -2,6 +2,7 @@ from web_crawler.list_crawler import TastyNoteListCrawler
 from web_crawler.detail_crawler import TastyNoteDetailCrawler
 from web_crawler.requester import HttpxRequester
 from web_crawler.schema import TastyNoteRecipe
+from loguru import logger
 import asyncio, random
 
 
@@ -48,10 +49,14 @@ class TastyNoteService:
         async def get_detail_urls(list_url, url_queue: asyncio.Queue):
             async with sem:
                 await asyncio.sleep(random.uniform(0.5, 1.5))
-                html = await self._requester.request(list_url)
-                for detail in self._list_crawler.crawl(html):
-                    await url_queue.put(detail.get_url())
-                    print("Added {} to queue".format(detail.get_url()))
+                try:
+                    html = await self._requester.request(list_url)
+                    for detail in self._list_crawler.crawl(html):
+                        await url_queue.put(detail.get_url())
+                        print("Added {} to queue".format(detail.get_url()))
+                except Exception as e:
+                    logger.error(f"Failed to fetch list: {list_url}")
+                    print(e)
 
         tasks = [
             get_detail_urls(LIST_URL.format(page), url_queue)
@@ -71,7 +76,10 @@ class TastyNoteService:
             try:
                 recipe = await get_recipe(url)
                 await result_queue.put(recipe)
-                print("Fetched {}".format(recipe.name))
+                logger.info(f"Fetched {url}")
+            except Exception as e:
+                logger.error(f"Failed to fetch {url}")
+                print(e)
             finally:
                 # 這是關鍵！不論成功失敗，都要告訴 queue「這件事我做完了」
                 # 這樣最外層的 await url_queue.join() 才會通過

@@ -1,6 +1,7 @@
 from app.client import es_client
 from web_crawler.service import get_tasty_note_crawler_service
 from app.services.ingestion import get_ingestion_service
+from app.core.logging import setup_logging, CrawlerSettings
 import asyncio
 
 async def storage_worker(queue: asyncio.Queue):
@@ -17,6 +18,8 @@ async def storage_worker(queue: asyncio.Queue):
                 queue.task_done()
 
 async def main():
+    setup_logging(CrawlerSettings())
+
     crawler = get_tasty_note_crawler_service()
 
     producer_task, consumer_tasks, url_queue, result_queue = await crawler.fetch_recipes()

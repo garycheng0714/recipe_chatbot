@@ -10,6 +10,7 @@ from app.services.converter import (
 )
 
 from web_crawler.schema import TastyNoteRecipe
+from loguru import logger
 
 
 class IngestionService:
@@ -36,7 +37,10 @@ class IngestionService:
                 EsConverter.to_parent_chunk(recipe),
                 EsConverter.to_child_chunks(recipe)
             )
+
+            logger.info(f'Recipe {recipe.id} was ingested successfully')
         except Exception as e:
+            logger.error(f'Recipe {recipe.id} was ingested failed: \n{e}')
             print(e)
 
 @asynccontextmanager
