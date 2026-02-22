@@ -5,7 +5,7 @@ from loguru import logger
 import asyncio, random
 
 LIST_URL = "https://tasty-note.com/tag/ten-minutes/page/{}/"
-MAX_PAGE_SIZE = 2
+MAX_PAGE_SIZE = 69
 MAX_WORKER = 5
 
 
