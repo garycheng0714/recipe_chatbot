@@ -1,4 +1,5 @@
 from sqlalchemy import select
+from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio.session import AsyncSession
 from sqlalchemy.orm import selectinload, joinedload
 
@@ -31,6 +32,22 @@ class PgRepository:
         stmt = select(PgRecipeModel)
         result = await self.async_session.execute(stmt)
         return result.scalars().all()
+
+    async def update_pending_url(self, recipe: PgRecipeModel):
+        try:
+            stmt = insert(PgRecipeModel).values(
+                id=recipe.id,
+                source_url=recipe.source_url,
+                status="pending",
+            ).on_conflict_do_nothing(index_elements=['source_url'])
+
+            await self.async_session.execute(stmt)
+            await self.async_session.commit()
+        except Exception as e:
+            # 發生任何錯誤先 rollback，確保連線回到乾淨狀態
+            # 這樣 tenacity 下一次重試時，連線才是可用的
+            await self.async_session.rollback()
+            raise e
 
     async def fetch_recipe(self, recipe: list[RRFResult]):
         obj_list = []
