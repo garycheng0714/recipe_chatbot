@@ -8,6 +8,8 @@ wheels/
 .idea/
 style.css
 report.html
+alembic.ini
+*.log
 
 # Virtual environments
 .venv
