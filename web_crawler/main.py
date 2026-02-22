@@ -1,6 +1,6 @@
 from app.client import es_client
 from web_crawler.service import get_tasty_note_crawler_service
-from app.services.ingestion import get_ingestion_service
+from app.services.ingestion import get_full_ingestion_service
 from app.core.logging import setup_logging, CrawlerSettings
 import asyncio
 
@@ -9,7 +9,7 @@ async def storage_worker(queue: asyncio.Queue):
     這是一個獨立的工人，專門搬運資料庫
     每次都建立一個獨立的 session
     """
-    async with get_ingestion_service() as service:
+    async with get_full_ingestion_service() as service:
         while True:
             recipe = await queue.get()
             try:
