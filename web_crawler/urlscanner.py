@@ -1,7 +1,7 @@
 from app.core.logging import setup_logging, CrawlerSettings
 from app.models import PgRecipeModel
 from app.services.ingestion import get_pg_ingestion_service
-from web_crawler.service.tasty_note_url_scanner import get_tasty_note_url_scanner
+from web_crawler.service.tasty_note_url_scanner_service import get_tasty_note_url_scanner_service
 from loguru import logger
 import asyncio
 
@@ -21,7 +21,7 @@ async def storage_worker(queue: asyncio.Queue[PgRecipeModel]):
 async def main():
     setup_logging(CrawlerSettings())
 
-    scanner = get_tasty_note_url_scanner()
+    scanner = get_tasty_note_url_scanner_service()
     url_queue = asyncio.Queue()
 
     storage_tasks = [

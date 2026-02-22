@@ -9,7 +9,7 @@ MAX_PAGE_SIZE = 2
 MAX_WORKER = 5
 
 
-class TastyNoteUrlScanner:
+class TastyNoteUrlScannerService:
     def __init__(self, list_crawler: TastyNoteListCrawler, requester: HttpxRequester):
         self._list_crawler = list_crawler
         self._requester = requester
@@ -41,7 +41,7 @@ class TastyNoteUrlScanner:
         await asyncio.gather(*tasks)
 
 
-def get_tasty_note_url_scanner() -> TastyNoteUrlScanner:
+def get_tasty_note_url_scanner_service() -> TastyNoteUrlScannerService:
     crawler = TastyNoteListCrawler()
     requester = HttpxRequester()
-    return TastyNoteUrlScanner(crawler, requester)
+    return TastyNoteUrlScannerService(crawler, requester)
