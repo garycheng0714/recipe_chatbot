@@ -10,26 +10,28 @@ from app.database import Base
 class PgRecipeModel(Base):
     __tablename__ = 'recipes'
 
+    # --- 第一階段就能確定的欄位 (Non-nullable) ---
     id = Column(String(100), primary_key=True)
-    name = Column(String(100), nullable=False)
     source_url = Column(Text, unique=True, index=True)
 
     # 狀態管理: pending (待爬取), processing, completed, failed (永久失敗)
     status = Column(String(50), default='pending', index=True)
 
-    # 重試與錯誤記錄
-    retry_count = Column(Integer, default=0)
-    last_error = Column(Text)  # 存儲最後一次的錯誤訊息或 Traceback
-
-    quantity = Column(String(50))
-    ingredients = Column(JSONB)
+    # --- 第二階段才會補齊的欄位 (Nullable) ---
+    name = Column(String(100), nullable=True)
+    quantity = Column(String(50), nullable=True)
+    ingredients = Column(JSONB, nullable=True)
     seasoning = Column(JSONB, nullable=True)
-    category = Column(Text)
-    tags = Column(ARRAY(String))
+    category = Column(Text, nullable=True)
+    tags = Column(ARRAY(String), nullable=True)
 
     # 時間戳 (這對 Backfill 非常有用)
     created_at = Column(DateTime, default=datetime.datetime.now)
-    updated_at = Column(DateTime, onupdate=func.now())
+    updated_at = Column(DateTime, onupdate=func.now(), nullable=True)
+
+    # 重試與錯誤記錄
+    retry_count = Column(Integer, default=0, nullable=True)
+    last_error = Column(Text, nullable=True)  # 存儲最後一次的錯誤訊息或 Traceback
 
     chunks = relationship("PgRecipeChunkModel", back_populates="recipe", cascade="all, delete-orphan")
 
