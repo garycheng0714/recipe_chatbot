@@ -37,8 +37,7 @@ class InfrastructureInitializer:
         if not exists:
             # 建立 index
             await self.es_client.indices.create(index=index_name, body=index_body)
-
-        print("  - Elasticsearch: Index 建立完成")
+            print("  - Elasticsearch: Index 建立完成")
 
     async def init_qdrant(self):
         # 建立 Collection 並設定向量維度 (例如 OpenAI embedding 是 1536)
@@ -56,7 +55,7 @@ class InfrastructureInitializer:
                     )
                 }
             )
-        print("  - Qdrant: Collection 建立完成")
+            print("  - Qdrant: Collection 建立完成")
 
 
 def get_infra_initializer():
