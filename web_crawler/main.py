@@ -1,4 +1,7 @@
+from app import database
 from app.client import es_client
+from app.database import AsyncSessionLocal
+from app.repositories import PgRepository
 from web_crawler.service import get_tasty_note_crawler_service
 from app.services.ingestion import get_full_ingestion_service
 from app.core.logging import setup_logging, CrawlerSettings
@@ -20,26 +23,29 @@ async def storage_worker(queue: asyncio.Queue):
 async def main():
     setup_logging(CrawlerSettings())
 
-    crawler = get_tasty_note_crawler_service()
+    async with AsyncSessionLocal() as session:
+        pg_repository = PgRepository(session)
+        crawler = await get_tasty_note_crawler_service(pg_repository)
 
-    producer_task, consumer_tasks, url_queue, result_queue = await crawler.fetch_recipes()
+        producer_task, consumer_tasks, url_queue, result_queue = await crawler.fetch_urls_from_db()
 
-    storage_tasks = [
-        asyncio.create_task(storage_worker(result_queue))
-        for _ in range(5)
-    ]
+        storage_tasks = [
+            asyncio.create_task(storage_worker(result_queue))
+            for _ in range(5)
+        ]
 
-    try:
-        await producer_task
-        await url_queue.join()
-        await result_queue.join()
+        try:
+            await producer_task
+            await url_queue.join()
+            await result_queue.join()
 
-    finally:
-        for c in consumer_tasks:
-            c.cancel()
-        for t in storage_tasks:
-            t.cancel()
-        await es_client.close()
+        finally:
+            for c in consumer_tasks:
+                c.cancel()
+            for t in storage_tasks:
+                t.cancel()
+            await es_client.close()
+            await database.engine.dispose()
 
 if __name__ == "__main__":
     asyncio.run(main())

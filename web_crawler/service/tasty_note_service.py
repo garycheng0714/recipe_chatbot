@@ -1,4 +1,4 @@
-from web_crawler.list_crawler import TastyNoteListCrawler
+from app.repositories import PgRepository
 from web_crawler.detail_crawler import TastyNoteDetailCrawler
 from web_crawler.requester import HttpxRequester
 from web_crawler.schema import TastyNoteRecipe
@@ -6,18 +6,16 @@ from loguru import logger
 import asyncio, random
 
 
-LIST_URL = "https://tasty-note.com/tag/ten-minutes/page/{}/"
-MAX_PAGE_SIZE = 2
 MAX_WORKER = 5
 
 class TastyNoteService:
-    def __init__(self, list_crawler: TastyNoteListCrawler, detail_crawler: TastyNoteDetailCrawler, requester: HttpxRequester):
-        self._list_crawler = list_crawler
+    def __init__(self, detail_crawler: TastyNoteDetailCrawler, requester: HttpxRequester, repository: PgRepository):
         self._detail_crawler = detail_crawler
         self._requester = requester
+        self._repository = repository
 
-    async def fetch_recipes(self):
-        url_queue = asyncio.Queue(maxsize=20)
+    async def fetch_urls_from_db(self):
+        url_queue = asyncio.Queue(maxsize=60)
         result_queue = asyncio.Queue(maxsize=20)
 
         # 啟動生產者與消費者
@@ -29,45 +27,29 @@ class TastyNoteService:
 
         return producer_task, consumer_task, url_queue, result_queue
 
-        # # 等待生產者做完
-        # await asyncio.gather(producer_task)
-        #
-        # # 等待隊列中剩下的任務被處理完
-        # await url_queue.join()
-        #
-        # # 關閉消費者 (因為它原本是死迴圈)
-        # for c in consumer_task:
-        #     c.cancel()
-        #
-        # # 最後把 result_queue 裡的東西 yield 出去
-        # while not result_queue.empty():
-        #     yield await result_queue.get()
-
     async def _producer(self, url_queue: asyncio.Queue):
-        sem = asyncio.Semaphore(3)  # 列表頁抓取可以更嚴格一點，限制同時 3 頁
+        while True:
+            # 1. 從 DB 撈一批 (例如 50 筆)
+            batch = await self._repository.get_next_url_batch(batch_size=50)
 
-        async def get_detail_urls(list_url, url_queue: asyncio.Queue):
-            async with sem:
-                await asyncio.sleep(random.uniform(0.5, 1.5))
-                try:
-                    html = await self._requester.request(list_url)
-                    for detail in self._list_crawler.crawl(html):
-                        await url_queue.put(detail.get_url())
-                        print("Added {} to queue".format(detail.get_url()))
-                except Exception as e:
-                    logger.error(f"Failed to fetch list: {list_url}")
-                    print(e)
+            # 2. 如果沒資料了，代表全爬完，跳出循環
+            if not batch:
+                print("🏁 所有 pending URL 已處理完畢")
+                break
 
-        tasks = [
-            get_detail_urls(LIST_URL.format(page), url_queue)
-            for page in range(2, MAX_PAGE_SIZE + 1)
-        ]
+            # 3. 塞進 Queue 讓 Consumer 消化
+            for url in batch:
+                await url_queue.put(url)
+                print(f"Added {url} to queue")
 
-        await asyncio.gather(*tasks)
+            # 4. 等待 Queue 消化完這批再拿下一批，或是監控 Queue 的長度
+            while url_queue.qsize() > 10:
+                await asyncio.sleep(1)
 
     async def _consumer(self, url_queue: asyncio.Queue, result_queue: asyncio.Queue):
 
         async def get_recipe(url: str) -> TastyNoteRecipe:
+            await asyncio.sleep(random.uniform(1.0, 1.5))
             html = await self._requester.request(url)
             return self._detail_crawler.crawl(html)
 
@@ -77,6 +59,7 @@ class TastyNoteService:
                 recipe = await get_recipe(url)
                 await result_queue.put(recipe)
                 logger.info(f"Fetched {url}")
+                print(f"Consume {url}")
             except Exception as e:
                 logger.error(f"Failed to fetch {url}")
                 print(e)
@@ -86,8 +69,7 @@ class TastyNoteService:
                 url_queue.task_done()
 
 
-def get_tasty_note_crawler_service():
-    list_crawler = TastyNoteListCrawler()
+async def get_tasty_note_crawler_service(pg_repository: PgRepository):
     detail_crawler = TastyNoteDetailCrawler()
     requester = HttpxRequester()
-    return TastyNoteService(list_crawler, detail_crawler, requester)
+    return TastyNoteService(detail_crawler, requester, pg_repository)

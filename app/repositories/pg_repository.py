@@ -1,4 +1,4 @@
-from sqlalchemy import select
+from sqlalchemy import select, text
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio.session import AsyncSession
 from sqlalchemy.orm import selectinload, joinedload
@@ -48,6 +48,27 @@ class PgRepository:
             # 這樣 tenacity 下一次重試時，連線才是可用的
             await self.async_session.rollback()
             raise e
+
+    async def get_next_url_batch(self, batch_size: int):
+        # 這裡使用 PostgreSQL 的 FOR UPDATE SKIP LOCKED 語法，這在多 Worker 時非常強大
+        # 它會選中 pending 的資料，且避開其他 Worker 正在處理的列
+        sql = """
+                UPDATE recipes
+                SET status = 'processing'
+                WHERE id IN (
+                    SELECT id FROM recipes 
+                    WHERE status = 'pending' 
+                    LIMIT :limit 
+                    FOR UPDATE SKIP LOCKED
+                )
+                RETURNING source_url;
+            """
+        result = await self.async_session.execute(text(sql), {"limit": batch_size})
+
+        # 【關鍵】立即提交，將狀態變更永久化並釋放鎖
+        await self.async_session.commit()
+
+        return result.all()
 
     async def fetch_recipe(self, recipe: list[RRFResult]):
         obj_list = []
