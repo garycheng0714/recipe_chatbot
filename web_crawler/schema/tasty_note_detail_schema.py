@@ -25,6 +25,7 @@ class Step(BaseModel):
 class TastyNoteRecipe(BaseModel):
     id: str
     name: str
+    source_url: str
     category: str
     description: str
     quantity: str

@@ -14,8 +14,11 @@ class TastyNoteDetailCrawler(BaseDetailCrawler):
         recipe = self._get_recipe_info(soup)
         return TastyNoteRecipe(**recipe)
 
+    def _get_url(self, soup: BeautifulSoup) -> str:
+        return soup.select_one('link[rel="canonical"]')['href']
+
     def _get_id(self, soup: BeautifulSoup) -> str:
-        link = soup.select_one('link[rel="canonical"]')['href']
+        link = self._get_url(soup)
         id = urlparse(link).path.split("/")[1]
         return id
 
@@ -63,6 +66,7 @@ class TastyNoteDetailCrawler(BaseDetailCrawler):
         recipe_info = {}
 
         recipe_info["id"] = self._get_id(soup)
+        recipe_info["source_url"] = self._get_url(soup)
         recipe_info["name"] = soup.select_one('h1[class="l-single-header__title"]').text.strip()
         recipe_info["category"] = soup.select_one('span[class="l-single-header__tag"]').text.strip()
         recipe_info["description"] = soup.select_one('section[class="l-single-content"]').text.strip()
