@@ -4,6 +4,7 @@ from sqlalchemy.exc import OperationalError, DBAPIError
 from typing import List
 from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type
 from app.database import AsyncSessionLocal
+from app.models import PgRecipeModel
 from app.repositories import PgRepository, ElasticSearchRepository, QdrantRepository
 from app.client import get_es, get_qdrant
 from app.services.converter import (
@@ -24,11 +25,11 @@ class IngestStep(ABC):
         wait=wait_exponential(multiplier=1, min=4, max=10),  # 指數型等待 (4s, 8s, 10s...)
         reraise=True  # 最後一次失敗後拋出異常
     )
-    async def run(self, recipe):
+    async def run(self, recipe: TastyNoteRecipe):
         return await self._run(recipe)
 
     @abstractmethod
-    async def _run(self, recipe):
+    async def _run(self, recipe: TastyNoteRecipe):
         pass
 
 
@@ -36,11 +37,15 @@ class PgIngestStep(IngestStep):
     def __init__(self, repository: PgRepository):
         self.repository = repository
 
-    async def _run(self, recipe):
+    async def _run(self, recipe: TastyNoteRecipe):
         await self.repository.add_recipe(
-            PgConverter.to_parent_chunk(recipe),
             PgConverter.to_child_chunks(recipe)
         )
+
+        PgConverter.to_parent_chunk(recipe)
+
+        await self.repository.update_recipe(recipe)
+
         await self.repository.commit()
 
 
@@ -48,15 +53,15 @@ class PgIngestStepStage1(IngestStep):
     def __init__(self, repository: PgRepository):
         self.repository = repository
 
-    async def _run(self, recipe):
-        await self.repository.update_pending_url(recipe)
+    async def _run(self, recipe: PgRecipeModel):
+        await self.repository.insert_pending_url(recipe)
 
 
 class EsIngestStep(IngestStep):
     def __init__(self, repository: ElasticSearchRepository):
         self.repository = repository
 
-    async def _run(self, recipe):
+    async def _run(self, recipe: TastyNoteRecipe):
         await self.repository.index_recipe(
             EsConverter.to_parent_chunk(recipe),
             EsConverter.to_child_chunks(recipe)
@@ -67,7 +72,7 @@ class QdrantIngestStep(IngestStep):
     def __init__(self, repository: QdrantRepository):
         self.repository = repository
 
-    async def _run(self, recipe):
+    async def _run(self, recipe: TastyNoteRecipe):
         await self.repository.upsert_recipe(
             QdrantConverter.to_parent_chunk(recipe),
             QdrantConverter.to_child_chunks(recipe),

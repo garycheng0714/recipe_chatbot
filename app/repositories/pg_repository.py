@@ -1,10 +1,11 @@
-from sqlalchemy import select, text
+from sqlalchemy import select, text, update
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio.session import AsyncSession
 from sqlalchemy.orm import selectinload, joinedload
 
 from app.models.pg_model import PgRecipeModel, PgRecipeChunkModel
 from app.schema import RRFResult
+from web_crawler.schema import TastyNoteRecipe
 
 
 class PgRepository:
@@ -17,8 +18,7 @@ class PgRepository:
     async def add_chunk(self, chunk: PgRecipeChunkModel):
         self.async_session.add(chunk)
 
-    async def add_recipe(self, main: PgRecipeModel, children: list[PgRecipeChunkModel]):
-        await self.add_main_chunk(main)
+    async def add_recipe(self, children: list[PgRecipeChunkModel]):
         for chunk in children:
             await self.add_chunk(chunk)
 
@@ -33,7 +33,7 @@ class PgRepository:
         result = await self.async_session.execute(stmt)
         return result.scalars().all()
 
-    async def update_pending_url(self, recipe: PgRecipeModel):
+    async def insert_pending_url(self, recipe: PgRecipeModel):
         try:
             stmt = insert(PgRecipeModel).values(
                 id=recipe.id,
@@ -69,6 +69,21 @@ class PgRepository:
         await self.async_session.commit()
 
         return result.all()
+
+    async def update_recipe(self, recipe: TastyNoteRecipe):
+        try:
+            stmt = update(PgRecipeModel).where(
+                PgRecipeModel.source_url == recipe.source_url
+            ).values(
+                **recipe.model_dump(),
+                status="completed"
+            )
+            await self.async_session.execute(stmt)
+            await self.async_session.commit()
+        finally:
+            #TODO: Dead Letter
+            await self.async_session.rollback()
+
 
     async def fetch_recipe(self, recipe: list[RRFResult]):
         obj_list = []
