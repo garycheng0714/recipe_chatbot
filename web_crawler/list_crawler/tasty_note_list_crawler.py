@@ -2,7 +2,7 @@ from typing import List
 from bs4.element import Tag
 
 from web_crawler.list_crawler import BaseListCrawler
-from web_crawler.schema import DetailUrl
+from web_crawler.schema.list_crawler_schema import DetailUrl
 
 
 class TastyNoteListCrawler(BaseListCrawler):

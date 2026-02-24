@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 
 from bs4 import BeautifulSoup
 
-from web_crawler.schema import TastyNoteRecipe
+from web_crawler.schema.tasty_note_detail_schema import TastyNoteRecipe
 
 class BaseDetailCrawler(ABC):
     @abstractmethod

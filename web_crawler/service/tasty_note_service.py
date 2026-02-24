@@ -1,7 +1,7 @@
 from app.repositories import PgRepository
 from web_crawler.detail_crawler import TastyNoteDetailCrawler
 from web_crawler.requester import HttpxRequester
-from web_crawler.schema import TastyNoteRecipe
+from web_crawler.schema.tasty_note_detail_schema import TastyNoteRecipe
 from loguru import logger
 import asyncio, random
 

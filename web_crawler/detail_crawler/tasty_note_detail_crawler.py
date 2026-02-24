@@ -3,7 +3,7 @@ from urllib.parse import urlparse
 from bs4 import BeautifulSoup, Tag
 
 from web_crawler.detail_crawler import BaseDetailCrawler
-from web_crawler.schema import TastyNoteRecipe
+from web_crawler.schema.tasty_note_detail_schema import TastyNoteRecipe
 import re
 
 
