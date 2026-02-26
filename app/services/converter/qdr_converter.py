@@ -4,7 +4,7 @@ from app.models.qdr_model import (
     InstructionRecipeChunk,
     RecipeMainChunkWithSemantics
 )
-from web_crawler.schema import TastyNoteRecipe
+from web_crawler.schema.tasty_note_detail_schema import TastyNoteRecipe
 
 
 class QdrantConverter:

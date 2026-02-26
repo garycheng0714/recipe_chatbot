@@ -1,6 +1,6 @@
 from app.models import PgRecipeModel, PgRecipeChunkModel
 from app.models.qdr_model import OverviewRecipeChunk, InstructionRecipeChunk
-from web_crawler.schema import TastyNoteRecipe
+from web_crawler.schema.tasty_note_detail_schema import TastyNoteRecipe
 
 
 class PgConverter:
@@ -10,6 +10,7 @@ class PgConverter:
         return PgRecipeModel(
             id=model.id,
             name=model.name,
+            source_url=model.source_url,
             quantity=model.quantity,
             ingredients=[ingredient.model_dump() for ingredient in model.ingredients],
             seasoning=[seasoning.model_dump() for seasoning in model.seasoning] if model.seasoning else None,
