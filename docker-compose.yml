@@ -41,7 +41,19 @@ services:
       - QDRANT__SERVICE__GRPC_PORT=6334
       - QDRANT__SERVICE__WEB_PORT=6333  # 明確指定 Web Console 端口
 
+  # 2. 任務中間人 (Redis)
+  redis:
+    image: redis:7.2-alpine  # 使用輕量級的 alpine 版本
+    container_name: redis
+    ports:
+      - "6379:6379"          # 將容器的 6379 映射到主機的 6379
+    volumes:
+      - redis_data:/data     # 資料持久化掛載
+    command: redis-server --appendonly yes  # 開啟 AOF 持久化模式，確保資料安全
+    restart: always          # 確保容器崩潰或重啟後會自動啟動
+
 volumes:
   es_data:
   kibana_data:
   qdrant_data:
+  redis_data:
