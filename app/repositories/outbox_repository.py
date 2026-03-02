@@ -1,5 +1,5 @@
 import uuid
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, UTC
 
 from sqlalchemy import update, select
 from sqlalchemy.dialects.postgresql import insert
@@ -36,20 +36,21 @@ class OutboxRepository:
 
         await self.session.execute(stmt)
 
-    def make_event_id(self, recipe_id: str, event_type: str) -> uuid.UUID:
+    @staticmethod
+    def make_event_id(recipe_id: str, event_type: str) -> uuid.UUID:
         return uuid.uuid5(
             uuid.NAMESPACE_URL,
             f"recipe:{recipe_id}:{event_type}"
         )
 
-    async def mark_event(self, event_id: str, status: EventStatus):
+    async def mark_event_completed(self, event_id: str):
         stmt = (
             update(OutboxModel)
             .where(
                 OutboxModel.event_id == event_id,
                 OutboxModel.status == EventStatus.PROCESSING.name.lower()
             )
-            .values(status=status.name.lower(), updated_at=datetime.now())
+            .values(status=EventStatus.COMPLETED.name.lower(), updated_at=datetime.now(UTC))
         )
 
         await self.session.execute(stmt)
@@ -61,7 +62,7 @@ class OutboxRepository:
             .values(
                 last_error=error_msg,
                 status=EventStatus.FAILED.name.lower(),
-                updated_at=datetime.now()
+                updated_at=datetime.now(UTC)
             )
         )
 
@@ -89,7 +90,7 @@ class OutboxRepository:
             )
             .values(
                 status=EventStatus.PROCESSING.name.lower(),
-                updated_at=datetime.now(),
+                updated_at=datetime.now(UTC),
             )
             .returning(OutboxModel)
         )
@@ -101,7 +102,7 @@ class OutboxRepository:
             update(OutboxModel)
             .where(
                 OutboxModel.status == EventStatus.PROCESSING.name.lower(),
-                OutboxModel.updated_at < datetime.now() - timedelta(minutes=timeout_minutes)
+                OutboxModel.updated_at < datetime.now(UTC) - timedelta(minutes=timeout_minutes)
             )
             .values(status=EventStatus.PENDING.name.lower())
         )

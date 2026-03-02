@@ -33,4 +33,5 @@ dependencies = [
     "flower>=2.0.1",
     "taskiq[redis]>=0.12.1",
     "taskiq-redis>=1.2.2",
+    "testcontainers[postgres]>=4.14.1",
 ]
