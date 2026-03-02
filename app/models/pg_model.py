@@ -3,7 +3,6 @@ from sqlalchemy.sql import func
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.dialects.postgresql import ARRAY
 from sqlalchemy.orm import relationship
-import datetime
 from app.database import Base
 
 # 4. 定義資料模型 (對應資料表)
@@ -26,8 +25,8 @@ class PgRecipeModel(Base):
     tags = Column(ARRAY(String), nullable=True)
 
     # 時間戳 (這對 Backfill 非常有用)
-    created_at = Column(DateTime, default=datetime.datetime.now)
-    updated_at = Column(DateTime, onupdate=func.now(), nullable=True)
+    created_at = Column(DateTime(timezone=True), default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now(), nullable=True)
 
     # 重試與錯誤記錄
     retry_count = Column(Integer, default=0, nullable=True)

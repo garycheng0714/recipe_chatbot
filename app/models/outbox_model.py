@@ -1,7 +1,6 @@
-from sqlalchemy import Column, String, DateTime, Integer, Index, text, Text
+from sqlalchemy import Column, String, DateTime, Integer, Index, text, Text, func
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from app.database import Base
-import datetime
 
 
 class OutboxModel(Base):
@@ -15,8 +14,8 @@ class OutboxModel(Base):
     status = Column(String(20), default="pending")   # pending, processed, failed
     retry_count = Column(Integer, nullable=False, default=0)
     last_error = Column(Text)
-    created_at = Column(DateTime, default=datetime.datetime.now)
-    updated_at = Column(DateTime, default=datetime.datetime.now, onupdate=datetime.datetime.now)
+    created_at = Column(DateTime(timezone=True), default=func.now())
+    updated_at = Column(DateTime(timezone=True), default=func.now(), onupdate=func.now())
 
     __table_args__ = (
         Index(
