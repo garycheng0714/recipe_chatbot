@@ -1,15 +1,13 @@
 from qdrant_client import AsyncQdrantClient
 from FlagEmbedding import BGEM3FlagModel
 from qdrant_client.http.models import PointStruct, Filter, FieldCondition, MatchValue
-from qdrant_client.models import (
-    VectorParams,
-    Distance
-)
 
 from app.models.qdr_model import RecipeChunk, RecipeMainChunk
 from app.infrastructure.qdrant.config import qdrant_settings
 import uuid
 
+from app.services.converter import QdrantConverter
+from web_crawler.schema.tasty_note_detail_schema import TastyNoteRecipe
 
 
 class QdrantRepository:
@@ -70,9 +68,11 @@ class QdrantRepository:
             ]
         )
 
-    async def upsert_recipe(self, parent_chunk: RecipeMainChunk, child_chunks: list[RecipeChunk]):
-        await self.upsert_recipe_main_chunk(parent_chunk)
-        for chunk in child_chunks:
+    async def upsert_recipe(self, recipe: TastyNoteRecipe):
+        parent = QdrantConverter.to_parent_chunk(recipe)
+        children = QdrantConverter.to_child_chunks(recipe)
+        await self.upsert_recipe_main_chunk(parent)
+        for chunk in children:
             await self.upsert_recipe_chunk(chunk)
 
     async def upsert_points(self, points: list[PointStruct], collection_name: str):
@@ -145,7 +145,6 @@ class QdrantRepository:
 
 if __name__ == "__main__":
     from app.client import qdr_client
-    from sentence_transformers import CrossEncoder
     import asyncio
 
 
@@ -153,7 +152,7 @@ if __name__ == "__main__":
 
     async def main():
         model = BGEM3FlagModel('BAAI/bge-m3', use_fp16=False)
-        db = QdrantRepository(qdr_client, model, "user_question_intent")
+        db = QdrantRepository(qdr_client, model)
         # await db.create_collection()
         # fast_match = await db.search(user_query)
 

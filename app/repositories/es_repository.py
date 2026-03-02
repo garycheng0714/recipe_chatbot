@@ -2,7 +2,8 @@ from typing import Any
 
 from elasticsearch import AsyncElasticsearch
 from app.infrastructure.elasticsearch.config import RECIPE_INDEX
-from app.models.qdr_model import RecipeMainChunk, RecipeChunk
+from app.services.converter import EsConverter
+from web_crawler.schema.tasty_note_detail_schema import TastyNoteRecipe
 
 
 class ElasticSearchRepository:
@@ -13,7 +14,10 @@ class ElasticSearchRepository:
     async def index_chunk(self, chunk: dict[str, Any]):
         await self.client.index(index=self.index_name, document=chunk)
 
-    async def index_recipe(self, parent: RecipeMainChunk, children: list[RecipeChunk]):
+    async def index_recipe(self, recipe: TastyNoteRecipe):
+        parent = EsConverter.to_parent_chunk(recipe)
+        children = EsConverter.to_child_chunks(recipe)
+
         await self.index_chunk(parent.model_dump())
         for chunk in children:
             await self.index_chunk(chunk.model_dump())

@@ -5,7 +5,8 @@ from sqlalchemy.orm import selectinload, joinedload
 
 from app.models.pg_model import PgRecipeModel, PgRecipeChunkModel
 from app.schema import RRFResult
-from web_crawler.schema import TastyNoteRecipe
+from app.services.converter import PgConverter
+from web_crawler.schema.tasty_note_detail_schema import TastyNoteRecipe
 
 
 class PgRepository:
@@ -71,18 +72,19 @@ class PgRepository:
         return result.all()
 
     async def update_recipe(self, recipe: TastyNoteRecipe):
-        try:
-            stmt = update(PgRecipeModel).where(
-                PgRecipeModel.source_url == recipe.source_url
-            ).values(
-                **recipe.model_dump(),
-                status="completed"
-            )
-            await self.async_session.execute(stmt)
-            await self.async_session.commit()
-        finally:
-            #TODO: Dead Letter
-            await self.async_session.rollback()
+        stmt = update(PgRecipeModel).where(
+            PgRecipeModel.source_url == recipe.source_url
+        ).values(
+            **recipe.model_dump(),
+            status="completed"
+        )
+
+        chunks = PgConverter.to_child_chunks(recipe)
+
+        for chunk in chunks:
+            await self.add_chunk(chunk)
+
+        await self.async_session.execute(stmt)
 
 
     async def fetch_recipe(self, recipe: list[RRFResult]):
