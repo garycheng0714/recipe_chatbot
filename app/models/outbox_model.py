@@ -6,14 +6,14 @@ import datetime
 
 class OutboxModel(Base):
     __tablename__ = 'outbox'
-    evnet_id = Column(UUID(as_uuid=True), primary_key=True)
+    event_id = Column(UUID(as_uuid=True), primary_key=True)
     aggregate_id = Column(String(100), nullable=False)
     aggregate_type = Column(String(100), nullable=False)
     event_type = Column(String(100), nullable=False)
     payload = Column(JSONB, nullable=False)
 
-    status = Column(String(20), default="pending")
-    retry_count = Column(Integer, nullable=False, default=0)    # pending, processed, failed
+    status = Column(String(20), default="pending")   # pending, processed, failed
+    retry_count = Column(Integer, nullable=False, default=0)
     last_error = Column(Text)
     created_at = Column(DateTime, default=datetime.datetime.now)
     updated_at = Column(DateTime, default=datetime.datetime.now, onupdate=datetime.datetime.now)
