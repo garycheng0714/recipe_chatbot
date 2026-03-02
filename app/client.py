@@ -7,6 +7,7 @@ from app.repositories import (
     PgRepository,
     ElasticSearchRepository
 )
+from app.repositories.outbox_repository import OutboxRepository
 from app.repositories.qdr_repository import QdrantRepository
 
 
@@ -19,6 +20,17 @@ async def get_db() -> AsyncGenerator:
             yield db_instance
         finally:
             await session.close()
+
+
+async def get_outbox_db() -> AsyncGenerator:
+    async with AsyncSessionLocal() as session:
+        # 將 session 注入到你的 Class 中
+        db_instance = OutboxRepository(session)
+        try:
+            yield db_instance
+        finally:
+            await session.close()
+
 
 
 # --- 2. ElasticSearch 設定 ---
