@@ -1,9 +1,13 @@
+from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type
+
 from app.repositories import PgRepository
+from app.database import AsyncSessionLocal
 from web_crawler.detail_crawler import TastyNoteDetailCrawler
 from web_crawler.requester import HttpxRequester
 from web_crawler.schema.tasty_note_detail_schema import TastyNoteRecipe
 from loguru import logger
 import asyncio, random
+import sqlalchemy.exc
 
 
 MAX_WORKER = 5
@@ -15,8 +19,8 @@ class TastyNoteService:
         self._repository = repository
 
     async def fetch_urls_from_db(self):
-        url_queue = asyncio.Queue(maxsize=60)
-        result_queue = asyncio.Queue(maxsize=20)
+        url_queue = asyncio.Queue(maxsize=100)
+        result_queue = asyncio.Queue(maxsize=10)
 
         # 啟動生產者與消費者
         producer_task = asyncio.create_task(self._producer(url_queue))
@@ -27,49 +31,72 @@ class TastyNoteService:
 
         return producer_task, consumer_task, url_queue, result_queue
 
+    # 定義重試規則：如果是資料庫連線相關錯誤，自動重試
+    # wait_exponential 會讓重試間隔變成 1s, 2s, 4s, 8s... 避免打死剛重啟的 DB
+    @retry(
+        stop=stop_after_attempt(3),
+        wait=wait_exponential(multiplier=1, min=4, max=10),
+        retry=retry_if_exception_type(sqlalchemy.exc.OperationalError),
+        reraise=True
+    )
+    async def _fetch_batch_with_retry(self):
+        async with AsyncSessionLocal() as session:
+            async with session.begin():
+                return await self._repository.get_next_url_batch(session, batch_size=50)
+
     async def _producer(self, url_queue: asyncio.Queue):
         while True:
-            # 1. 從 DB 撈一批 (例如 50 筆)
-            batch = await self._repository.get_next_url_batch(batch_size=50)
+            try:
+                # 1. 從 DB 撈一批 (例如 50 筆)
+                batch = await self._fetch_batch_with_retry()
 
-            # 2. 如果沒資料了，代表全爬完，跳出循環
-            if not batch:
-                print("🏁 所有 pending URL 已處理完畢")
-                break
+                # 2. 如果沒資料了，代表全爬完，跳出循環
+                if not batch:
+                    print("🏁 所有 pending URL 已處理完畢")
+                    break
 
-            # 3. 塞進 Queue 讓 Consumer 消化
-            for url in batch:
-                await url_queue.put(url)
-                print(f"Added {url} to queue")
+                # 3. 塞進 Queue 讓 Consumer 消化
+                for url in batch:
+                    await url_queue.put(url)
+                    print(f"Added {url} to queue")
 
-            # 4. 等待 Queue 消化完這批再拿下一批，或是監控 Queue 的長度
-            while url_queue.qsize() > 10:
-                await asyncio.sleep(1)
+                # 撈完一批後看 queue 狀況
+                print(f"queue size: {url_queue.qsize()}/{url_queue.maxsize}")
+            except Exception as e:
+                # 這裡捕獲所有重試失敗後或是非預期的錯誤
+                logger.exception(e)
+                # 可以在這裡加入通知機制 (例如 Slack 或 Sentry)
+                await asyncio.sleep(10)  # 發生嚴重錯誤後停頓一下，避免緊湊報錯
+                continue  # 嘗試下一次迴圈
+
+
+    async def _sleep(self):
+        await asyncio.sleep(random.uniform(1.0, 1.5))
+
+    async def get_recipe(self, url: str) -> TastyNoteRecipe:
+        await self._sleep()
+        html = await self._requester.request(url)
+        return self._detail_crawler.crawl(html)
+
 
     async def _consumer(self, url_queue: asyncio.Queue, result_queue: asyncio.Queue):
-
-        async def get_recipe(url: str) -> TastyNoteRecipe:
-            await asyncio.sleep(random.uniform(1.0, 1.5))
-            html = await self._requester.request(url)
-            return self._detail_crawler.crawl(html)
-
         while True:
             url = await url_queue.get()
             try:
-                recipe = await get_recipe(url)
+                recipe = await self.get_recipe(url)
                 await result_queue.put(recipe)
                 logger.info(f"Fetched {url}")
                 print(f"Consume {url}")
             except Exception as e:
-                logger.error(f"Failed to fetch {url}")
-                print(e)
+                logger.exception(f"Failed to fetch {url}")
             finally:
                 # 這是關鍵！不論成功失敗，都要告訴 queue「這件事我做完了」
                 # 這樣最外層的 await url_queue.join() 才會通過
                 url_queue.task_done()
 
 
-async def get_tasty_note_crawler_service(pg_repository: PgRepository):
+async def get_tasty_note_crawler_service():
     detail_crawler = TastyNoteDetailCrawler()
     requester = HttpxRequester()
+    pg_repository = PgRepository()
     return TastyNoteService(detail_crawler, requester, pg_repository)

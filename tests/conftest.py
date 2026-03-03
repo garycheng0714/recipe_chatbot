@@ -3,7 +3,9 @@ from typing import AsyncGenerator
 
 import pytest_asyncio
 from testcontainers.postgres import PostgresContainer
-from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession
+from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
+from testcontainers.elasticsearch import ElasticSearchContainer
+from testcontainers.qdrant import QdrantContainer
 from app.database import Base  # 你的 DeclarativeBase
 import pytest
 
@@ -22,6 +24,20 @@ def postgres_container():
     # 實際上應該跟你正式環境的 PostgreSQL 版本一致，這樣才能確保測試環境和正式環境行為相同，避免出現「測試過但上線出問題」的情況。
     with PostgresContainer("postgres:18.1") as pg:
         yield pg
+
+
+@pytest.fixture(scope="session")
+def qdrant():
+    with QdrantContainer("qdrant/qdrant:latest")\
+        .with_exposed_ports(6333) as qdr:
+        yield qdr
+
+
+@pytest.fixture(scope="session")
+def elasticsearch():
+    with ElasticSearchContainer("elasticsearch:9.1.4") as es:
+        yield es
+
 
 @pytest_asyncio.fixture(scope="session")
 async def engine(postgres_container):
