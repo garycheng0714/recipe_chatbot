@@ -95,8 +95,7 @@ class TastyNoteService:
                 url_queue.task_done()
 
 
-async def get_tasty_note_crawler_service():
+async def get_tasty_note_crawler_service(requester: HttpxRequester):
     detail_crawler = TastyNoteDetailCrawler()
-    requester = HttpxRequester()
     pg_repository = PgRepository()
     return TastyNoteService(detail_crawler, requester, pg_repository)

@@ -47,7 +47,6 @@ class TastyNoteUrlScannerService:
         await asyncio.gather(*tasks)
 
 
-def get_tasty_note_url_scanner_service() -> TastyNoteUrlScannerService:
+async def get_tasty_note_url_scanner_service(requester: HttpxRequester) -> TastyNoteUrlScannerService:
     crawler = TastyNoteListCrawler()
-    requester = HttpxRequester()
     return TastyNoteUrlScannerService(crawler, requester)

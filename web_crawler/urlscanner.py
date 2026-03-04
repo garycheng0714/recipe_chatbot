@@ -1,12 +1,13 @@
 from app.core.logging import setup_logging, CrawlerSettings
-from app.models import PgRecipeModel
 from app.services.ingestion import get_pg_ingestion_service
+from web_crawler.requester import HttpxRequester
+from web_crawler.schema.tasty_note_detail_schema import TastyNoteRecipe
 from web_crawler.service.tasty_note_url_scanner_service import get_tasty_note_url_scanner_service
 from loguru import logger
 import asyncio
 
 
-async def storage_worker(queue: asyncio.Queue[PgRecipeModel]):
+async def storage_worker(queue: asyncio.Queue[TastyNoteRecipe]):
     async with get_pg_ingestion_service() as service:
         while True:
             recipe = await queue.get()
@@ -21,19 +22,20 @@ async def storage_worker(queue: asyncio.Queue[PgRecipeModel]):
 async def main():
     setup_logging(CrawlerSettings())
 
-    scanner = get_tasty_note_url_scanner_service()
-    url_queue = asyncio.Queue()
+    async with HttpxRequester() as requester:
+        scanner = await get_tasty_note_url_scanner_service(requester)
+        url_queue = asyncio.Queue()
 
-    storage_tasks = [
-        asyncio.create_task(storage_worker(url_queue))
-        for _ in range(5)
-    ]
+        storage_tasks = [
+            asyncio.create_task(storage_worker(url_queue))
+            for _ in range(5)
+        ]
 
-    await scanner.fetch_urls(url_queue)
-    await url_queue.join()
+        await scanner.fetch_urls(url_queue)
+        await url_queue.join()
 
-    for task in storage_tasks:
-        task.cancel()
+        for task in storage_tasks:
+            task.cancel()
 
 
 if __name__ == '__main__':
