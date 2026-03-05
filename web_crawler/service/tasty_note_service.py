@@ -7,6 +7,7 @@ from web_crawler.exceptions import RequestFatalError, RequestBlockedError, Conte
 from web_crawler.requester import HttpxRequester
 from web_crawler.schema.crawler_status_schema import CrawlerStatusUpdate
 from web_crawler.schema.tasty_note_detail_schema import TastyNoteRecipe
+from aiolimiter import AsyncLimiter
 from loguru import logger
 import asyncio, random
 import sqlalchemy.exc
@@ -19,6 +20,8 @@ class TastyNoteService:
         self._detail_crawler = detail_crawler
         self._requester = requester
         self._repository = repository
+        # 每 1 秒只允許發出 2 個請求 (2 requests per 1 second)
+        self._limiter = AsyncLimiter(2, 1)
 
     async def fetch_urls_from_db(self):
         url_queue = asyncio.Queue(maxsize=100)
@@ -72,13 +75,14 @@ class TastyNoteService:
                 continue  # 嘗試下一次迴圈
 
 
-    async def _sleep(self):
-        await asyncio.sleep(random.uniform(1.0, 1.5))
+    async def _random_sleep(self):
+        await asyncio.sleep(random.uniform(0.1, 0.5))
 
     async def get_recipe(self, url: str) -> TastyNoteRecipe:
-        await self._sleep()
-        html = await self._requester.request(url)
-        return self._detail_crawler.crawl(html)
+        # 在發起請求前，必須先獲得「許可證」
+        async with self._limiter:
+            html = await self._requester.request(url)
+            return self._detail_crawler.crawl(html)
 
 
     async def _consumer(self, url_queue: asyncio.Queue, result_queue: asyncio.Queue):

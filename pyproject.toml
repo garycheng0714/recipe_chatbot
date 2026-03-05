@@ -35,4 +35,5 @@ dependencies = [
     "taskiq-redis>=1.2.2",
     "testcontainers[postgres]>=4.14.1",
     "pytest-httpx>=0.36.0",
+    "aiolimiter>=1.2.1",
 ]

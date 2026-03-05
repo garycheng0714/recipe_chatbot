@@ -33,7 +33,7 @@ async def test_process_single_page_return_tasty_note_recipe():
     requester = AsyncMock()
 
     service = TastyNoteUrlScannerService(crawler, requester)
-    service._sleep = AsyncMock()
+    service._random_sleep = AsyncMock()
 
     await service._process_single_page("url", queue)
 
@@ -55,7 +55,7 @@ async def test_process_single_page_fail_not_raise_exception():
     requester.request.side_effect = Exception("Boom")
 
     service = TastyNoteUrlScannerService(crawler, requester)
-    service._sleep = AsyncMock()
+    service._random_sleep = AsyncMock()
 
     await service._process_single_page("url", queue)
 

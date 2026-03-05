@@ -3,6 +3,7 @@ from web_crawler.schema.tasty_note_detail_schema import TastyNoteRecipe
 from web_crawler.list_crawler import TastyNoteListCrawler
 from web_crawler.requester import HttpxRequester
 from loguru import logger
+from aiolimiter import AsyncLimiter
 import asyncio, random
 
 
@@ -16,10 +17,10 @@ class TastyNoteUrlScannerService:
     def __init__(self, list_crawler: TastyNoteListCrawler, requester: HttpxRequester):
         self._list_crawler = list_crawler
         self._requester = requester
-        self._sem = asyncio.Semaphore(3)    # 列表頁抓取可以更嚴格一點，限制同時 3 頁
+        self._limiter = AsyncLimiter(2, 1)
 
-    async def _sleep(self):
-        await asyncio.sleep(random.uniform(0.5, 1.5))
+    async def _random_sleep(self):
+        await asyncio.sleep(random.uniform(0.1, 0.5))
 
     # 1. 純邏輯：產生 URL 列表 (容易測試 Range 是否正確)
     def _get_list_urls(self, start_page: int, max_page: int) -> List[str]:
@@ -28,8 +29,8 @@ class TastyNoteUrlScannerService:
 
     # 2. 單一職責：抓取並解析 (容易 Mock requester 測試解析邏輯)
     async def _process_single_page(self, list_url: str, url_queue: asyncio.Queue):
-        async with self._sem:
-            await self._sleep()
+        async with self._limiter:
+            await self._random_sleep()
             try:
                 html = await self._requester.request(list_url)
                 for detail_url in self._list_crawler.crawl(html):
