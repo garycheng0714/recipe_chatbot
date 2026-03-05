@@ -6,6 +6,7 @@ from sqlalchemy.orm import selectinload, joinedload
 from app.models.pg_model import PgRecipeModel, PgRecipeChunkModel
 from app.schema import RRFResult
 from app.services.converter import PgConverter
+from web_crawler.schema.crawler_status_schema import CrawlerStatusUpdate
 from web_crawler.schema.tasty_note_detail_schema import TastyNoteRecipe
 
 
@@ -16,11 +17,14 @@ class PgRepository:
         result = await session.execute(stmt)
         return result.scalars().all()
 
-    async def mark_crawler_status(self, session: AsyncSession, source_url: str, status: str, error: str):
+    async def update_crawler_status(self, session: AsyncSession, update_data: CrawlerStatusUpdate):
         await session.execute(
             update(PgRecipeModel)
-            .where(PgRecipeModel.source_url == source_url)
-            .values(status=status, last_error=error)
+            .where(PgRecipeModel.source_url == update_data.source_url)
+            .values(
+                status=update_data.status,
+                last_error=update_data.error_msg
+            )
         )
 
     async def insert_pending_url(self, session: AsyncSession, recipe: TastyNoteRecipe):

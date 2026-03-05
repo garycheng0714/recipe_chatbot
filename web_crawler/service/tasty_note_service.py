@@ -5,6 +5,7 @@ from app.database import AsyncSessionLocal
 from web_crawler.detail_crawler import TastyNoteDetailCrawler
 from web_crawler.exceptions import RequestFatalError, RequestBlockedError, ContentParsingError
 from web_crawler.requester import HttpxRequester
+from web_crawler.schema.crawler_status_schema import CrawlerStatusUpdate
 from web_crawler.schema.tasty_note_detail_schema import TastyNoteRecipe
 from loguru import logger
 import asyncio, random
@@ -109,9 +110,15 @@ class TastyNoteService:
                 url_queue.task_done()
 
     async def _mark_status_failed(self, url: str, status: str, error_msg: str):
+        update_data = CrawlerStatusUpdate(
+            source_url=url,
+            status=status,
+            error_msg=error_msg
+        )
+
         async with AsyncSessionLocal() as session:
             async with session.begin():
-                await self._repository.mark_crawler_status(session, url, status, error_msg)
+                await self._repository.update_crawler_status(session, update_data)
 
 
 async def get_tasty_note_crawler_service(requester: HttpxRequester):
