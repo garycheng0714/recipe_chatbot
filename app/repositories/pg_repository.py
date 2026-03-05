@@ -16,6 +16,13 @@ class PgRepository:
         result = await session.execute(stmt)
         return result.scalars().all()
 
+    async def mark_crawler_status(self, session: AsyncSession, source_url: str, status: str, error: str):
+        await session.execute(
+            update(PgRecipeModel)
+            .where(PgRecipeModel.source_url == source_url)
+            .values(status=status, last_error=error)
+        )
+
     async def insert_pending_url(self, session: AsyncSession, recipe: TastyNoteRecipe):
         await session.execute(
             insert(PgRecipeModel).values(
