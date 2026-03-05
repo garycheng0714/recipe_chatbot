@@ -3,9 +3,9 @@ from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_excep
 from app.repositories import PgRepository
 from app.database import AsyncSessionLocal
 from web_crawler.detail_crawler import TastyNoteDetailCrawler
-from web_crawler.exceptions import RequestFatalError, RequestBlockedError, ContentParsingError
+from web_crawler.exceptions import RequestFatalError, RequestBlockedError, ContentParsingError, RequestRetryableError
 from web_crawler.requester import HttpxRequester
-from web_crawler.schema.crawler_status_schema import CrawlerStatusUpdate
+from web_crawler.schema.crawl_result_schema import CrawlResult
 from web_crawler.schema.tasty_note_detail_schema import TastyNoteRecipe
 from aiolimiter import AsyncLimiter
 from loguru import logger
@@ -85,44 +85,39 @@ class TastyNoteService:
             return self._detail_crawler.crawl(html)
 
 
-    async def _consumer(self, url_queue: asyncio.Queue, result_queue: asyncio.Queue):
+    async def _consumer(self, url_queue: asyncio.Queue, result_queue: asyncio.Queue[CrawlResult]):
         while True:
             url = await url_queue.get()
             try:
                 recipe = await self.get_recipe(url)
-                await result_queue.put(recipe)
+                await result_queue.put(
+                    CrawlResult(source_url=url, status="completed", data=recipe)
+                )
                 logger.info(f"Fetched {url}")
                 print(f"Consume {url}")
-            except RequestFatalError as e:
-                logger.error(f"🗑️ Fatal Error: {url} - {e}")
-                await self._mark_status_failed(url, "failed", str(e))
-            except RequestBlockedError as e:
-                logger.critical(f"🛑 Blocked: {e}")
-                await self._mark_status_failed(url, "retry", str(e))
-                #TODO: notify
-            except ContentParsingError as e:
-                # 解析失敗：結構變了，標記為 'parsing_error' 待人工檢查
-                logger.error(f"🧩 Parsing Error: {url} - {e}")
-                await self._mark_status_failed(url, "parsing_error", str(e))
-
             except Exception as e:
-                logger.exception(f"💥 Unknown Error: {url}")
-                await self._mark_status_failed(url, "pending", str(e))
+                await self._handle_crawler_error(url, e, result_queue)
             finally:
                 # 這是關鍵！不論成功失敗，都要告訴 queue「這件事我做完了」
                 # 這樣最外層的 await url_queue.join() 才會通過
                 url_queue.task_done()
 
-    async def _mark_status_failed(self, url: str, status: str, error_msg: str):
-        update_data = CrawlerStatusUpdate(
-            source_url=url,
-            status=status,
-            error_msg=error_msg
-        )
+    async def _handle_crawler_error(self, url: str, exc: Exception, queue: asyncio.Queue[CrawlResult]):
+        exception_mapping = {
+            RequestFatalError: ("failed", logger.error, "Fatal Error"),
+            RequestBlockedError: ("retry", logger.critical, "Blocked"),
+            RequestRetryableError: ("retry", logger.warning, "Retryable Network Error"),
+            ContentParsingError: ("parsing_error", logger.error, "Parsing Error")
+        }
 
-        async with AsyncSessionLocal() as session:
-            async with session.begin():
-                await self._repository.update_crawler_status(session, update_data)
+        status, log_func, msg = exception_mapping.get(type(exc), ("pending", logger.exception, "Unknown Error"))
+        log_func(f"{msg} [{status}]: {url} - {exc}")
+
+        await queue.put(CrawlResult(source_url=url, status=status, error_msg=str(exc)))
+
+        if isinstance(exc, RequestBlockedError):
+            #TODO: notify
+            pass
 
 
 async def get_tasty_note_crawler_service(requester: HttpxRequester):

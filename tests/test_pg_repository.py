@@ -3,7 +3,7 @@ from sqlalchemy import select, func
 
 from app.models import PgRecipeModel
 from app.repositories import PgRepository
-from web_crawler.schema.crawler_status_schema import CrawlerStatusUpdate
+from web_crawler.schema.crawl_result_schema import CrawlResult
 from web_crawler.schema.tasty_note_detail_schema import TastyNoteRecipe
 
 pytestmark = pytest.mark.asyncio(loop_scope="session")
@@ -88,7 +88,7 @@ async def test_update_crawler_status(session, repo, sample_recipe):
     await repo.insert_pending_url(session, sample_recipe)
     await session.flush()
 
-    update_data = CrawlerStatusUpdate(
+    update_data = CrawlResult(
         source_url=sample_recipe.source_url,
         status="failed",
         error_msg="error"
@@ -110,7 +110,7 @@ async def test_update_crawler_status(session, repo, sample_recipe):
 async def test_update_crawler_status_with_completed_status(session, repo, sample_recipe):
     await test_update_crawler_status(session, repo, sample_recipe)
 
-    update_data = CrawlerStatusUpdate(
+    update_data = CrawlResult(
         source_url=sample_recipe.source_url,
         status="completed"
     )
