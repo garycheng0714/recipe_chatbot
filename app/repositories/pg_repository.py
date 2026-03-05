@@ -53,6 +53,7 @@ class PgRepository:
         result = await session.execute(text(sql), {"limit": batch_size})
         return result.scalars().all()  # ✅ 先拿資料
 
+    #TODO: 沒有 idempotency 保護，如果 worker crash 可能會 update_recipe twice，建議 ON CONFLICT UPDATE
     async def update_recipe(self, session: AsyncSession, recipe: TastyNoteRecipe):
         await session.execute(
             update(PgRecipeModel)

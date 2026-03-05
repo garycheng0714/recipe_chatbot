@@ -18,10 +18,8 @@ class EventStatus(Enum):
 
 
 class OutboxRepository:
-    def __init__(self, session: AsyncSession):
-        self.session = session
 
-    async def insert_event(self, recipe: TastyNoteRecipe):
+    async def insert_event(self, session: AsyncSession, recipe: TastyNoteRecipe):
         event_id = self.make_event_id(recipe.id, "recipe.created")
 
         stmt = (
@@ -34,7 +32,7 @@ class OutboxRepository:
             ).on_conflict_do_nothing(index_elements=["event_id"])
         )
 
-        await self.session.execute(stmt)
+        await session.execute(stmt)
 
     @staticmethod
     def make_event_id(recipe_id: str, event_type: str) -> uuid.UUID:
@@ -43,7 +41,7 @@ class OutboxRepository:
             f"recipe:{recipe_id}:{event_type}"
         )
 
-    async def mark_event_completed(self, event_id: str):
+    async def mark_event_completed(self, session: AsyncSession, event_id: str):
         stmt = (
             update(OutboxModel)
             .where(
@@ -53,9 +51,9 @@ class OutboxRepository:
             .values(status=EventStatus.COMPLETED.name.lower(), updated_at=datetime.now(UTC))
         )
 
-        await self.session.execute(stmt)
+        await session.execute(stmt)
 
-    async def mark_event_failed(self, event_id: str, error_msg: str):
+    async def mark_event_failed(self, session: AsyncSession, event_id: str, error_msg: str):
         stmt = (
             update(OutboxModel)
             .where(OutboxModel.event_id == event_id)
@@ -66,12 +64,12 @@ class OutboxRepository:
             )
         )
 
-        await self.session.execute(stmt)
+        await session.execute(stmt)
 
-    async def get_pending_event(self, limit: int = 50):
+    async def get_pending_event(self, session: AsyncSession, limit: int = 50):
         # 呼叫方必須在 session.begin() context 內
         # SELECT FOR UPDATE SKIP LOCKED 避免多個 worker 重複處理
-        result = await self.session.execute(
+        result = await session.execute(
             select(OutboxModel)
             .where(OutboxModel.status == EventStatus.PENDING.name.lower())
             .order_by(OutboxModel.created_at)
@@ -81,7 +79,7 @@ class OutboxRepository:
 
         return result.scalars().all()
 
-    async def claim_event(self, event_id: str):
+    async def claim_event(self, session: AsyncSession, event_id: str):
         stmt = (
             update(OutboxModel)
             .where(
@@ -94,10 +92,10 @@ class OutboxRepository:
             )
             .returning(OutboxModel)
         )
-        result = await self.session.execute(stmt)
+        result = await session.execute(stmt)
         return result.scalars().first()
 
-    async def reset_stale_events(self, timeout_minutes: int = 30):
+    async def reset_stale_events(self, session: AsyncSession, timeout_minutes: int = 30):
         stmt = (
             update(OutboxModel)
             .where(
@@ -106,4 +104,4 @@ class OutboxRepository:
             )
             .values(status=EventStatus.PENDING.name.lower())
         )
-        await self.session.execute(stmt)
+        await session.execute(stmt)

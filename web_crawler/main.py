@@ -1,23 +1,49 @@
+from sqlalchemy.ext.asyncio.session import AsyncSession
+from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_exponential
+from sqlalchemy.exc import OperationalError, DisconnectionError
+
 from app import database
 from app.client import es_client
 from web_crawler.requester import HttpxRequester
+from web_crawler.schema.crawl_result_schema import CrawlResult
 from web_crawler.service import get_tasty_note_crawler_service
-from app.services.ingestion import get_full_ingestion_service
+from app.services.ingestion import get_ingestion_service, IngestionService
 from app.core.logging import setup_logging, CrawlerSettings
+from app.database import AsyncSessionLocal
+from loguru import logger
 import asyncio
 
-async def storage_worker(queue: asyncio.Queue):
+@retry(
+    retry=retry_if_exception_type((OperationalError, DisconnectionError)),
+    stop=stop_after_attempt(3),
+    wait=wait_exponential(multiplier=1, min=4, max=10),
+    reraise=True,
+)
+async def _ingest_result(ingestion_service: IngestionService, result: CrawlResult):
+    async with AsyncSessionLocal() as session:
+        async with session.begin():
+            if result.status == "completed":
+                await ingestion_service.ingest_crawl_completed_data(session, result)
+            else:
+                await ingestion_service.update_crawl_status(session, result)
+
+
+async def storage_worker(queue: asyncio.Queue[CrawlResult]):
     """
     這是一個獨立的工人，專門搬運資料庫
     每次都建立一個獨立的 session
     """
-    async with get_full_ingestion_service() as service:
-        while True:
-            recipe = await queue.get()
-            try:
-                await service.ingest_recipe(recipe)
-            finally:
-                queue.task_done()
+    ingestion_service = get_ingestion_service()
+    while True:
+        result = await queue.get()
+        try:
+            # 這裡就是 "Session-per-task" 的體現
+            await _ingest_result(ingestion_service, result)
+        except Exception as e:
+            logger.exception(f"ingestion error: {e}")
+            # TODO: custom DB exception
+        finally:
+            queue.task_done()
 
 async def main():
     setup_logging(CrawlerSettings())
