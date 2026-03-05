@@ -3,6 +3,7 @@ from sqlalchemy import select, func
 
 from app.models import PgRecipeModel
 from app.repositories import PgRepository
+from web_crawler.schema.crawler_status_schema import CrawlerStatusUpdate
 from web_crawler.schema.tasty_note_detail_schema import TastyNoteRecipe
 
 pytestmark = pytest.mark.asyncio(loop_scope="session")
@@ -81,3 +82,47 @@ async def test_get_url_batch_no_pending_status(session, repo, sample_recipe):
     await session.flush()
 
     assert len(second) == 0
+
+
+async def test_update_crawler_status(session, repo, sample_recipe):
+    await repo.insert_pending_url(session, sample_recipe)
+    await session.flush()
+
+    update_data = CrawlerStatusUpdate(
+        source_url=sample_recipe.source_url,
+        status="failed",
+        error_msg="error"
+    )
+
+    await repo.update_crawler_status(session, update_data)
+    await session.flush()
+
+    result = await session.execute(
+        select(PgRecipeModel)
+        .where(PgRecipeModel.source_url == sample_recipe.source_url)
+    )
+
+    row = result.scalar_one()
+    assert row.status == "failed"
+    assert row.last_error == "error"
+
+
+async def test_update_crawler_status_with_completed_status(session, repo, sample_recipe):
+    await test_update_crawler_status(session, repo, sample_recipe)
+
+    update_data = CrawlerStatusUpdate(
+        source_url=sample_recipe.source_url,
+        status="completed"
+    )
+
+    await repo.update_crawler_status(session, update_data)
+    await session.flush()
+
+    result = await session.execute(
+        select(PgRecipeModel)
+        .where(PgRecipeModel.source_url == sample_recipe.source_url)
+    )
+
+    row = result.scalar_one()
+    assert row.status == "completed"
+    assert row.last_error is None
