@@ -1,5 +1,6 @@
 import uuid
 from datetime import datetime, timedelta, UTC
+from typing import List
 
 from sqlalchemy import update, select
 from sqlalchemy.dialects.postgresql import insert
@@ -30,6 +31,26 @@ class OutboxRepository:
                 event_type="recipe.created",
                 payload=recipe.model_dump(exclude_none=True)
             ).on_conflict_do_nothing(index_elements=["event_id"])
+        )
+
+        await session.execute(stmt)
+
+    async def insert_bulk_event(self, session: AsyncSession, recipes: List[TastyNoteRecipe]):
+        values = [
+            {
+                "event_id": self.make_event_id(recipe.id, "recipe.created"),
+                "aggregate_type" : "recipe",
+                "aggregate_id" : recipe.id,
+                "event_type" : "recipe.created",
+                "payload" : recipe.model_dump(exclude_none=True)
+            }
+            for recipe in recipes
+        ]
+
+        stmt = (
+            insert(OutboxModel).values(values).on_conflict_do_nothing(
+                index_elements=["event_id"]
+            )
         )
 
         await session.execute(stmt)

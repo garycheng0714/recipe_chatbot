@@ -1,4 +1,6 @@
-from sqlalchemy import select, text, update
+from typing import List
+
+from sqlalchemy import select, text, update, bindparam
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio.session import AsyncSession
 from sqlalchemy.orm import selectinload, joinedload
@@ -26,6 +28,28 @@ class PgRepository:
                 last_error=update_data.error_msg
             )
         )
+
+    async def update_bulk_crawl_status(self, session: AsyncSession, results: List[CrawlResult]):
+        stmt = (
+            update(PgRecipeModel)
+            .where(PgRecipeModel.source_url == bindparam('b_source_url'))
+            .values(
+                status=bindparam('b_status'),
+                last_error=bindparam('b_last_error'),
+            )
+        )
+
+        rows = [
+            {
+                'b_source_url': r.source_url,
+                'b_status': r.status,
+                'b_last_error': r.last_error,
+            }
+            for r in results
+        ]
+
+        await session.execute(stmt, rows)
+
 
     async def insert_pending_url(self, session: AsyncSession, recipe: TastyNoteRecipe):
         await session.execute(
@@ -64,11 +88,65 @@ class PgRepository:
             )
         )
 
+    async def update_bulk_recipe(self, session: AsyncSession, recipes: List[TastyNoteRecipe]):
+        # bulk update 最有效率的方式是用 VALUES 子查詢
+        # 從 model schema 取欄位，穩定不受資料影響
+        all_fields = TastyNoteRecipe.model_fields.keys()
+        updated_fields = [f for f in all_fields if f != "source_url"]
+
+        stmt = (
+            update(PgRecipeModel)
+            .where(PgRecipeModel.source_url == bindparam("b_source_url"))
+            .values(
+                **{f: bindparam(f"b_{f}") for f in updated_fields},
+                status="completed"
+            )
+        )
+
+        rows = [
+            {f"b_{f}": getattr(recipe, f) for f in all_fields}
+            for recipe in recipes
+        ]
+
+        await session.execute(stmt, rows)
+
+
+    #TODO: 注意冪等性
+    async def add_recipe_chunk(self, session: AsyncSession, recipe: TastyNoteRecipe):
         chunks = PgConverter.to_child_chunks(recipe)
 
         for chunk in chunks:
             session.add(chunk)
 
+    async def add_bulk_recipe_chunk(self, session: AsyncSession, recipes: List[TastyNoteRecipe]):
+        chunks = [
+            chunk
+            for recipe in recipes
+            for chunk in PgConverter.to_child_chunks(recipe)
+        ]
+
+        rows = [
+            {
+                "id": chunk.id,
+                "parent_id": chunk.parent_id,
+                "chunk_type": chunk.chunk_type,
+                "content": chunk.content
+            }
+            for chunk in chunks
+        ]
+
+        stmt = insert(PgRecipeChunkModel).values(rows)
+
+        stmt = stmt.on_conflict_do_update(
+            index_elements=["id"],
+            set_={
+                "parent_id": stmt.excluded.parent_id,
+                "chunk_type": stmt.excluded.chunk_type,
+                "content": stmt.excluded.content,  # ✅ 從 stmt 自己取 excluded
+            }
+        )
+
+        await session.execute(stmt)
 
     async def fetch_recipe(self, session: AsyncSession, recipe: list[RRFResult]):
         obj_list = []
