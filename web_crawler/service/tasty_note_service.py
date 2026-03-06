@@ -25,7 +25,7 @@ class TastyNoteService:
 
     async def fetch_urls_from_db(self):
         url_queue = asyncio.Queue(maxsize=100)
-        result_queue = asyncio.Queue(maxsize=10)
+        result_queue = asyncio.Queue(maxsize=50)
 
         # 啟動生產者與消費者
         producer_task = asyncio.create_task(self._producer(url_queue))
