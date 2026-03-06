@@ -104,7 +104,7 @@ class PgRepository:
         )
 
         rows = [
-            {f"b_{f}": getattr(recipe, f) for f in all_fields}
+            {f"b_{f}": getattr(recipe, f, None) for f in all_fields}
             for recipe in recipes
         ]
 
@@ -119,12 +119,6 @@ class PgRepository:
             session.add(chunk)
 
     async def add_bulk_recipe_chunk(self, session: AsyncSession, recipes: List[TastyNoteRecipe]):
-        chunks = [
-            chunk
-            for recipe in recipes
-            for chunk in PgConverter.to_child_chunks(recipe)
-        ]
-
         rows = [
             {
                 "id": chunk.id,
@@ -132,7 +126,8 @@ class PgRepository:
                 "chunk_type": chunk.chunk_type,
                 "content": chunk.content
             }
-            for chunk in chunks
+            for recipe in recipes
+            for chunk in PgConverter.to_child_chunks(recipe)
         ]
 
         stmt = insert(PgRecipeChunkModel).values(rows)

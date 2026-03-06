@@ -66,7 +66,6 @@ async def _collect_batch(
     # 1. 阻塞等待第一筆資料，避免 Busy Loop
     first_result = await queue.get()
     batch.append(first_result)
-    queue.task_done()
 
     # 2. 啟動計時器累積後續資料
     deadline = asyncio.get_running_loop().time() + timeout
@@ -79,7 +78,6 @@ async def _collect_batch(
             # 使用 wait_for 避免永遠阻塞
             result = await asyncio.wait_for(queue.get(), timeout=remaining)
             batch.append(result)
-            queue.task_done()
         except asyncio.TimeoutError:
             break
 
@@ -94,6 +92,7 @@ async def storage_worker(queue: asyncio.Queue[CrawlResult]):
     """
     ingestion_service = get_ingestion_service()
     while True:
+        batch = []
         try:
             # 這裡就是 "Session-per-task" 的體現
             batch = await _collect_batch(queue)
@@ -102,6 +101,10 @@ async def storage_worker(queue: asyncio.Queue[CrawlResult]):
         except Exception as e:
             logger.exception(f"ingestion error: {e}")
             # TODO: custom DB exception
+        finally:
+            for _ in batch:
+                queue.task_done()
+
 
 
 async def main():
