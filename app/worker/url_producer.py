@@ -1,0 +1,50 @@
+from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type
+
+from app.database import AsyncSessionLocal
+from app.repositories import PgRepository
+from loguru import logger
+import sqlalchemy.exc
+
+
+# 定義重試規則：如果是資料庫連線相關錯誤，自動重試
+# wait_exponential 會讓重試間隔變成 1s, 2s, 4s, 8s... 避免打死剛重啟的 DB
+@retry(
+    stop=stop_after_attempt(3),
+    wait=wait_exponential(multiplier=1, min=4, max=10),
+    retry=retry_if_exception_type(sqlalchemy.exc.OperationalError),
+    reraise=True
+)
+async def _fetch_batch_with_retry(pg_repo: PgRepository):
+    async with AsyncSessionLocal() as session:
+        async with session.begin():
+            return await pg_repo.get_next_url_batch(session, batch_size=50)
+
+
+class UrlProducer:
+    def __init__(self, pg_repo: PgRepository, url_queue):
+        self.pg_repo = pg_repo
+        self.url_queue = url_queue
+
+
+    async def run(self):
+        while True:
+            try:
+                # 1. 從 DB 撈一批 (例如 50 筆)
+                batch = await _fetch_batch_with_retry(self.pg_repo)
+
+                # 2. 如果沒資料了，代表全爬完，跳出循環
+                if not batch:
+                    print("🏁 所有 pending URL 已處理完畢")
+                    break
+
+                # 3. 塞進 Queue 讓 Consumer 消化
+                for url in batch:
+                    await self.url_queue.put(url)
+                    print(f"Added {url} to queue")
+
+                # 撈完一批後看 queue 狀況
+                print(f"queue size: {self.url_queue.qsize()}/{self.url_queue.maxsize}")
+            except Exception as e:
+                # 這裡捕獲所有重試失敗後或是非預期的錯誤
+                logger.exception(e)
+                raise

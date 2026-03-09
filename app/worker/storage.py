@@ -1,4 +1,5 @@
 import asyncio
+from asyncio import Queue
 from typing import List
 
 from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_exponential
@@ -53,10 +54,11 @@ async def _ingest_single_result(service: IngestionService, result: CrawlResult):
 
 
 class StorageWorker:
-    def __init__(self, service: IngestionService):
+    def __init__(self, service: IngestionService, queue: asyncio.Queue[CrawlResult]):
         self.service = service
+        self.queue = queue
 
-    async def ingest_data(self, queue: asyncio.Queue):
+    async def run(self):
         """
         這是一個獨立的工人，專門搬運資料庫
         每次都建立一個獨立的 session
@@ -65,7 +67,7 @@ class StorageWorker:
             batch: List[CrawlResult] = []
             try:
                 # 這裡就是 "Session-per-task" 的體現
-                batch = await collect_batch(queue)
+                batch = await collect_batch(self.queue)
                 if batch:
                     await self._ingest_batch_with_fallback(batch)
             except Exception as e:
@@ -73,7 +75,7 @@ class StorageWorker:
                 # TODO: custom DB exception
             finally:
                 for _ in batch:
-                    queue.task_done()
+                    self.queue.task_done()
 
     async def _ingest_batch_with_fallback(self, batch: List[CrawlResult]):
         try:
@@ -85,8 +87,3 @@ class StorageWorker:
                     await _ingest_single_result(self.service, result)
                 except Exception as e:
                     logger.error(f"單筆寫入失敗，跳過: {result}, error: {e}")
-
-
-def get_storage_worker():
-    ingestion_service = get_ingestion_service()
-    return StorageWorker(ingestion_service)
