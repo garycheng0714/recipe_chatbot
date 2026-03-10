@@ -1,3 +1,5 @@
+from sqlalchemy.ext.asyncio import async_sessionmaker
+from sqlalchemy.ext.asyncio.session import AsyncSession
 from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type
 
 from app.database import AsyncSessionLocal
@@ -11,26 +13,34 @@ import sqlalchemy.exc
 @retry(
     stop=stop_after_attempt(3),
     wait=wait_exponential(multiplier=1, min=4, max=10),
-    retry=retry_if_exception_type(sqlalchemy.exc.OperationalError),
+    retry=retry_if_exception_type((
+        sqlalchemy.exc.OperationalError,
+        sqlalchemy.exc.DisconnectionError,
+    )),
     reraise=True
 )
-async def _fetch_batch_with_retry(pg_repo: PgRepository):
-    async with AsyncSessionLocal() as session:
+async def _fetch_batch_with_retry(session_factory: async_sessionmaker, pg_repo: PgRepository):
+    async with session_factory() as session:
         async with session.begin():
             return await pg_repo.get_next_url_batch(session, batch_size=50)
 
 
 class UrlProducer:
-    def __init__(self, pg_repo: PgRepository, url_queue):
+    def __init__(
+        self,
+        pg_repo: PgRepository,
+        url_queue,
+        session_factory=None
+    ):
         self.pg_repo = pg_repo
         self.url_queue = url_queue
-
+        self.session_factory = session_factory or AsyncSessionLocal
 
     async def run(self):
         while True:
             try:
                 # 1. 從 DB 撈一批 (例如 50 筆)
-                batch = await _fetch_batch_with_retry(self.pg_repo)
+                batch = await _fetch_batch_with_retry(self.session_factory, self.pg_repo)
 
                 # 2. 如果沒資料了，代表全爬完，跳出循環
                 if not batch:

@@ -1,5 +1,17 @@
 import httpx
 
+'''
+DB 錯誤
+├── 暫時性（值得 retry）
+│   ├── OperationalError    ← 連線斷掉、DB 重啟
+│   └── DisconnectionError  ← 網路瞬斷
+└── 永久性（retry 也沒用）
+    ├── ProgrammingError    ← SQL 語法錯誤、table 不存在
+    ├── IntegrityError      ← constraint 違反
+    └── DataError           ← 資料格式錯誤
+'''
+
+
 # 定義哪些情況應該 retry
 RETRYABLE_EXCEPTIONS = (
     httpx.TimeoutException,      # 連線/讀取逾時
