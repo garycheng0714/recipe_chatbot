@@ -1,5 +1,5 @@
+import asyncio
 from sqlalchemy.ext.asyncio import async_sessionmaker
-from sqlalchemy.ext.asyncio.session import AsyncSession
 from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type
 
 from app.database import AsyncSessionLocal
@@ -29,15 +29,21 @@ class UrlProducer:
     def __init__(
         self,
         pg_repo: PgRepository,
-        url_queue,
+        url_queue: asyncio.Queue,
+        stop_event: asyncio.Event,
         session_factory=None
     ):
         self.pg_repo = pg_repo
         self.url_queue = url_queue
+        self.stop_event = stop_event
         self.session_factory = session_factory or AsyncSessionLocal
 
     async def run(self):
-        while True:
+        async with self.session_factory() as session:
+            async with session.begin():
+                await self.pg_repo.reset_stale_events(session)
+
+        while not self.stop_event.is_set():
             try:
                 # 1. 從 DB 撈一批 (例如 50 筆)
                 batch = await _fetch_batch_with_retry(self.session_factory, self.pg_repo)
@@ -49,6 +55,9 @@ class UrlProducer:
 
                 # 3. 塞進 Queue 讓 Consumer 消化
                 for url in batch:
+                    # put 的時候也要檢查 shutdown，避免卡住
+                    if self.stop_event.is_set():
+                        break
                     await self.url_queue.put(url)
                     print(f"Added {url} to queue")
 

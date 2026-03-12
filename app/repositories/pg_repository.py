@@ -1,3 +1,4 @@
+from datetime import datetime, UTC, timedelta
 from typing import List
 
 from sqlalchemy import select, text, update, bindparam
@@ -167,3 +168,14 @@ class PgRepository:
             obj_list.append(result.scalar_one_or_none())
 
         return obj_list
+
+    async def reset_stale_events(self, session: AsyncSession, timeout_minutes: int = 30):
+        stmt = (
+            update(PgRecipeModel)
+            .where(
+                PgRecipeModel.status == "processing",
+                PgRecipeModel.updated_at < datetime.now(UTC) - timedelta(minutes=timeout_minutes)
+            )
+            .values(status="pending")
+        )
+        await session.execute(stmt)

@@ -41,8 +41,11 @@ class UrlConsumer:
 
     async def run(self):
         while True:
-            url = await self._url_queue.get()
             try:
+                url = await self._url_queue.get()
+                if url is None:
+                    self._url_queue.task_done()
+                    break
                 recipe = await self._get_recipe(url)
                 await self._result_queue.put(
                     CrawlResult(source_url=url, status="completed", data=recipe)
