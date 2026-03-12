@@ -62,20 +62,22 @@ async def main():
             except asyncio.TimeoutError:
                 # 這裡可以檢查是哪個 queue 塞住了
                 logger.error(f"超時！url_queue 剩餘: {url_queue.qsize()}, result_queue 大小: {result_queue.qsize()}")
+            finally:
+                # 3. 給 Consumer 餵毒藥丸
+                for _ in range(MAX_WORKER):
+                    await url_queue.put(None)
+                await asyncio.gather(*consumer_tasks, return_exceptions=True)
 
-            # 3. 給 Consumer 餵毒藥丸
-            for _ in range(MAX_WORKER):
-                await url_queue.put(None)
-            await asyncio.gather(*consumer_tasks, return_exceptions=True)
+            try:
+                # 4. 等待 Result Queue 消化完 (確保最後一批 batch 入庫)
+                await asyncio.wait_for(result_queue.join(), timeout=30)
+            except asyncio.TimeoutError:
+                logger.error(f"超時！result_queue 大小: {result_queue.qsize()}")
+            finally:
+                storage_task.cancel()
 
-            # 4. 等待 Result Queue 消化完 (確保最後一批 batch 入庫)
-            await result_queue.join()
-
-            for task in consumer_tasks + [storage_task]:
+            for task in consumer_tasks:
                 task.cancel()
-
-            await es_client.close()
-            await database.engine.dispose()
 
             # 善後外部資源
             await asyncio.gather(
