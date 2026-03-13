@@ -89,7 +89,9 @@ async def test_claim_event_returns_none_if_already_processing(repo, session, sam
 
 @pytest.fixture
 async def outbox_cleaner(engine):
+    # yield 之前：setup（這裡什麼都沒做）
     yield
+    # yield 之後：teardown（測試結束後才執行）
     async with AsyncSession(engine) as s:
         async with s.begin():
             await s.execute(delete(OutboxModel))
