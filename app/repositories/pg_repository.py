@@ -1,4 +1,4 @@
-from datetime import datetime, UTC, timedelta
+from datetime import datetime
 from typing import List
 
 from sqlalchemy import select, text, update, bindparam
@@ -64,19 +64,26 @@ class PgRepository:
     async def get_next_url_batch(self, session: AsyncSession, batch_size: int):
         # 這裡使用 PostgreSQL 的 FOR UPDATE SKIP LOCKED 語法，這在多 Worker 時非常強大
         # 它會選中 pending 的資料，且避開其他 Worker 正在處理的列
-        sql = """
-                UPDATE recipes
-                SET status = 'processing'
-                WHERE id IN (
-                    SELECT id FROM recipes 
-                    WHERE status = 'pending' 
-                    LIMIT :limit 
-                    FOR UPDATE SKIP LOCKED
+        """
+        小坑：
+        onupdate=func.now() 只有在透過 ORM（session.execute(update(Model)...)） 執行 UPDATE 時才會自動觸發
+        直接用 text() 執行原生 SQL 完全繞過了 ORM 層，SQLAlchemy 不知道有 UPDATE 發生，所以不會自動帶入 updated_at。
+        """
+        stmt = (
+            update(PgRecipeModel)
+            .where(
+                PgRecipeModel.id.in_(
+                    select(PgRecipeModel.id)
+                    .where(PgRecipeModel.status == "pending")
+                    .limit(batch_size)
+                    .with_for_update(skip_locked=True)
                 )
-                RETURNING source_url;
-            """
-        result = await session.execute(text(sql), {"limit": batch_size})
-        return result.scalars().all()  # ✅ 先拿資料
+            )
+            .values(status="processing")
+            .returning(PgRecipeModel.source_url)
+        )
+        result = await session.execute(stmt)
+        return result.scalars().all()
 
     #TODO: 沒有 idempotency 保護，如果 worker crash 可能會 update_recipe twice，建議 ON CONFLICT UPDATE
     async def update_recipe(self, session: AsyncSession, recipe: TastyNoteRecipe):
@@ -169,12 +176,12 @@ class PgRepository:
 
         return obj_list
 
-    async def reset_stale_events(self, session: AsyncSession, timeout_minutes: int = 30):
+    async def reset_stale_events(self, session: AsyncSession, cut_off: datetime):
         stmt = (
             update(PgRecipeModel)
             .where(
                 PgRecipeModel.status == "processing",
-                PgRecipeModel.updated_at < datetime.now(UTC) - timedelta(minutes=timeout_minutes)
+                PgRecipeModel.updated_at < cut_off
             )
             .values(status="pending")
         )

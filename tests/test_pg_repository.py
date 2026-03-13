@@ -1,3 +1,5 @@
+import datetime
+
 import pytest
 from sqlalchemy import select, func
 
@@ -126,3 +128,23 @@ async def test_update_crawler_status_with_completed_status(session, repo, sample
     row = result.scalar_one()
     assert row.status == "completed"
     assert row.last_error is None
+
+
+async def test_reset_stale_event(engine, session, repo, sample_recipe):
+    await repo.insert_pending_url(session, sample_recipe)
+    await session.flush()
+
+    await repo.get_next_url_batch(session, 1)
+    await session.flush()
+
+    cut_off = datetime.datetime.now(datetime.UTC) + datetime.timedelta(minutes=1)
+
+    await repo.reset_stale_events(session, cut_off)
+    await session.flush()
+
+    result = await session.execute(
+        select(PgRecipeModel.status)
+        .where(PgRecipeModel.source_url == sample_recipe.source_url)
+    )
+
+    assert result.scalar_one() == "pending"
