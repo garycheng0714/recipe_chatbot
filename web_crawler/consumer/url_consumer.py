@@ -41,17 +41,16 @@ class UrlConsumer:
 
     async def run(self):
         while True:
+            url = await self._url_queue.get()
+            if url is None:
+                self._url_queue.task_done()
+                break
             try:
-                url = await self._url_queue.get()
-                if url is None:
-                    self._url_queue.task_done()
-                    break
                 recipe = await self._get_recipe(url)
                 await self._result_queue.put(
                     CrawlResult(source_url=url, status="completed", data=recipe)
                 )
                 logger.info(f"Fetched {url}")
-                print(f"Consume {url}")
             except Exception as e:
                 await self._handle_crawler_error(url, e, self._result_queue)
             finally:
@@ -68,7 +67,7 @@ class UrlConsumer:
             ContentParsingError: ("parsing_error", logger.error, "Parsing Error")
         }
 
-        status, log_func, msg = exception_mapping.get(type(exc), ("pending", logger.exception, "Unknown Error"))
+        status, log_func, msg = exception_mapping.get(type(exc), ("failed", logger.exception, "Unknown Error"))
         log_func(f"{msg} [{status}]: {url} - {exc}")
 
         await queue.put(CrawlResult(source_url=url, status=status, error_msg=str(exc)))
