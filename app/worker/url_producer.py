@@ -39,16 +39,7 @@ class UrlProducer:
         self.session_factory = session_factory or AsyncSessionLocal
 
     async def run(self):
-        await self.reset_stale_events()
-
-        loop = asyncio.get_running_loop()
-        reset_time = loop.time() + 30 * 60
-
         while not self.stop_event.is_set():
-            if loop.time() >= reset_time:
-                reset_time = loop.time() + 30 * 60
-                await self.reset_stale_events()
-
             try:
                 # 1. 從 DB 撈一批 (例如 50 筆)
                 batch = await _fetch_batch_with_retry(self.session_factory, self.pg_repo)
@@ -75,11 +66,6 @@ class UrlProducer:
                 raise
 
             await self._sleep()
-
-    async def reset_stale_events(self):
-        async with self.session_factory() as session:
-            async with session.begin():
-                await self.pg_repo.reset_stale_events(session)
 
     async def _sleep(self):
         await asyncio.sleep(1)

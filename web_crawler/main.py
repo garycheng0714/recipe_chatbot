@@ -5,6 +5,7 @@ from app import database
 from app.client import es_client
 from app.repositories import PgRepository
 from app.services.ingestion import get_ingestion_service
+from app.worker.stale_event_reset_worker import StaleEventResetWorker
 from app.worker.storage import StorageWorker
 from app.worker.url_producer import UrlProducer
 from web_crawler.consumer.url_consumer import UrlConsumer
@@ -31,10 +32,12 @@ async def main():
     setup_logging(CrawlerSettings())
     limiter = AsyncLimiter(2, 1)  # 共用的 limiter
     producer = UrlProducer(PgRepository(), url_queue, stop_event)
+    stale_event_worker = StaleEventResetWorker(PgRepository(), stop_event)
     storage_worker = StorageWorker(get_ingestion_service(), result_queue)
 
     async with HttpxRequester() as requester:
         producer_task = asyncio.create_task(producer.run())
+        reset_task = asyncio.create_task(stale_event_worker.run())
         consumer_tasks = [
             asyncio.create_task(
                 UrlConsumer(
@@ -75,6 +78,11 @@ async def main():
                 logger.error(f"超時！result_queue 大小: {result_queue.qsize()}")
             finally:
                 storage_task.cancel()
+
+            # stop_event.set() 之後 reset_task 會自然結束
+            # 加個 await 確認它真的結束了
+            stop_event.set()
+            await asyncio.gather(reset_task, return_exceptions=True)
 
             for task in consumer_tasks:
                 task.cancel()

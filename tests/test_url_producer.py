@@ -39,7 +39,6 @@ async def test_producer_put_pending_url_to_queue(mock_repo, queue, stop_event, m
     ])
 
     producer = UrlProducer(mock_repo, queue, stop_event, mock_session_factory)
-    producer.reset_stale_events = AsyncMock()
     producer._sleep = AsyncMock()
 
     await producer.run()
@@ -52,7 +51,6 @@ async def test_producer_put_pending_url_to_queue(mock_repo, queue, stop_event, m
     """
     assert queue.qsize() == 2
     assert mock_repo.get_next_url_batch.call_count == 2
-    assert producer.reset_stale_events.call_count == 1
     mock_repo.get_next_url_batch.assert_called_with(ANY, batch_size=50)
 
 
@@ -61,7 +59,6 @@ async def test_db_no_data_queue_is_empty(mock_repo, queue, stop_event, mock_sess
     mock_repo.get_next_url_batch = AsyncMock(return_value=[])
 
     producer = UrlProducer(mock_repo, queue, stop_event, mock_session_factory)
-    producer.reset_stale_events = AsyncMock()
     producer._sleep = AsyncMock()
 
     await producer.run()
@@ -78,7 +75,6 @@ async def test_producer_get_the_fatal_exception_then_raise(mock_repo, queue, sto
     )
 
     producer = UrlProducer(mock_repo, queue, stop_event, mock_session_factory)
-    producer.reset_stale_events = AsyncMock()
     producer._sleep = AsyncMock()
 
     with pytest.raises(ProgrammingError):
@@ -94,7 +90,6 @@ async def test_producer_raises_after_retry_exhausted(mock_repo, queue, stop_even
     )
 
     producer = UrlProducer(mock_repo, queue, stop_event, mock_session_factory)
-    producer.reset_stale_events = AsyncMock()
     producer._sleep = AsyncMock()
 
     with patch("asyncio.sleep", new_callable=AsyncMock):
@@ -114,7 +109,6 @@ async def test_producer_retry_twice_then_get_the_data(mock_repo, queue, stop_eve
     ])
 
     producer = UrlProducer(mock_repo, queue, stop_event, mock_session_factory)
-    producer.reset_stale_events = AsyncMock()
     producer._sleep = AsyncMock()
 
     with patch("asyncio.sleep", new_callable=AsyncMock):
@@ -137,7 +131,6 @@ async def test_producer_receive_stop_event_when_putting_queue(mock_repo, mock_se
     ])
 
     producer = UrlProducer(mock_repo, queue, stop_event, mock_session_factory)
-    producer.reset_stale_events = AsyncMock()
     producer._sleep = AsyncMock()
 
     # 3. 啟動 Producer
@@ -164,6 +157,10 @@ async def test_producer_receive_stop_event_when_putting_queue(mock_repo, mock_se
     assert not queue.empty()
 
 
+"""
+create_task 只有在你需要「同時做兩件事」的時候才需要
+例如測試 stop_event 那個案例，因為你需要一邊跑 producer 一邊在外面觸發 stop_event。
+"""
 @pytest.mark.asyncio
 async def test_producer_stop_when_receive_stop_event(mock_repo, queue, mock_session_factory):
     stop_event = asyncio.Event()
@@ -171,7 +168,6 @@ async def test_producer_stop_when_receive_stop_event(mock_repo, queue, mock_sess
     mock_repo.get_next_url_batch = AsyncMock(return_value=["url1", "url2", "url3"])
 
     producer = UrlProducer(mock_repo, queue, stop_event, mock_session_factory)
-    producer.reset_stale_events = AsyncMock()
 
     task = asyncio.create_task(producer.run())
 
