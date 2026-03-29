@@ -20,7 +20,7 @@ tenacity 的 @retry 裝飾在 class method 上時，retry 狀態是跨 instance 
 @retry(
     retry=retry_if_exception_type((OperationalError, DisconnectionError)),
     stop=stop_after_attempt(3),
-    wait=wait_exponential(multiplier=1, min=4, max=10),
+    wait=wait_exponential(multiplier=0.5, max=5),
     reraise=True,
 )
 async def _ingest_batch(service: IngestionService, batch: List[CrawlResult]):
@@ -52,7 +52,9 @@ async def _ingest_single_result(service: IngestionService, result: CrawlResult):
             else:
                 await service.update_crawl_status(session, result)
 
-
+"""
+是否也要用 poison pill
+"""
 class StorageWorker:
     def __init__(self, service: IngestionService, queue: asyncio.Queue[CrawlResult]):
         self.service = service
