@@ -5,12 +5,14 @@ from aiolimiter import AsyncLimiter
 
 from web_crawler.exceptions import RequestFatalError, RequestBlockedError, ContentParsingError, RequestRetryableError
 from web_crawler.detail_crawler import TastyNoteDetailCrawler
-from web_crawler.service.crawler_app import STOP_SIGNAL
 from web_crawler.requester import HttpxRequester
 from web_crawler.schema.crawl_result_schema import CrawlResult
 from web_crawler.schema.tasty_note_detail_schema import TastyNoteRecipe
 from loguru import logger
 
+class StopSignal: pass
+
+STOP_SIGNAL = StopSignal()
 
 class UrlConsumer:
     def __init__(

@@ -4,11 +4,8 @@ from loguru import logger
 from app.worker.stale_event_reset_worker import StaleEventResetWorker
 from app.worker.storage import StorageWorker
 from app.worker.url_producer import UrlProducer
-from web_crawler.consumer.url_consumer import UrlConsumer
+from web_crawler.consumer.url_consumer import UrlConsumer, STOP_SIGNAL
 
-class StopSignal: pass
-
-STOP_SIGNAL = StopSignal()
 
 class CrawlerApp:
     def __init__(

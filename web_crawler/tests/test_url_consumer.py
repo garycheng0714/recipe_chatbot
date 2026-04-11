@@ -4,7 +4,7 @@ from unittest.mock import MagicMock, AsyncMock
 import httpx
 import pytest
 
-from web_crawler.consumer.url_consumer import UrlConsumer
+from web_crawler.consumer.url_consumer import UrlConsumer, STOP_SIGNAL
 from web_crawler.exceptions import RequestFatalError, RequestBlockedError, RequestRetryableError, ContentParsingError
 from web_crawler.schema.tasty_note_detail_schema import TastyNoteRecipe
 
@@ -28,7 +28,7 @@ def recipe():
 @pytest.mark.asyncio
 async def test_consumer_stop_when_no_task_in_queue(queue, result_queue, recipe):
     await queue.put(recipe.source_url)
-    await queue.put(None)
+    await queue.put(STOP_SIGNAL)
 
     consumer = UrlConsumer(
         detail_crawler=MagicMock(),
@@ -57,7 +57,7 @@ async def test_consumer_stop_when_no_task_in_queue(queue, result_queue, recipe):
 async def test_consumer_handle_multiple_results(queue, result_queue, recipe):
     await queue.put("https://example.com")
     await queue.put("https://example2.com")
-    await queue.put(None)
+    await queue.put(STOP_SIGNAL)
 
     consumer = UrlConsumer(
         detail_crawler=MagicMock(),
@@ -93,7 +93,7 @@ async def test_consumer_handle_multiple_results(queue, result_queue, recipe):
 ])
 async def test_consumer_raises_fatal_exception(queue, result_queue, recipe, exception, status):
     await queue.put(recipe.source_url)
-    await queue.put(None)
+    await queue.put(STOP_SIGNAL)
 
     consumer = UrlConsumer(
         detail_crawler=MagicMock(),
