@@ -9,11 +9,11 @@ async def collect_batch(
     timeout: float = 5.0
 ) -> List[T]:
     """累積一批資料，滿了或 timeout 就回傳"""
-    batch = []
 
-    # 1. 阻塞等待第一筆資料，避免 Busy Loop
-    first_result = await queue.get()
-    batch.append(first_result)
+    if timeout <= 0.0:
+        raise ValueError(f"timeout 必須大於 0，收到 {timeout}")
+
+    batch = []
 
     # 2. 啟動計時器累積後續資料
     loop = asyncio.get_running_loop()
