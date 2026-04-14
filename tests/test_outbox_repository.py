@@ -1,6 +1,8 @@
 import asyncio
 import pytest
 from datetime import datetime, timedelta, UTC
+
+import pytest_asyncio
 from sqlalchemy import select, func, delete, update
 from sqlalchemy.ext.asyncio import async_sessionmaker
 
@@ -29,7 +31,6 @@ def sample_recipe():
 # ──────────────────────────────────────────
 # insert_event
 # ──────────────────────────────────────────
-
 
 async def test_insert_event_creates_pending_event(repo, session, sample_recipe):
     await repo.insert_event(session, sample_recipe)
@@ -87,7 +88,7 @@ async def test_claim_event_returns_none_if_already_processing(repo, session, sam
     assert second is None  # 搶不到
 
 
-@pytest.fixture
+@pytest_asyncio.fixture(loop_scope="session")
 async def outbox_cleaner(engine):
     # yield 之前：setup（這裡什麼都沒做）
     yield

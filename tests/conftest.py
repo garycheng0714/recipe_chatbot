@@ -61,7 +61,7 @@ async def engine(postgres_container):
     yield engine
     await engine.dispose()
 
-@pytest_asyncio.fixture
+@pytest_asyncio.fixture(loop_scope="session")
 async def session(engine) -> AsyncGenerator:
     # 每個測試用獨立的 transaction，測完 rollback，保持隔離
     async with engine.connect() as conn:
