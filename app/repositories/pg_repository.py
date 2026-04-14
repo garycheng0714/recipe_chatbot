@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import List
 
-from sqlalchemy import select, text, update, bindparam
+from sqlalchemy import select, update, bindparam, inspect
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio.session import AsyncSession
 from sqlalchemy.orm import selectinload, joinedload
@@ -87,33 +87,59 @@ class PgRepository:
 
     #TODO: 沒有 idempotency 保護，如果 worker crash 可能會 update_recipe twice，建議 ON CONFLICT UPDATE
     async def update_recipe(self, session: AsyncSession, recipe: TastyNoteRecipe):
+        model = PgConverter.to_parent_chunk(recipe)
+        model.status = "completed"
+
+        model_dict = {
+            c.key: getattr(model, c.key)
+            for c in inspect(model).mapper.column_attrs
+        }
+
         await session.execute(
             update(PgRecipeModel)
-            .where(PgRecipeModel.source_url == recipe.source_url)
+            .where(PgRecipeModel.source_url == model.source_url)
             .values(
-                **recipe.model_dump(),
-                status="completed"
+                **model_dict
             )
         )
 
     async def update_bulk_recipe(self, session: AsyncSession, recipes: List[TastyNoteRecipe]):
         # bulk update 最有效率的方式是用 VALUES 子查詢
         # 從 model schema 取欄位，穩定不受資料影響
-        all_fields = TastyNoteRecipe.model_fields.keys()
-        updated_fields = [f for f in all_fields if f != "source_url"]
+        # all_fields = TastyNoteRecipe.model_fields.keys()
+        # updated_fields = [f for f in all_fields if f != "source_url"]
+
+        if not recipes:
+            return
+
+        models = [PgConverter.to_parent_chunk(recipe) for recipe in recipes]
+
+        for model in models:
+            model.status = "completed"
+
+        model_dicts = [
+            {
+                c.key: getattr(model, c.key)
+                for c in inspect(model).mapper.column_attrs
+            }
+            for model in models
+        ]
+
+        updated_fields = [key for key in model_dicts[0].keys() if key != "source_url"]
+
 
         stmt = (
             update(PgRecipeModel)
             .where(PgRecipeModel.source_url == bindparam("b_source_url"))
             .values(
                 **{f: bindparam(f"b_{f}") for f in updated_fields},
-                status="completed"
             )
+            .execution_options(dml_strategy="core_only")  # 👈 關鍵
         )
 
         rows = [
-            {f"b_{f}": getattr(recipe, f, None) for f in all_fields}
-            for recipe in recipes
+            {f"b_{k}": v for k, v in model_dict.items()}
+            for model_dict in model_dicts
         ]
 
         await session.execute(stmt, rows)
