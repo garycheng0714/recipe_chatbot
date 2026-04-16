@@ -27,6 +27,16 @@ def sample_recipe():
         description="Good tasty"
     )
 
+@pytest.fixture
+def sample_recipe_2():
+    return TastyNoteRecipe(
+        id="recipe-456",
+        name="apple",
+        source_url="https://example2.com",
+        category="hk",
+        description="Good tasty"
+    )
+
 
 # ──────────────────────────────────────────
 # insert_event
@@ -44,6 +54,27 @@ async def test_insert_event_creates_pending_event(repo, session, sample_recipe):
     row = result.scalar_one()
     assert row is not None
     assert row.status == "pending"
+
+
+async def test_insert_bulk_event(repo, session, sample_recipe, sample_recipe_2):
+    recipes = [sample_recipe, sample_recipe_2]
+    await repo.insert_bulk_event(session, recipes)
+    await session.flush()
+
+    recipe_ids = [recipe.id for recipe in recipes]
+
+    result = await session.execute(
+        select(OutboxModel)
+        .where(OutboxModel.aggregate_id.in_(recipe_ids))
+    )
+
+    rows = {row.aggregate_id: row for row in result.scalars().all()}
+
+    assert len(rows) == len(recipes)
+    for recipe in recipes:
+        row = rows[recipe.id]
+        assert row.status == "pending"
+        assert row.payload == recipe.model_dump(exclude_none=True)
 
 
 async def test_insert_event_idempotent(repo, session, sample_recipe):
