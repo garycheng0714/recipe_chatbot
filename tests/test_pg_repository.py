@@ -146,38 +146,28 @@ async def test_update_bulk_crawl_status(session, repo, recipe_url, recipe_url2):
     await repo.insert_pending_url(session, recipe_url2)
     await session.flush()
 
-    update_data = CrawlResult(
-        source_url=recipe_url.source_url,
-        status="failed",
-        error_msg="error"
-    )
+    craw_results = [
+        CrawlResult(source_url=recipe_url.source_url, status="failed", error_msg="error"),
+        CrawlResult(source_url=recipe_url2.source_url, status="retry", error_msg="timeout")
+    ]
 
-    update_data_2 = CrawlResult(
-        source_url=recipe_url2.source_url,
-        status="retry",
-        error_msg="timeout"
-    )
+    urls = [r.source_url for r in craw_results]
 
-    await repo.update_bulk_crawl_status(session, [update_data, update_data_2])
+    await repo.update_bulk_crawl_status(session, craw_results)
     await session.flush()
 
     result = await session.execute(
         select(PgRecipeModel)
-        .where(PgRecipeModel.source_url == recipe_url.source_url)
+        .where(PgRecipeModel.source_url.in_(urls))
     )
 
-    row = result.scalar_one()
-    assert row.status == "failed"
-    assert row.last_error == "error"
+    rows = {row.source_url: row for row in result.scalars().all()}
 
-    result = await session.execute(
-        select(PgRecipeModel)
-        .where(PgRecipeModel.source_url == recipe_url2.source_url)
-    )
-
-    row = result.scalar_one()
-    assert row.status == "retry"
-    assert row.last_error == "timeout"
+    assert len(rows) == len(craw_results)
+    for r in craw_results:
+        row = rows[r.source_url]
+        assert row.status == r.status
+        assert row.last_error == r.error_msg
 
 
 async def test_update_crawler_status_with_completed_status(session, repo, recipe_url):
@@ -284,35 +274,23 @@ async def test_update_bulk_recipe(session, recipe_url, recipe_url2, recipe_data,
     await repo.insert_pending_url(session, recipe_url2)
     await session.flush()
 
-    await repo.update_bulk_recipe(session, [recipe_data, recipe_data2])
+    recipes = [recipe_data, recipe_data2]
+
+    await repo.update_bulk_recipe(session, recipes)
     await session.flush()
-    session.expire_all()
 
-    result1 = await session.execute(
-        select(PgRecipeModel)
-        .where(
-            PgRecipeModel.source_url == recipe_url.source_url
-        )
+    result = await session.execute(
+        select(PgRecipeModel).where(PgRecipeModel.source_url.in_([r.source_url for r in recipes]))
     )
 
-    row = result1.scalar_one()
+    rows = {row.source_url: row for row in result.scalars().all()}
+    assert len(rows) == len(recipes)
+    for r in recipes:
+        row = rows[r.source_url]
+        assert row.status == "completed"
+        assert row.id == r.id
+        assert row.name == r.name
 
-    assert row.status == "completed"
-    assert row.id == recipe_data.id
-    assert row.name == recipe_data.name
-
-    result2 = await session.execute(
-        select(PgRecipeModel)
-        .where(
-            PgRecipeModel.source_url == recipe_url2.source_url
-        )
-    )
-
-    row = result2.scalar_one()
-
-    assert row.status == "completed"
-    assert row.id == recipe_data2.id
-    assert row.name == recipe_data2.name
 
 async def test_add_bulk_recipe_chunk_have_overview_chunk(session, recipe_url, recipe_url2, recipe_data, recipe_data2, repo):
     await repo.insert_pending_url(session, recipe_url)
