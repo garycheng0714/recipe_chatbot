@@ -38,13 +38,14 @@ class PgRepository:
                 status=bindparam('b_status'),
                 last_error=bindparam('b_last_error'),
             )
+            .execution_options(dml_strategy="core_only")
         )
 
         rows = [
             {
                 'b_source_url': r.source_url,
                 'b_status': r.status,
-                'b_last_error': r.last_error,
+                'b_last_error': r.error_msg,
             }
             for r in results
         ]

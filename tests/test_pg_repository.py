@@ -141,6 +141,44 @@ async def test_update_crawler_status(session, repo, recipe_url):
     assert row.status == "failed"
     assert row.last_error == "error"
 
+async def test_update_bulk_crawl_status(session, repo, recipe_url, recipe_url2):
+    await repo.insert_pending_url(session, recipe_url)
+    await repo.insert_pending_url(session, recipe_url2)
+    await session.flush()
+
+    update_data = CrawlResult(
+        source_url=recipe_url.source_url,
+        status="failed",
+        error_msg="error"
+    )
+
+    update_data_2 = CrawlResult(
+        source_url=recipe_url2.source_url,
+        status="retry",
+        error_msg="timeout"
+    )
+
+    await repo.update_bulk_crawl_status(session, [update_data, update_data_2])
+    await session.flush()
+
+    result = await session.execute(
+        select(PgRecipeModel)
+        .where(PgRecipeModel.source_url == recipe_url.source_url)
+    )
+
+    row = result.scalar_one()
+    assert row.status == "failed"
+    assert row.last_error == "error"
+
+    result = await session.execute(
+        select(PgRecipeModel)
+        .where(PgRecipeModel.source_url == recipe_url2.source_url)
+    )
+
+    row = result.scalar_one()
+    assert row.status == "retry"
+    assert row.last_error == "timeout"
+
 
 async def test_update_crawler_status_with_completed_status(session, repo, recipe_url):
     await test_update_crawler_status(session, repo, recipe_url)
@@ -275,3 +313,43 @@ async def test_update_bulk_recipe(session, recipe_url, recipe_url2, recipe_data,
     assert row.status == "completed"
     assert row.id == recipe_data2.id
     assert row.name == recipe_data2.name
+
+async def test_add_bulk_recipe_chunk_have_overview_chunk(session, recipe_url, recipe_url2, recipe_data, recipe_data2, repo):
+    await repo.insert_pending_url(session, recipe_url)
+    await repo.insert_pending_url(session, recipe_url2)
+    await session.flush()
+
+    await repo.add_bulk_recipe_chunk(session, [recipe_data, recipe_data2])
+
+    overview_result = await session.execute(
+        select(PgRecipeChunkModel)
+        .where(
+            PgRecipeChunkModel.parent_id == recipe_url.id,
+            PgRecipeChunkModel.chunk_type == "overview",
+        )
+    )
+
+    overview_chunk = overview_result.scalar_one()
+    assert overview_chunk.id == f"{recipe_data.id}_overview"
+    assert overview_chunk.parent_id == recipe_data.id
+    assert overview_chunk.content == recipe_data.description
+
+async def test_add_bulk_recipe_chunk_have_instrument_chunk(session, recipe_url, recipe_url2, recipe_data, recipe_data2, repo):
+    await repo.insert_pending_url(session, recipe_url)
+    await repo.insert_pending_url(session, recipe_url2)
+    await session.flush()
+
+    await repo.add_bulk_recipe_chunk(session, [recipe_data, recipe_data2])
+
+    instruction_result = await session.execute(
+        select(PgRecipeChunkModel)
+        .where(
+            PgRecipeChunkModel.parent_id == recipe_url2.id,
+            PgRecipeChunkModel.chunk_type == "instruction",
+        )
+    )
+
+    instruction_chunk = instruction_result.scalar_one()
+    assert instruction_chunk.id == f"{recipe_data2.id}_instruction"
+    assert instruction_chunk.parent_id == recipe_data2.id
+    assert instruction_chunk.content == "".join([s.step for s in recipe_data2.steps])
