@@ -40,7 +40,7 @@ class Hit(BaseModel):
 
 class Hits(BaseModel):
     total: Total
-    max_score: float
+    max_score: float | None = None
     hits: list[Hit]
 
 

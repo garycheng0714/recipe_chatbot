@@ -34,7 +34,7 @@ def qdrant():
 
 
 @pytest.fixture(scope="session")
-def elasticsearch():
+def es_container():
     with ElasticSearchContainer("elasticsearch:9.1.4") as es:
         yield es
 

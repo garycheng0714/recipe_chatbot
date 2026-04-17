@@ -1,7 +1,7 @@
 from typing import Any
 
 from elasticsearch import AsyncElasticsearch
-from app.infrastructure.elasticsearch.config import RECIPE_INDEX
+from app.infrastructure.elasticsearch.config import get_index_name
 from app.services.converter import EsConverter
 from web_crawler.schema.tasty_note_detail_schema import TastyNoteRecipe
 
@@ -9,7 +9,7 @@ from web_crawler.schema.tasty_note_detail_schema import TastyNoteRecipe
 class ElasticSearchRepository:
     def __init__(self, es_client: AsyncElasticsearch):
         self.client = es_client
-        self.index_name = RECIPE_INDEX["name"]
+        self.index_name = get_index_name()
 
     async def index_chunk(self, chunk: dict[str, Any]):
         await self.client.index(index=self.index_name, document=chunk)
@@ -34,7 +34,7 @@ class ElasticSearchRepository:
                         {
                             "multi_match": {
                                 "query": query_text,
-                                "fields": ["name^5", "ingredients^3", "content"]
+                                "fields": ["name^5", "ingredients^3", "content", "tags"]
                             }
                         }
                     ],
