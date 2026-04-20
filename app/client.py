@@ -3,6 +3,7 @@ from qdrant_client import AsyncQdrantClient
 from typing import AsyncGenerator
 from FlagEmbedding import BGEM3FlagModel
 from app.database import AsyncSessionLocal, ES_URL, QDRANT_URL
+from app.embedder.embedder import BGEEmbedder
 from app.repositories import (
     PgRepository,
     ElasticSearchRepository
@@ -48,6 +49,7 @@ async def get_es():
 
 # --- 3. Qdrant 設定 ---
 qdr_client = AsyncQdrantClient(url=QDRANT_URL)
+embedder = BGEEmbedder()
 
 # 載入 BGE-M3 模型
 model = BGEM3FlagModel('BAAI/bge-m3',use_fp16=False)
@@ -55,4 +57,4 @@ model = BGEM3FlagModel('BAAI/bge-m3',use_fp16=False)
 # reranker = FlagReranker('BAAI/bge-reranker-v2-m3', use_fp16=False)
 
 async def get_qdrant():
-    return QdrantRepository(qdr_client, model)
+    return QdrantRepository(qdr_client, embedder)

@@ -1,4 +1,4 @@
-from app.models.qdr_model import (
+from app.domain.models.qdr_model import (
     RecipeMainChunk,
     RecipeChunk,
     OverviewRecipeChunk,

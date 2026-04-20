@@ -1,5 +1,5 @@
-from app.models import PgRecipeModel, PgRecipeChunkModel
-from app.models.qdr_model import OverviewRecipeChunk, InstructionRecipeChunk
+from app.domain.models import PgRecipeModel, PgRecipeChunkModel
+from app.domain.models.qdr_model import OverviewRecipeChunk, InstructionRecipeChunk
 from web_crawler.schema.tasty_note_detail_schema import TastyNoteRecipe
 
 

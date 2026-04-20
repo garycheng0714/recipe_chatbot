@@ -6,7 +6,7 @@ from sqlalchemy import update, select
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio.session import AsyncSession
 
-from app.models.outbox_model import OutboxModel
+from app.domain.models import OutboxModel
 from web_crawler.schema.tasty_note_detail_schema import TastyNoteRecipe
 from enum import auto, Enum
 

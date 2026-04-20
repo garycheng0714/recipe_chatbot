@@ -3,7 +3,7 @@ import pytest_asyncio
 from elasticsearch import AsyncElasticsearch
 
 from app.infrastructure.elasticsearch.config import get_index_name, get_body_config, AnalyzerMode
-from app.models import EsPointsModel
+from app.domain.models import EsPointsModel
 from app.repositories import ElasticSearchRepository
 from web_crawler.schema.tasty_note_detail_schema import TastyNoteRecipe, Ingredient, Step
 

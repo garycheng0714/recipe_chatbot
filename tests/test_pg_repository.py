@@ -3,10 +3,10 @@ import datetime
 import pytest
 from sqlalchemy import select, func
 
-from app.models import PgRecipeModel, PgRecipeChunkModel
+from app.domain.models import PgRecipeModel, PgRecipeChunkModel
 from app.repositories import PgRepository
 from web_crawler.schema.crawl_result_schema import CrawlResult
-from web_crawler.schema.tasty_note_detail_schema import TastyNoteRecipe, Ingredient, Step
+from web_crawler.schema.tasty_note_detail_schema import TastyNoteRecipe, Step
 
 pytestmark = pytest.mark.asyncio(loop_scope="session")
 

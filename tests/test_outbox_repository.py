@@ -6,8 +6,8 @@ import pytest_asyncio
 from sqlalchemy import select, func, delete, update
 from sqlalchemy.ext.asyncio import async_sessionmaker
 
-from app.models.outbox_model import OutboxModel
-from app.repositories.outbox_repository import OutboxRepository, EventStatus
+from app.domain.models import OutboxModel
+from app.repositories.outbox_repository import OutboxRepository
 from web_crawler.schema.tasty_note_detail_schema import TastyNoteRecipe  # 換成你實際的 model
 from sqlalchemy.ext.asyncio.session import AsyncSession
 

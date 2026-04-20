@@ -6,7 +6,7 @@ from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio.session import AsyncSession
 from sqlalchemy.orm import selectinload, joinedload
 
-from app.models.pg_model import PgRecipeModel, PgRecipeChunkModel
+from app.domain.models import PgRecipeModel, PgRecipeChunkModel
 from app.schema import RRFResult
 from app.services.converter import PgConverter
 from web_crawler.schema.crawl_result_schema import CrawlResult

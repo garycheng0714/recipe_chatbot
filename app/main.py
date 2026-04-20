@@ -18,7 +18,7 @@ from app.client import (
     model
 )
 
-from app.models import (
+from app.domain.models import (
     PgRecipeChunkModel,
     EsPointsModel
 )

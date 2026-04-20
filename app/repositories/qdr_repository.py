@@ -2,78 +2,30 @@ from qdrant_client import AsyncQdrantClient
 from FlagEmbedding import BGEM3FlagModel
 from qdrant_client.http.models import PointStruct, Filter, FieldCondition, MatchValue
 
-from app.models.qdr_model import RecipeChunk, RecipeMainChunk
+from app.domain.chunks import BaseChunk
+from app.embedder.embedder import BGEEmbedder
 from app.infrastructure.qdrant.config import qdrant_settings
 import uuid
 
-from app.services.converter import QdrantConverter
-from web_crawler.schema.tasty_note_detail_schema import TastyNoteRecipe
-
 
 class QdrantRepository:
-    def __init__(self, client: AsyncQdrantClient, model: BGEM3FlagModel):
+    def __init__(self, client: AsyncQdrantClient, embedder: BGEEmbedder):
         self.client = client
-        self.model = model
+        self.embedder = embedder
 
-    def embed(self, text: str) -> list[float]:
-        output = self.model.encode(
-            text.strip(),
-            return_dense=True
-        )
-
-        return output["dense_vecs"].tolist()
-
-    async def upsert_recipe_chunk(self, model: RecipeChunk):
-        point_id = str(uuid.uuid5(uuid.NAMESPACE_DNS, model.id))
-
+    async def upsert_recipe(self, chunk: BaseChunk):
         await self.client.upsert(
             collection_name=qdrant_settings.recipe_collection_name,
             points=[
                 PointStruct(
-                    id=point_id,
+                    id=str(uuid.uuid5(uuid.NAMESPACE_DNS, chunk.get_id())),
                     vector={
-                        qdrant_settings.vectors_name: self.embed(model.content),
+                        qdrant_settings.vectors_name: chunk.to_vector(self.embedder),
                     },
-                    payload={
-                        "id": model.id,
-                        "parent_id": model.parent_id,
-                        "chunk_type": model.chunk_type,
-                        "content": model.content,
-                    }
+                    payload=chunk.get_payload().model_dump()
                 )
             ]
         )
-
-    async def upsert_recipe_main_chunk(self, model: RecipeMainChunk):
-        point_id = str(uuid.uuid5(uuid.NAMESPACE_DNS, model.id))
-        semantics = model.to_semantics()
-
-        await self.client.upsert(
-            collection_name=qdrant_settings.recipe_collection_name,
-            points=[
-                PointStruct(
-                    id=point_id,
-                    vector={
-                        qdrant_settings.vectors_name: self.embed(semantics),
-                    },
-                    payload={
-                        "id": model.id,
-                        "name": model.name,
-                        "quantity": model.quantity,
-                        "ingredients": model.ingredients,
-                        "category": model.category,
-                        "tags": model.tags
-                    }
-                )
-            ]
-        )
-
-    async def upsert_recipe(self, recipe: TastyNoteRecipe):
-        parent = QdrantConverter.to_parent_chunk(recipe)
-        children = QdrantConverter.to_child_chunks(recipe)
-        await self.upsert_recipe_main_chunk(parent)
-        for chunk in children:
-            await self.upsert_recipe_chunk(chunk)
 
     async def upsert_points(self, points: list[PointStruct], collection_name: str):
         await self.client.upsert(
@@ -88,10 +40,8 @@ class QdrantRepository:
         return await self.query_points(query_text, k, qdrant_settings.intent_collection_name)
 
     async def query_points(self, query_text, k: int, collection_name: str):
-        output = self.model.encode(query_text, return_dense=True)
-
         # 1. 處理 Dense 向量 (轉成普通 list)
-        query_dense = output['dense_vecs'].tolist()
+        query_dense = self.embedder.embed(query_text)
 
         # 同樣取得 query 的 dense 與 sparse 向量
         return await self.client.query_points(
@@ -102,9 +52,9 @@ class QdrantRepository:
             # query=models.FusionQuery(fusion=models.Fusion.RRF),  # 使用 RRF 融合
         )
 
-    def delete(self):
+    async def delete(self):
         for value in ["overview", "instruction"]:
-            self.client.delete(
+            await self.client.delete(
                 collection_name=qdrant_settings.recipe_collection_name,
                 points_selector=Filter(
                     must=[FieldCondition(
