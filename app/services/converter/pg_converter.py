@@ -6,33 +6,34 @@ from web_crawler.schema.tasty_note_detail_schema import TastyNoteRecipe
 class PgConverter:
 
     @staticmethod
-    def to_parent_chunk(model: TastyNoteRecipe) -> PgRecipeModel:
+    def to_main_chunk(recipe: TastyNoteRecipe) -> PgRecipeModel:
         return PgRecipeModel(
-            id=model.id,
-            name=model.name,
-            source_url=model.source_url,
-            quantity=model.quantity,
-            ingredients=[ingredient.model_dump() for ingredient in model.ingredients],
-            seasoning=[seasoning.model_dump() for seasoning in model.seasoning] if model.seasoning else None,
-            category=model.category,
-            tags=model.tags
+            id=recipe.id,
+            name=recipe.name,
+            source_url=recipe.source_url,
+            quantity=recipe.quantity,
+            ingredients=[ingredient.model_dump() for ingredient in recipe.ingredients],
+            seasoning=[seasoning.model_dump() for seasoning in recipe.seasoning] if recipe.seasoning else None,
+            category=recipe.category,
+            tags=recipe.tags
         )
 
     @staticmethod
-    def to_child_chunks(model: TastyNoteRecipe) -> list[PgRecipeChunkModel]:
+    def to_overview_chunk(recipe: TastyNoteRecipe) -> PgRecipeChunkModel:
         overview_chunk = OverviewRecipeChunk(
-            id=f"{model.id}_overview",
-            parent_id=model.id,
-            content=model.description
+            id=f"{recipe.id}_overview",
+            parent_id=recipe.id,
+            content=recipe.description
         )
 
+        return PgRecipeChunkModel(**overview_chunk.model_dump())
+
+    @staticmethod
+    def to_instruction_chunk(recipe: TastyNoteRecipe) -> PgRecipeChunkModel:
         instruction_chunk = InstructionRecipeChunk(
-            id=f"{model.id}_instruction",
-            parent_id=model.id,
-            content="".join([s.step for s in model.steps])
+            id=f"{recipe.id}_instruction",
+            parent_id=recipe.id,
+            content="".join([s.step for s in recipe.steps])
         )
 
-        return [
-            PgRecipeChunkModel(**overview_chunk.model_dump()),
-            PgRecipeChunkModel(**instruction_chunk.model_dump())
-        ]
+        return PgRecipeChunkModel(**instruction_chunk.model_dump())

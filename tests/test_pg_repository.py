@@ -215,7 +215,7 @@ async def test_update_recipe_content(session, recipe_url, recipe_data, repo):
     await repo.insert_pending_url(session, recipe_url)
     await session.flush()
 
-    model = PgConverter.to_parent_chunk(recipe_data)
+    model = PgConverter.to_main_chunk(recipe_data)
 
     await repo.update_recipe(session, model)
     await session.flush()
@@ -258,7 +258,10 @@ async def test_add_recipe_child_chunks(session, recipe_url, recipe_data, repo):
     await repo.insert_pending_url(session, recipe_url)
     await session.flush()
 
-    chunks = PgConverter.to_child_chunks(recipe_data)
+    chunks = [
+        PgConverter.to_overview_chunk(recipe_data),
+        PgConverter.to_instruction_chunk(recipe_data)
+    ]
 
     await repo.add_recipe_chunk(session, chunks)
     await session.flush()
@@ -272,11 +275,11 @@ async def test_add_bulk_recipe_chunk_have_overview_chunk(session, recipe_url, re
     await session.flush()
 
     data_list = [recipe_data, recipe_data2]
-    models = [
-        chunk
-        for data in data_list
-        for chunk in PgConverter.to_child_chunks(data)
-    ]
+
+    models = []
+    for data in data_list:
+        models.append(PgConverter.to_overview_chunk(data))
+        models.append(PgConverter.to_instruction_chunk(data))
 
     await repo.add_bulk_recipe_chunk(session, models)
 
@@ -291,7 +294,7 @@ async def test_update_bulk_recipe(session, recipe_url, recipe_url2, recipe_data,
 
     recipes = [recipe_data, recipe_data2]
     models = [
-        PgConverter.to_parent_chunk(recipe)
+        PgConverter.to_main_chunk(recipe)
         for recipe in recipes
     ]
 

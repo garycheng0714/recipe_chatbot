@@ -16,10 +16,13 @@ class IngestionService:
     async def ingest_crawl_completed_data(self, session: AsyncSession, crawl_result: CrawlResult):
         recipe = crawl_result.data
 
-        chunk = PgConverter.to_parent_chunk(recipe)
+        chunk = PgConverter.to_main_chunk(recipe)
         await self.pg_repo.update_recipe(session, chunk)
 
-        chunks = PgConverter.to_child_chunks(recipe)
+        chunks = [
+            PgConverter.to_overview_chunk(recipe),
+            PgConverter.to_instruction_chunk(recipe)
+        ]
         await self.pg_repo.add_recipe_chunk(session, chunks)
 
         await self.outbox_repo.insert_event(session, recipe)
@@ -28,16 +31,15 @@ class IngestionService:
         recipes = [r.data for r in crawl_results]
 
         models = [
-            PgConverter.to_parent_chunk(recipe)
+            PgConverter.to_main_chunk(recipe)
             for recipe in recipes
         ]
         await self.pg_repo.update_bulk_recipe(session, models)
 
-        child_models = [
-            model
-            for recipe in recipes
-            for model in PgConverter.to_child_chunks(recipe)
-        ]
+        child_models = []
+        for recipe in recipes:
+            models.append(PgConverter.to_overview_chunk(recipe))
+            models.append(PgConverter.to_instruction_chunk(recipe))
 
         await self.pg_repo.add_bulk_recipe_chunk(session, child_models)
         await self.outbox_repo.insert_bulk_event(session, recipes)
