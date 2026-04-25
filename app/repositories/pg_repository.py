@@ -8,7 +8,6 @@ from sqlalchemy.orm import selectinload, joinedload
 
 from app.domain.models import PgRecipeModel, PgRecipeChunkModel
 from app.schema import RRFResult
-from app.services.converter import PgConverter
 from web_crawler.schema.crawl_result_schema import CrawlResult
 from web_crawler.schema.tasty_note_detail_schema import TastyNoteRecipe
 
@@ -87,8 +86,7 @@ class PgRepository:
         return result.scalars().all()
 
     #TODO: 沒有 idempotency 保護，如果 worker crash 可能會 update_recipe twice，建議 ON CONFLICT UPDATE
-    async def update_recipe(self, session: AsyncSession, recipe: TastyNoteRecipe):
-        model = PgConverter.to_parent_chunk(recipe)
+    async def update_recipe(self, session: AsyncSession, model: PgRecipeModel):
         model.status = "completed"
 
         model_dict = {
@@ -104,16 +102,14 @@ class PgRepository:
             )
         )
 
-    async def update_bulk_recipe(self, session: AsyncSession, recipes: List[TastyNoteRecipe]):
+    async def update_bulk_recipe(self, session: AsyncSession, models: List[PgRecipeModel]):
         # bulk update 最有效率的方式是用 VALUES 子查詢
         # 從 model schema 取欄位，穩定不受資料影響
         # all_fields = TastyNoteRecipe.model_fields.keys()
         # updated_fields = [f for f in all_fields if f != "source_url"]
 
-        if not recipes:
+        if not models:
             return
-
-        models = [PgConverter.to_parent_chunk(recipe) for recipe in recipes]
 
         for model in models:
             model.status = "completed"
@@ -147,22 +143,19 @@ class PgRepository:
 
 
     #TODO: 注意冪等性
-    async def add_recipe_chunk(self, session: AsyncSession, recipe: TastyNoteRecipe):
-        chunks = PgConverter.to_child_chunks(recipe)
+    async def add_recipe_chunk(self, session: AsyncSession, models: List[PgRecipeChunkModel]):
+        for model in models:
+            session.add(model)
 
-        for chunk in chunks:
-            session.add(chunk)
-
-    async def add_bulk_recipe_chunk(self, session: AsyncSession, recipes: List[TastyNoteRecipe]):
+    async def add_bulk_recipe_chunk(self, session: AsyncSession, models: List[PgRecipeChunkModel]):
         rows = [
             {
-                "id": chunk.id,
-                "parent_id": chunk.parent_id,
-                "chunk_type": chunk.chunk_type,
-                "content": chunk.content
+                "id": model.id,
+                "parent_id": model.parent_id,
+                "chunk_type": model.chunk_type,
+                "content": model.content
             }
-            for recipe in recipes
-            for chunk in PgConverter.to_child_chunks(recipe)
+            for model in models
         ]
 
         stmt = insert(PgRecipeChunkModel).values(rows)

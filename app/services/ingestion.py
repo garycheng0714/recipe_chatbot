@@ -3,6 +3,7 @@ from typing import List
 from sqlalchemy.ext.asyncio.session import AsyncSession
 from app.repositories import PgRepository
 from app.repositories.outbox_repository import OutboxRepository
+from app.services.converter import PgConverter
 from web_crawler.schema.crawl_result_schema import CrawlResult
 from web_crawler.schema.tasty_note_detail_schema import TastyNoteRecipe
 
@@ -14,14 +15,31 @@ class IngestionService:
 
     async def ingest_crawl_completed_data(self, session: AsyncSession, crawl_result: CrawlResult):
         recipe = crawl_result.data
-        await self.pg_repo.update_recipe(session, recipe)
-        await self.pg_repo.add_recipe_chunk(session, recipe)
+
+        chunk = PgConverter.to_parent_chunk(recipe)
+        await self.pg_repo.update_recipe(session, chunk)
+
+        chunks = PgConverter.to_child_chunks(recipe)
+        await self.pg_repo.add_recipe_chunk(session, chunks)
+
         await self.outbox_repo.insert_event(session, recipe)
 
     async def ingest_crawl_bulk_data(self, session: AsyncSession, crawl_results: List[CrawlResult]):
         recipes = [r.data for r in crawl_results]
-        await self.pg_repo.update_bulk_recipe(session, recipes)
-        await self.pg_repo.add_bulk_recipe_chunk(session, recipes)
+
+        models = [
+            PgConverter.to_parent_chunk(recipe)
+            for recipe in recipes
+        ]
+        await self.pg_repo.update_bulk_recipe(session, models)
+
+        child_models = [
+            model
+            for recipe in recipes
+            for model in PgConverter.to_child_chunks(recipe)
+        ]
+
+        await self.pg_repo.add_bulk_recipe_chunk(session, child_models)
         await self.outbox_repo.insert_bulk_event(session, recipes)
 
     async def ingest_pending_url(self, session: AsyncSession, recipe: TastyNoteRecipe):

@@ -5,6 +5,7 @@ from sqlalchemy import select, func
 
 from app.domain.models import PgRecipeModel, PgRecipeChunkModel
 from app.repositories import PgRepository
+from app.services.converter import PgConverter
 from web_crawler.schema.crawl_result_schema import CrawlResult
 from web_crawler.schema.tasty_note_detail_schema import TastyNoteRecipe, Step
 
@@ -214,7 +215,9 @@ async def test_update_recipe_content(session, recipe_url, recipe_data, repo):
     await repo.insert_pending_url(session, recipe_url)
     await session.flush()
 
-    await repo.update_recipe(session, recipe_data)
+    model = PgConverter.to_parent_chunk(recipe_data)
+
+    await repo.update_recipe(session, model)
     await session.flush()
 
     result = await session.execute(
@@ -255,7 +258,9 @@ async def test_add_recipe_child_chunks(session, recipe_url, recipe_data, repo):
     await repo.insert_pending_url(session, recipe_url)
     await session.flush()
 
-    await repo.add_recipe_chunk(session, recipe_data)
+    chunks = PgConverter.to_child_chunks(recipe_data)
+
+    await repo.add_recipe_chunk(session, chunks)
     await session.flush()
 
     await check_recipe_child_chunks(session, recipe_data)
@@ -267,7 +272,13 @@ async def test_add_bulk_recipe_chunk_have_overview_chunk(session, recipe_url, re
     await session.flush()
 
     data_list = [recipe_data, recipe_data2]
-    await repo.add_bulk_recipe_chunk(session, data_list)
+    models = [
+        chunk
+        for data in data_list
+        for chunk in PgConverter.to_child_chunks(data)
+    ]
+
+    await repo.add_bulk_recipe_chunk(session, models)
 
     for data in data_list:
         await check_recipe_child_chunks(session, data)
@@ -279,8 +290,12 @@ async def test_update_bulk_recipe(session, recipe_url, recipe_url2, recipe_data,
     await session.flush()
 
     recipes = [recipe_data, recipe_data2]
+    models = [
+        PgConverter.to_parent_chunk(recipe)
+        for recipe in recipes
+    ]
 
-    await repo.update_bulk_recipe(session, recipes)
+    await repo.update_bulk_recipe(session, models)
     await session.flush()
 
     result = await session.execute(
