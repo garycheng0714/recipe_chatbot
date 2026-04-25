@@ -38,8 +38,8 @@ class IngestionService:
 
         child_models = []
         for recipe in recipes:
-            models.append(PgConverter.to_overview_chunk(recipe))
-            models.append(PgConverter.to_instruction_chunk(recipe))
+            child_models.append(PgConverter.to_overview_chunk(recipe))
+            child_models.append(PgConverter.to_instruction_chunk(recipe))
 
         await self.pg_repo.add_bulk_recipe_chunk(session, child_models)
         await self.outbox_repo.insert_bulk_event(session, recipes)
