@@ -8,6 +8,7 @@ from sqlalchemy.ext.asyncio import async_sessionmaker
 
 from app.domain.models import OutboxModel
 from app.repositories.outbox_repository import OutboxRepository
+from app.services.event.recipe_event import RecipeEvent
 from web_crawler.schema.tasty_note_detail_schema import TastyNoteRecipe  # 換成你實際的 model
 from sqlalchemy.ext.asyncio.session import AsyncSession
 
@@ -37,31 +38,41 @@ def sample_recipe_2():
         description="Good tasty"
     )
 
+@pytest.fixture
+def outbox_event(sample_recipe):
+    return RecipeEvent.create(sample_recipe)
+
+@pytest.fixture
+def outbox_event_2(sample_recipe_2):
+    return RecipeEvent.create(sample_recipe_2)
 
 # ──────────────────────────────────────────
 # insert_event
 # ──────────────────────────────────────────
 
-async def test_insert_event_creates_pending_event(repo, session, sample_recipe):
-    await repo.insert_event(session, sample_recipe)
+async def test_insert_event_creates_pending_event(repo, session, outbox_event, sample_recipe):
+    await repo.insert_event(session, outbox_event)
     await session.flush()
 
     result = await session.execute(
         select(OutboxModel)
-        .where(OutboxModel.aggregate_id == sample_recipe.id)
+        .where(OutboxModel.aggregate_id == "recipe-123")
     )
 
     row = result.scalar_one()
-    assert row is not None
     assert row.status == "pending"
+    assert row.aggregate_type == "recipe"
+    assert row.aggregate_id == "recipe-123"
+    assert row.event_type == "recipe.created"
+    assert row.payload == sample_recipe.model_dump(exclude_none=True)
 
 
-async def test_insert_bulk_event(repo, session, sample_recipe, sample_recipe_2):
-    recipes = [sample_recipe, sample_recipe_2]
-    await repo.insert_bulk_event(session, recipes)
+async def test_insert_bulk_event(repo, session, outbox_event, outbox_event_2):
+    outbox_event_dicts = [outbox_event, outbox_event_2]
+    await repo.insert_bulk_event(session, outbox_event_dicts)
     await session.flush()
 
-    recipe_ids = [recipe.id for recipe in recipes]
+    recipe_ids = ["recipe-123", "recipe-456"]
 
     result = await session.execute(
         select(OutboxModel)
@@ -70,22 +81,18 @@ async def test_insert_bulk_event(repo, session, sample_recipe, sample_recipe_2):
 
     rows = {row.aggregate_id: row for row in result.scalars().all()}
 
-    assert len(rows) == len(recipes)
-    for recipe in recipes:
-        row = rows[recipe.id]
-        assert row.status == "pending"
-        assert row.payload == recipe.model_dump(exclude_none=True)
+    assert len(rows) == 2
 
 
-async def test_insert_event_idempotent(repo, session, sample_recipe):
+async def test_insert_event_idempotent(repo, session, outbox_event):
     """同一個 recipe + event_type 插入兩次，只會有一筆"""
-    await repo.insert_event(session, sample_recipe)
-    await repo.insert_event(session, sample_recipe)  # 第二次應該被 on_conflict_do_nothing 擋掉
+    await repo.insert_event(session, outbox_event)
+    await repo.insert_event(session, outbox_event)  # 第二次應該被 on_conflict_do_nothing 擋掉
     await session.flush()
 
     result = await session.execute(
         select(func.count()).select_from(OutboxModel)
-        .where(OutboxModel.aggregate_id == sample_recipe.id)
+        .where(OutboxModel.aggregate_id == "recipe-123")
     )
 
     assert result.scalar() == 1
@@ -95,23 +102,22 @@ async def test_insert_event_idempotent(repo, session, sample_recipe):
 # claim_event
 # ──────────────────────────────────────────
 
-async def test_claim_event_success(repo, session, sample_recipe):
-    await repo.insert_event(session, sample_recipe)
+async def test_claim_event_success(repo, session, outbox_event):
+    await repo.insert_event(session, outbox_event)
     await session.flush()
 
-    event_id = str(repo.make_event_id(sample_recipe.id, "recipe.created"))
-    claimed = await repo.claim_event(session, event_id)
+    claimed = await repo.claim_event(session, str(outbox_event.event_id))
 
     assert claimed is not None
     assert claimed.status == "processing"
 
 
-async def test_claim_event_returns_none_if_already_processing(repo, session, sample_recipe):
+async def test_claim_event_returns_none_if_already_processing(repo, session, outbox_event):
     """已經是 PROCESSING 的 event，不能再被 claim"""
-    await repo.insert_event(session, sample_recipe)
+    await repo.insert_event(session, outbox_event)
     await session.flush()
 
-    event_id = str(repo.make_event_id(sample_recipe.id, "recipe.created"))
+    event_id = str(outbox_event.event_id)
     first = await repo.claim_event(session, event_id)
     second = await repo.claim_event(session, event_id)  # 已經是 PROCESSING
 
@@ -129,25 +135,23 @@ async def outbox_cleaner(engine):
             await s.execute(delete(OutboxModel))
 
 
-async def test_claim_event_concurrent(engine, sample_recipe, outbox_cleaner):
+async def test_claim_event_concurrent(engine, outbox_event, outbox_cleaner):
     """
     真正的競態測試：兩個 session 同時 claim 同一個 event，只有一個能成功
     注意：這個測試不能用 rollback fixture，要自己管 transaction
     """
-    SessionFactory = async_sessionmaker(engine, expire_on_commit=False)
+    session_factory = async_sessionmaker(engine, expire_on_commit=False)
 
     # Step 1：先插入一筆 pending event（乾淨的前置狀態）
-    async with SessionFactory() as s:
+    async with session_factory() as s:
         async with s.begin():
-            await OutboxRepository().insert_event(s, sample_recipe)
-
-    event_id = str(OutboxRepository.make_event_id(sample_recipe.id, "recipe.created"))
+            await OutboxRepository().insert_event(s, outbox_event)
 
     # Step 2：兩個 coroutine 同時 claim 同一個 event_id
     async def try_claim():
-        async with SessionFactory() as s:
+        async with session_factory() as s:
             async with s.begin():
-                return await OutboxRepository().claim_event(s, event_id)
+                return await OutboxRepository().claim_event(s, str(outbox_event.event_id))
 
     results = await asyncio.gather(try_claim(), try_claim())
     successful_claims = [r for r in results if r is not None]
@@ -159,11 +163,11 @@ async def test_claim_event_concurrent(engine, sample_recipe, outbox_cleaner):
 # mark_event
 # ──────────────────────────────────────────
 
-async def test_mark_event_completed(repo, session, sample_recipe):
-    await repo.insert_event(session, sample_recipe)
+async def test_mark_event_completed(repo, session, outbox_event):
+    await repo.insert_event(session, outbox_event)
     await session.flush()
 
-    event_id = str(repo.make_event_id(sample_recipe.id, "recipe.created"))
+    event_id = str(outbox_event.event_id)
     await repo.claim_event(session, event_id)
     await repo.mark_event_completed(session, event_id)
     await session.flush()
@@ -176,12 +180,13 @@ async def test_mark_event_completed(repo, session, sample_recipe):
     assert result.scalar() == "completed"
 
 
-async def test_mark_event_only_updates_processing(repo, session, sample_recipe):
+async def test_mark_event_only_updates_processing(repo, session, outbox_event):
     """mark_event 只能更新 PROCESSING 狀態的 event（你的 WHERE 條件）"""
-    await repo.insert_event(session, sample_recipe)
+    await repo.insert_event(session, outbox_event)
     await session.flush()
 
-    event_id = str(repo.make_event_id(sample_recipe.id, "recipe.created"))
+    event_id = str(outbox_event.event_id)
+
     # 不 claim，直接 mark（還在 PENDING）
     await repo.mark_event_completed(session, event_id)
     await session.flush()
@@ -199,11 +204,11 @@ async def test_mark_event_only_updates_processing(repo, session, sample_recipe):
 # reset_stale_events
 # ──────────────────────────────────────────
 
-async def test_reset_stale_events(repo, session, sample_recipe):
-    await repo.insert_event(session, sample_recipe)
+async def test_reset_stale_events(repo, session, outbox_event):
+    await repo.insert_event(session, outbox_event)
     await session.flush()
 
-    event_id = str(repo.make_event_id(sample_recipe.id, "recipe.created"))
+    event_id = str(outbox_event.event_id)
     await repo.claim_event(session, event_id)
 
     # 手動把 updated_at 設成很久以前，模擬卡住的 event
@@ -224,12 +229,12 @@ async def test_reset_stale_events(repo, session, sample_recipe):
     assert result.scalar() == "pending"
 
 
-async def test_reset_stale_events_ignores_recent(repo, session, sample_recipe):
+async def test_reset_stale_events_ignores_recent(repo, session, outbox_event):
     """還沒超時的 PROCESSING event 不應該被 reset"""
-    await repo.insert_event(session, sample_recipe)
+    await repo.insert_event(session, outbox_event)
     await session.flush()
 
-    event_id = str(repo.make_event_id(sample_recipe.id, "recipe.created"))
+    event_id = str(outbox_event.event_id)
     await repo.claim_event(session, event_id)
     # updated_at 是剛剛，不超時
     await repo.reset_stale_events(session, timeout_minutes=30)

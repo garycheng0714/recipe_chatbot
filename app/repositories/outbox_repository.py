@@ -7,8 +7,9 @@ from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio.session import AsyncSession
 
 from app.domain.models import OutboxModel
-from web_crawler.schema.tasty_note_detail_schema import TastyNoteRecipe
 from enum import auto, Enum
+
+from app.services.event.recipe_event import OutboxEvent
 
 
 class EventStatus(Enum):
@@ -20,32 +21,17 @@ class EventStatus(Enum):
 
 class OutboxRepository:
 
-    async def insert_event(self, session: AsyncSession, recipe: TastyNoteRecipe):
-        event_id = self.make_event_id(recipe.id, "recipe.created")
-
+    async def insert_event(self, session: AsyncSession, outbox_event: OutboxEvent):
         stmt = (
             insert(OutboxModel).values(
-                event_id=event_id,
-                aggregate_type="recipe",
-                aggregate_id=recipe.id,
-                event_type="recipe.created",
-                payload=recipe.model_dump(exclude_none=True)
+                **outbox_event.model_dump()
             ).on_conflict_do_nothing(index_elements=["event_id"])
         )
 
         await session.execute(stmt)
 
-    async def insert_bulk_event(self, session: AsyncSession, recipes: List[TastyNoteRecipe]):
-        values = [
-            {
-                "event_id": self.make_event_id(recipe.id, "recipe.created"),
-                "aggregate_type" : "recipe",
-                "aggregate_id" : recipe.id,
-                "event_type" : "recipe.created",
-                "payload" : recipe.model_dump(exclude_none=True)
-            }
-            for recipe in recipes
-        ]
+    async def insert_bulk_event(self, session: AsyncSession, outbox_events: List[OutboxEvent]):
+        values = [event.model_dump() for event in outbox_events]
 
         stmt = (
             insert(OutboxModel).values(values).on_conflict_do_nothing(
@@ -74,6 +60,7 @@ class OutboxRepository:
 
         await session.execute(stmt)
 
+    #TODO: write test
     async def mark_event_failed(self, session: AsyncSession, event_id: str, error_msg: str):
         stmt = (
             update(OutboxModel)
@@ -87,6 +74,7 @@ class OutboxRepository:
 
         await session.execute(stmt)
 
+    # TODO: write test
     async def get_pending_event(self, session: AsyncSession, limit: int = 50):
         # 呼叫方必須在 session.begin() context 內
         # SELECT FOR UPDATE SKIP LOCKED 避免多個 worker 重複處理

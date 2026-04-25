@@ -4,6 +4,7 @@ from unittest.mock import MagicMock, AsyncMock
 import pytest
 
 from app.domain.models import PgRecipeModel, PgRecipeChunkModel
+from app.services.event.recipe_event import OutboxEvent
 from app.services.ingestion import IngestionService
 from web_crawler.schema.crawl_result_schema import CrawlResult
 from web_crawler.schema.tasty_note_detail_schema import TastyNoteRecipe, Ingredient, SeasoningItem, Step
@@ -53,7 +54,7 @@ async def test_ingest_crawl_completed_data(crawl_result):
         assert isinstance(chunk, PgRecipeChunkModel)
 
     args, _ = mock_outbox_repo.insert_event.call_args
-    assert isinstance(args[1], TastyNoteRecipe)
+    assert isinstance(args[1], OutboxEvent)
 
 
 @pytest.mark.asyncio
@@ -81,4 +82,4 @@ async def test_ingest_crawl_bulk_data(crawl_result):
     args, _ = mock_outbox_repo.insert_bulk_event.call_args
     assert isinstance(args[1], List)
     for arg in args[1]:
-        assert isinstance(arg, TastyNoteRecipe)
+        assert isinstance(arg, OutboxEvent)

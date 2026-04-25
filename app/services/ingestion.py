@@ -4,6 +4,7 @@ from sqlalchemy.ext.asyncio.session import AsyncSession
 from app.repositories import PgRepository
 from app.repositories.outbox_repository import OutboxRepository
 from app.services.converter import PgConverter
+from app.services.event.recipe_event import RecipeEvent
 from web_crawler.schema.crawl_result_schema import CrawlResult
 from web_crawler.schema.tasty_note_detail_schema import TastyNoteRecipe
 
@@ -25,7 +26,9 @@ class IngestionService:
         ]
         await self.pg_repo.add_recipe_chunk(session, chunks)
 
-        await self.outbox_repo.insert_event(session, recipe)
+        outbox_event = RecipeEvent.create(recipe)
+
+        await self.outbox_repo.insert_event(session, outbox_event)
 
     async def ingest_crawl_bulk_data(self, session: AsyncSession, crawl_results: List[CrawlResult]):
         recipes = [r.data for r in crawl_results]
@@ -42,7 +45,10 @@ class IngestionService:
             child_models.append(PgConverter.to_instruction_chunk(recipe))
 
         await self.pg_repo.add_bulk_recipe_chunk(session, child_models)
-        await self.outbox_repo.insert_bulk_event(session, recipes)
+
+        outbox_events = [RecipeEvent.create(recipe) for recipe in recipes]
+
+        await self.outbox_repo.insert_bulk_event(session, outbox_events)
 
     async def ingest_pending_url(self, session: AsyncSession, recipe: TastyNoteRecipe):
         await self.pg_repo.insert_pending_url(session, recipe)
