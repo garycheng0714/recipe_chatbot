@@ -246,3 +246,31 @@ async def test_reset_stale_events_ignores_recent(repo, session, outbox_event):
     )
 
     assert result.scalar() == "processing"  # 不應該被動到
+
+
+async def test_mark_event_failed(repo, session, outbox_event):
+    await repo.insert_event(session, outbox_event)
+    await session.flush()
+
+    event_id = str(outbox_event.event_id)
+
+    await repo.mark_event_failed(session, event_id, "error")
+    await session.flush()
+
+    result = await session.execute(
+        select(OutboxModel).where(OutboxModel.event_id == event_id)
+    )
+
+    row = result.scalar_one()
+    assert row.status == "failed"
+    assert row.last_error == "error"
+
+
+async def test_get_pending_event(repo, session, outbox_event, outbox_event_2):
+    await repo.insert_event(session, outbox_event)
+    await repo.insert_event(session, outbox_event_2)
+    await session.flush()
+
+    rows = await repo.get_pending_events(session)
+
+    assert len(rows) == 2

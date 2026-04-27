@@ -60,7 +60,6 @@ class OutboxRepository:
 
         await session.execute(stmt)
 
-    #TODO: write test
     async def mark_event_failed(self, session: AsyncSession, event_id: str, error_msg: str):
         stmt = (
             update(OutboxModel)
@@ -75,7 +74,7 @@ class OutboxRepository:
         await session.execute(stmt)
 
     # TODO: write test
-    async def get_pending_event(self, session: AsyncSession, limit: int = 50):
+    async def get_pending_events(self, session: AsyncSession, limit: int = 50):
         # 呼叫方必須在 session.begin() context 內
         # SELECT FOR UPDATE SKIP LOCKED 避免多個 worker 重複處理
         result = await session.execute(
