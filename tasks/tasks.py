@@ -1,10 +1,9 @@
 import asyncio
 from app.client import get_es, get_qdrant, get_outbox_db
 from app.database import AsyncSessionLocal
-from app.domain.chunks import MainChunk, OverviewChunk, InstructionChunk
+from app.dto.distributed_payload import DistributedPayload
 from app.repositories import ElasticSearchRepository, QdrantRepository
 from app.repositories.outbox_repository import OutboxRepository
-from web_crawler.schema.tasty_note_detail_schema import TastyNoteRecipe
 from taskiq_redis import ListQueueBroker
 from taskiq import TaskiqDepends, SmartRetryMiddleware, Context
 from loguru import logger
@@ -19,7 +18,7 @@ redis_broker = ListQueueBroker("redis://localhost:6379/0").with_middlewares(
 
 @redis_broker.task(retry_on_error=True, max_retries=3)
 async def sync_to_distributed_db(
-    payload: dict,
+    payload: DistributedPayload,
     es: ElasticSearchRepository = TaskiqDepends(get_es),
     qdr: QdrantRepository = TaskiqDepends(get_qdrant),
     outbox_db: OutboxRepository = TaskiqDepends(get_outbox_db),
@@ -27,30 +26,26 @@ async def sync_to_distributed_db(
 ):
     async with AsyncSessionLocal() as session:
         async with session.begin():
-            claimed = await outbox_db.claim_event(session, str(payload["event_id"]))
+            claimed = await outbox_db.claim_event(session, payload.event_id)
             if claimed is None:
                 return
 
     try:
-        recipe = TastyNoteRecipe(**payload)
+        chunks = [payload.main_chunk, payload.overview_chunk, payload.instruction_chunk]
+        writers = [es.index_chunk, qdr.upsert_recipe]
 
-        main_chunk = MainChunk.from_recipe(recipe)
-        overview_chunk = OverviewChunk.from_recipe(recipe)
-        instruction_chunk = InstructionChunk.from_recipe(recipe)
+        tasks = [
+            w(chunk)
+            for w in writers
+            for chunk in chunks
+        ]
 
-        await asyncio.gather(
-            es.index_chunk(main_chunk),
-            es.index_chunk(overview_chunk),
-            es.index_chunk(instruction_chunk),
-            qdr.upsert_recipe(main_chunk),
-            qdr.upsert_recipe(overview_chunk),
-            qdr.upsert_recipe(instruction_chunk)
-        )
+        await asyncio.gather(*tasks)
 
         async with AsyncSessionLocal() as session:
             async with session.begin():
-                await outbox_db.mark_event_completed(session, event_id=payload["event_id"])
-                print(f"Syncing {recipe.id} to ES and Qdrant...")
+                await outbox_db.mark_event_completed(session, event_id=payload.event_id)
+                print(f"Syncing {payload.main_chunk.id} to ES and Qdrant...")
     except Exception as e:
         # 這裡不 mark failed，交給 reset_stale_events 讓它回歸 pending 重跑
         # 或者你可以 mark 一個 'error' 狀態並記錄錯誤訊息
@@ -60,7 +55,7 @@ async def sync_to_distributed_db(
         if is_last_retry:
             async with AsyncSessionLocal() as session:
                 async with session.begin():
-                    await outbox_db.mark_event_failed(session, payload["event_id"], str(e))
+                    await outbox_db.mark_event_failed(session, payload.event_id, str(e))
         logger.exception(f"同步失敗，準備重試: {e}")
         raise  # 讓 TaskIQ retry
 
