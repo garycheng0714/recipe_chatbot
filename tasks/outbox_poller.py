@@ -1,5 +1,5 @@
 import asyncio
-from typing import List
+from typing import List, Callable, Awaitable
 
 from app.domain.chunks import MainChunk, OverviewChunk, InstructionChunk
 from app.dto.distributed_payload import DistributedPayload
@@ -10,22 +10,27 @@ from loguru import logger
 
 from web_crawler.schema.tasty_note_detail_schema import TastyNoteRecipe
 
-outbox_db = OutboxRepository()
 
-async def poll_outbox():
+async def _dispatch_fn(payload: DistributedPayload) -> None:
+    await sync_to_distributed_db.kiq(payload)
+
+async def poll_outbox(
+    outbox_repo: OutboxRepository,
+    dispatch_fn: Callable[[DistributedPayload], Awaitable[None]] = _dispatch_fn,
+):
     # 建議：不要在一個 transaction 處理所有事情，
     # 而是「抓取並鎖定」後立即 commit，釋放資料庫連線。
     events_to_dispatch: List[DistributedPayload] = []
 
     async with AsyncSessionLocal() as session:
-
         # 每次 poll 前先 reset 卡住的事件
         async with session.begin():
-            await outbox_db.reset_stale_events(session, timeout_minutes=30)
+            await outbox_repo.reset_stale_events(session, timeout_minutes=30)
 
+    async with AsyncSessionLocal() as session:
         # 1. 開啟邊界：抓取並標記為處理中
         async with session.begin():
-            events = await outbox_db.get_pending_events(session, limit=10)
+            events = await outbox_repo.get_pending_events(session, limit=10)
             for event in events:
                 recipe = TastyNoteRecipe(**event.payload)
                 events_to_dispatch.append(
@@ -36,16 +41,18 @@ async def poll_outbox():
                         instruction_chunk=InstructionChunk.from_recipe(recipe),
                     ))
 
-        # commit 之後再丟 queue，確保 DB 狀態已落地
-        for event_data in events_to_dispatch:
-            await sync_to_distributed_db.kiq(event_data)
+    # commit 之後再丟 queue，確保 DB 狀態已落地
+    for event_data in events_to_dispatch:
+        await dispatch_fn(event_data)
 
 
 
 async def run_poller(interval_seconds: int = 5):
+    outbox_repo = OutboxRepository()
+
     while True:
         try:
-            await poll_outbox()
+            await poll_outbox(outbox_repo)
         except Exception as e:
             print(f"Poller error: {e}")
             logger.exception(e)
@@ -53,7 +60,7 @@ async def run_poller(interval_seconds: int = 5):
 
 
 if __name__ == "__main__":
-    asyncio.run(poll_outbox())
+    asyncio.run(run_poller())
 
 
 # await outbox_db.reset_stale_events()
