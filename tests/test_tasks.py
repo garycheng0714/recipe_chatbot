@@ -100,7 +100,7 @@ async def test_es_index_fail_will_mark_event_failed():
     es.index_chunk = AsyncMock(side_effect=Exception("boom"))
 
     qdr = MagicMock()
-    qdr.upsert_recipe = AsyncMock
+    qdr.upsert_recipe = AsyncMock()
 
     outbox = MagicMock()
     outbox.claim_event = AsyncMock()
