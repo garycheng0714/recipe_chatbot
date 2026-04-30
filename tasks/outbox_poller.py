@@ -17,17 +17,18 @@ async def _dispatch_fn(payload: DistributedPayload) -> None:
 async def poll_outbox(
     outbox_repo: OutboxRepository,
     dispatch_fn: Callable[[DistributedPayload], Awaitable[None]] = _dispatch_fn,
+    session_factory=AsyncSessionLocal
 ):
     # 建議：不要在一個 transaction 處理所有事情，
     # 而是「抓取並鎖定」後立即 commit，釋放資料庫連線。
     events_to_dispatch: List[DistributedPayload] = []
 
-    async with AsyncSessionLocal() as session:
+    async with session_factory() as session:
         # 每次 poll 前先 reset 卡住的事件
         async with session.begin():
             await outbox_repo.reset_stale_events(session, timeout_minutes=30)
 
-    async with AsyncSessionLocal() as session:
+    async with session_factory() as session:
         # 1. 開啟邊界：抓取並標記為處理中
         async with session.begin():
             events = await outbox_repo.get_pending_events(session, limit=10)
