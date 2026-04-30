@@ -1,6 +1,7 @@
 import pytest
 import pytest_asyncio
 from elasticsearch import AsyncElasticsearch
+from testcontainers.elasticsearch import ElasticSearchContainer
 
 from app.domain.chunks import MainChunk, OverviewChunk, InstructionChunk
 from app.repositories import ElasticSearchRepository
@@ -8,6 +9,12 @@ from app.repositories import ElasticSearchRepository
 from app.infrastructure.elasticsearch.config import get_index_name, get_body_config, AnalyzerMode
 from app.domain.models import EsPointsModel
 from web_crawler.schema.tasty_note_detail_schema import TastyNoteRecipe, Ingredient, Step
+
+
+@pytest.fixture(scope="session")
+def es_container():
+    with ElasticSearchContainer("elasticsearch:9.1.4") as es:
+        yield es
 
 
 @pytest_asyncio.fixture(scope="session")
