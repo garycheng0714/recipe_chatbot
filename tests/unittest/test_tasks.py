@@ -11,8 +11,19 @@ def speed_up_tenacity():
         yield mock_sleep
 
 
+@pytest.fixture
+def mock_session_factory():
+    mock_session = AsyncMock()
+    mock_session.__aenter__ = AsyncMock(return_value=mock_session)
+    mock_session.__aexit__ = AsyncMock(return_value=None)
+    mock_session.begin = MagicMock(return_value=mock_session)
+
+    factory = MagicMock(return_value=mock_session)
+    return factory
+
+
 @pytest.mark.asyncio
-async def test_no_pending_events_will_stop_tasks():
+async def test_no_pending_events_will_stop_tasks(mock_session_factory):
     es = MagicMock()
     qdr = MagicMock()
     outbox = MagicMock()
@@ -24,7 +35,8 @@ async def test_no_pending_events_will_stop_tasks():
         es,
         qdr,
         outbox,
-        MagicMock()
+        MagicMock(),
+        mock_session_factory
     )
 
     outbox.claim_event.assert_called_once()
@@ -32,7 +44,7 @@ async def test_no_pending_events_will_stop_tasks():
 
 
 @pytest.mark.asyncio
-async def test_mark_event_completed():
+async def test_mark_event_completed(mock_session_factory):
     payload = MagicMock()
 
     es = MagicMock()
@@ -50,7 +62,8 @@ async def test_mark_event_completed():
         es,
         qdr,
         outbox,
-        MagicMock()
+        MagicMock(),
+        mock_session_factory
     )
 
     outbox.claim_event.assert_called_once()
@@ -61,7 +74,7 @@ async def test_mark_event_completed():
 
 
 @pytest.mark.asyncio
-async def test_qdr_upsert_fail_will_mark_event_failed():
+async def test_qdr_upsert_fail_will_mark_event_failed(mock_session_factory):
     payload = MagicMock()
 
     es = MagicMock()
@@ -84,7 +97,8 @@ async def test_qdr_upsert_fail_will_mark_event_failed():
             es,
             qdr,
             outbox,
-            context
+            context,
+            mock_session_factory
         )
 
     outbox.claim_event.assert_called_once()
@@ -93,7 +107,7 @@ async def test_qdr_upsert_fail_will_mark_event_failed():
 
 
 @pytest.mark.asyncio
-async def test_es_index_fail_will_mark_event_failed():
+async def test_es_index_fail_will_mark_event_failed(mock_session_factory):
     payload = MagicMock()
 
     es = MagicMock()
@@ -116,7 +130,8 @@ async def test_es_index_fail_will_mark_event_failed():
             es,
             qdr,
             outbox,
-            context
+            context,
+            mock_session_factory
         )
 
     outbox.claim_event.assert_called_once()
@@ -126,7 +141,7 @@ async def test_es_index_fail_will_mark_event_failed():
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("retry_label", [0, 1])
-async def test_sync_fail_first_time_will_not_mark_event_fail(retry_label):
+async def test_sync_fail_first_time_will_not_mark_event_fail(retry_label, mock_session_factory):
     payload = MagicMock()
 
     es = MagicMock()
@@ -149,7 +164,8 @@ async def test_sync_fail_first_time_will_not_mark_event_fail(retry_label):
             es,
             qdr,
             outbox,
-            context
+            context,
+            mock_session_factory
         )
 
     outbox.claim_event.assert_called_once()

@@ -23,8 +23,9 @@ async def sync_to_distributed_db(
     qdr: QdrantRepository = TaskiqDepends(get_qdrant),
     outbox_db: OutboxRepository = TaskiqDepends(get_outbox_db),
     context: Context = TaskiqDepends(),  # 注入 task metadata
+    session_factory=AsyncSessionLocal,
 ):
-    async with AsyncSessionLocal() as session:
+    async with session_factory() as session:
         async with session.begin():
             claimed = await outbox_db.claim_event(session, payload.event_id)
             if claimed is None:
@@ -42,7 +43,7 @@ async def sync_to_distributed_db(
 
         await asyncio.gather(*tasks)
 
-        async with AsyncSessionLocal() as session:
+        async with session_factory() as session:
             async with session.begin():
                 await outbox_db.mark_event_completed(session, event_id=payload.event_id)
                 print(f"Syncing {payload.main_chunk.id} to ES and Qdrant...")
@@ -53,7 +54,7 @@ async def sync_to_distributed_db(
         await asyncio.sleep(5)
         is_last_retry = context.message.labels.get("_retries", 0) + 1 >= 3
         if is_last_retry:
-            async with AsyncSessionLocal() as session:
+            async with session_factory() as session:
                 async with session.begin():
                     await outbox_db.mark_event_failed(session, payload.event_id, str(e))
         logger.exception(f"同步失敗，準備重試: {e}")
