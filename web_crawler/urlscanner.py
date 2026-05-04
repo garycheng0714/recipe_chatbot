@@ -1,22 +1,9 @@
 from app.core.logging import setup_logging, CrawlerSettings
-from app.services.ingestion import get_pg_ingestion_service
+from app.services.ingestion import get_ingestion_service
+from app.worker.ingest_pending_event_worker import IngestPendingEventWorker
 from web_crawler.requester import HttpxRequester
-from web_crawler.schema.tasty_note_detail_schema import TastyNoteRecipe
 from web_crawler.service.tasty_note_url_scanner_service import get_tasty_note_url_scanner_service
-from loguru import logger
 import asyncio
-
-
-async def storage_worker(queue: asyncio.Queue[TastyNoteRecipe]):
-    async with get_pg_ingestion_service() as service:
-        while True:
-            recipe = await queue.get()
-            try:
-                await service.ingest_recipe(recipe)
-            except Exception as e:
-                logger.exception("Ingest failed")
-            finally:
-                queue.task_done()
 
 
 async def main():
@@ -27,7 +14,9 @@ async def main():
         url_queue = asyncio.Queue()
 
         storage_tasks = [
-            asyncio.create_task(storage_worker(url_queue))
+            asyncio.create_task(
+                IngestPendingEventWorker(get_ingestion_service(), url_queue).run()
+            )
             for _ in range(5)
         ]
 
