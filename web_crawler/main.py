@@ -1,4 +1,3 @@
-import signal
 from aiolimiter import AsyncLimiter
 
 from app import database
@@ -20,11 +19,6 @@ from web_crawler.service.crawler_app import CrawlerApp
 async def main():
     setup_logging(CrawlerSettings())
     stop_event = asyncio.Event()  # 全域開關
-
-    loop = asyncio.get_running_loop()
-
-    for sig in (signal.SIGINT, signal.SIGTERM):
-        loop.add_signal_handler(sig, stop_event.set)
 
     url_queue = asyncio.Queue(maxsize=100)
     result_queue = asyncio.Queue(maxsize=50)

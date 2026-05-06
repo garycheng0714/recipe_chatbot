@@ -2,6 +2,7 @@ import asyncio
 from asyncio import Queue
 from typing import List
 
+from sqlalchemy.ext.asyncio.session import AsyncSession, async_sessionmaker
 from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_exponential
 from sqlalchemy.exc import OperationalError, DisconnectionError
 
@@ -23,8 +24,8 @@ tenacity 的 @retry 裝飾在 class method 上時，retry 狀態是跨 instance 
     wait=wait_exponential(multiplier=0.5, max=5),
     reraise=True,
 )
-async def _ingest_batch(service: IngestionService, batch: List[CrawlResult]):
-    async with AsyncSessionLocal() as session:
+async def _ingest_batch(service: IngestionService, batch: List[CrawlResult], session_factory: async_sessionmaker):
+    async with session_factory() as session:
         async with session.begin():
             success_items = [r for r in batch if r.status == "completed"]
             fail_items = [r for r in batch if r.status != "completed"]
@@ -44,8 +45,8 @@ async def _ingest_batch(service: IngestionService, batch: List[CrawlResult]):
     wait=wait_exponential(multiplier=1, min=4, max=10),
     reraise=True,
 )
-async def _ingest_single_result(service: IngestionService, result: CrawlResult):
-    async with AsyncSessionLocal() as session:
+async def _ingest_single_result(service: IngestionService, result: CrawlResult, session_factory: async_sessionmaker):
+    async with session_factory() as session:
         async with session.begin():
             if result.status == "completed":
                 await service.ingest_crawl_completed_data(session, result)
@@ -56,9 +57,15 @@ async def _ingest_single_result(service: IngestionService, result: CrawlResult):
 是否也要用 poison pill
 """
 class StorageWorker:
-    def __init__(self, service: IngestionService, queue: asyncio.Queue[CrawlResult]):
+    def __init__(
+            self,
+            service: IngestionService,
+            queue: asyncio.Queue[CrawlResult],
+            session_factory = None
+    ):
         self.service = service
         self.queue = queue
+        self.session_factory = session_factory or AsyncSessionLocal
 
     async def run(self):
         """
@@ -81,11 +88,11 @@ class StorageWorker:
 
     async def _ingest_batch_with_fallback(self, batch: List[CrawlResult]):
         try:
-            await _ingest_batch(self.service, batch)
+            await _ingest_batch(self.service, batch, self.session_factory)
         except Exception as e:
             logger.error(f"Ingestion bulk data error: {e}")
             for result in batch:
                 try:
-                    await _ingest_single_result(self.service, result)
+                    await _ingest_single_result(self.service, result, self.session_factory)
                 except Exception as e:
                     logger.error(f"單筆寫入失敗，跳過: {result}, error: {e}")
