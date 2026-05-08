@@ -1,13 +1,12 @@
 import asyncio
-from asyncio import Queue
 from typing import List
 
-from sqlalchemy.ext.asyncio.session import AsyncSession, async_sessionmaker
+from sqlalchemy.ext.asyncio.session import async_sessionmaker
 from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_exponential
 from sqlalchemy.exc import OperationalError, DisconnectionError
 
 from app.database import AsyncSessionLocal
-from app.services.ingestion import IngestionService, get_ingestion_service
+from app.services.ingestion import IngestionService
 from app.utils.batch_queue import collect_batch
 from web_crawler.schema.crawl_result_schema import CrawlResult
 from loguru import logger
@@ -58,14 +57,20 @@ async def _ingest_single_result(service: IngestionService, result: CrawlResult, 
 """
 class StorageWorker:
     def __init__(
-            self,
-            service: IngestionService,
-            queue: asyncio.Queue[CrawlResult],
-            session_factory = None
+        self,
+        service: IngestionService,
+        queue: asyncio.Queue[CrawlResult],
+        stop_event: asyncio.Event,
+        collect_timeout: float = 5.0,
+        session_factory = AsyncSessionLocal,
+        loguru_logger = logger,
     ):
         self.service = service
         self.queue = queue
-        self.session_factory = session_factory or AsyncSessionLocal
+        self.stop_event = stop_event
+        self.collect_timeout = collect_timeout
+        self.session_factory = session_factory
+        self.logger = loguru_logger
 
     async def run(self):
         """
@@ -75,12 +80,14 @@ class StorageWorker:
         while True:
             batch: List[CrawlResult] = []
             try:
+                if self.stop_event.is_set():
+                    break
                 # 這裡就是 "Session-per-task" 的體現
-                batch = await collect_batch(self.queue)
+                batch = await collect_batch(self.queue, self.collect_timeout)
                 if batch:
                     await self._ingest_batch_with_fallback(batch)
             except Exception as e:
-                logger.exception(f"ingestion error: {e}")
+                self.logger.exception(f"ingestion error: {e}")
                 # TODO: custom DB exception
             finally:
                 for _ in batch:
@@ -90,9 +97,9 @@ class StorageWorker:
         try:
             await _ingest_batch(self.service, batch, self.session_factory)
         except Exception as e:
-            logger.error(f"Ingestion bulk data error: {e}")
+            self.logger.exception(f"Ingestion bulk data error: {e}")
             for result in batch:
                 try:
                     await _ingest_single_result(self.service, result, self.session_factory)
                 except Exception as e:
-                    logger.error(f"單筆寫入失敗，跳過: {result}, error: {e}")
+                    self.logger.exception(f"單筆寫入失敗，跳過: {result}, error: {e}")

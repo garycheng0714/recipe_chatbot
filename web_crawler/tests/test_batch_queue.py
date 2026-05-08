@@ -14,6 +14,7 @@ async def test_collect_batch_hit_batch_limiter(result_queue):
 
     batch = await collect_batch(
         queue=result_queue,
+        timeout=5.0,
         batch_size=size,
     )
 

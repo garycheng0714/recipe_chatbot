@@ -5,8 +5,8 @@ T = TypeVar('T')
 
 async def collect_batch(
     queue: asyncio.Queue[T],
+    timeout: float,
     batch_size: int = 50,
-    timeout: float = 5.0
 ) -> List[T]:
     """累積一批資料，滿了或 timeout 就回傳"""
 

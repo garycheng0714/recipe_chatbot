@@ -82,7 +82,7 @@ async def test_app_get_pending_urls_then_update_recipe_table_and_insert_outbox_t
         stop_event=stop_event,
         producer=UrlProducer(PgRepository(), url_queue, stop_event, session_factory),
         stale_event_worker=StaleEventResetWorker(PgRepository(), stop_event, session_factory),
-        storage_worker=StorageWorker(get_ingestion_service(), result_queue, session_factory),
+        storage_worker=StorageWorker(get_ingestion_service(), result_queue, stop_event, session_factory=session_factory),
         consumer_factory=lambda: fake_consumer,
         url_queue=url_queue,
         result_queue=result_queue,

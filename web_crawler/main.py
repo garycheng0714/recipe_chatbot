@@ -38,7 +38,7 @@ async def main():
             stop_event=stop_event,
             producer=UrlProducer(PgRepository(), url_queue, stop_event),
             stale_event_worker=StaleEventResetWorker(PgRepository(), stop_event),
-            storage_worker=StorageWorker(get_ingestion_service(), result_queue),
+            storage_worker=StorageWorker(get_ingestion_service(), result_queue, stop_event),
             consumer_factory=consumer_factory,
             url_queue=url_queue,
             result_queue=result_queue
