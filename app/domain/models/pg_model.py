@@ -2,7 +2,7 @@ from sqlalchemy import Column, String, Text, DateTime, ForeignKey, Integer
 from sqlalchemy.sql import func
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.dialects.postgresql import ARRAY
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import relationship, Mapped, mapped_column
 from app.database import Base
 
 # 4. 定義資料模型 (對應資料表)
@@ -10,11 +10,11 @@ class PgRecipeModel(Base):
     __tablename__ = 'recipes'
 
     # --- 第一階段就能確定的欄位 (Non-nullable) ---
-    id = Column(String(100), primary_key=True)
-    source_url = Column(Text, unique=True, index=True)
+    id: Mapped[str] = mapped_column(String(100), primary_key=True)
+    source_url: Mapped[str] = mapped_column(Text, unique=True, index=True)
 
     # 狀態管理: pending (待爬取), processing, completed, failed (永久失敗)
-    status = Column(String(50), default='pending', index=True)
+    status: Mapped[str]  = mapped_column(String(50), default='pending', index=True)
 
     # --- 第二階段才會補齊的欄位 (Nullable) ---
     name = Column(String(100), nullable=True)
@@ -38,7 +38,7 @@ class PgRecipeModel(Base):
 class PgRecipeChunkModel(Base):
     __tablename__ = 'recipe_chunks'
 
-    id = Column(String(100), primary_key=True)
+    id: Mapped[str] = mapped_column(String(100), primary_key=True)
     parent_id = Column(String(100), ForeignKey('recipes.id', ondelete="CASCADE"), nullable=False)
     chunk_type = Column(String(30))
     content = Column(Text)
