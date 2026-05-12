@@ -110,3 +110,25 @@ async def test_qdr_repository_upsert_overview_chunk(recipe):
         "content": "ab"
     }
     assert point.payload == expected_payload
+
+
+@pytest.mark.asyncio
+async def test_qdr_repository_upsert_batch_chunk(recipe):
+    client = AsyncMock()
+    embedder = MagicMock()
+    embedder.embed_batch = MagicMock(return_value=[[1], [2], [3]])
+
+    repository = QdrantRepository(client, embedder)
+
+    chunks = [
+        MainChunk.from_recipe(recipe),
+        OverviewChunk.from_recipe(recipe),
+        InstructionChunk.from_recipe(recipe)
+    ]
+
+    await repository.upsert_batch_recipe(chunks)
+
+    embedder.embed_batch.assert_called_once()
+    client.upsert.assert_called_once()
+    points = client.upsert.call_args.kwargs["points"]
+    assert len(points) == 3

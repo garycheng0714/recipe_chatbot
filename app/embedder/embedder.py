@@ -18,3 +18,17 @@ class BGEEmbedder:
         )
 
         return output["dense_vecs"].tolist()
+
+    def embed_batch(self, texts: list[str]) -> list[list[float]]:
+        cleaned_texts = [
+            text.strip()
+            for text in texts
+        ]
+
+        output = self.model.encode(
+            cleaned_texts,
+            return_dense=True,
+            batch_size=32
+        )
+
+        return output["dense_vecs"].tolist()

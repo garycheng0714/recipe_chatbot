@@ -1,5 +1,5 @@
+from typing import List
 from qdrant_client import AsyncQdrantClient
-from FlagEmbedding import BGEM3FlagModel
 from qdrant_client.http.models import PointStruct, Filter, FieldCondition, MatchValue
 
 from app.domain.chunks import BaseChunk
@@ -26,6 +26,28 @@ class QdrantRepository:
                     payload=chunk.get_payload().model_dump()
                 )
             ]
+        )
+
+    async def upsert_batch_recipe(self, chunks: List[BaseChunk]):
+        texts = [chunk.to_embedding_text() for chunk in chunks]
+        vectors = self.embedder.embed_batch(texts)
+
+        points = []
+
+        for chunk, vector in zip(chunks, vectors):
+            points.append(
+                PointStruct(
+                    id=str(uuid.uuid5(uuid.NAMESPACE_DNS, chunk.get_id())),
+                    vector={
+                        qdrant_settings.vectors_name: vector,
+                    },
+                    payload=chunk.get_payload().model_dump()
+                )
+            )
+
+        await self.client.upsert(
+            collection_name=qdrant_settings.recipe_collection_name,
+            points=points
         )
 
     async def upsert_points(self, points: list[PointStruct], collection_name: str):
@@ -91,58 +113,5 @@ class QdrantRepository:
     #     self.client.create_payload_index(
     #         collection_name=self.collection_name,
     #         field_name="category",
-    #         field_schema="keyword",
+    #         field_schema="keyword"
     #     )
-
-if __name__ == "__main__":
-    from app.client import qdr_client
-    import asyncio
-
-
-
-
-    async def main():
-        model = BGEM3FlagModel('BAAI/bge-m3', use_fp16=False)
-        db = QdrantRepository(qdr_client, model)
-        # await db.create_collection()
-        # fast_match = await db.search(user_query)
-
-        # scores = reranker.compute_score([user_query, "紅燒肉怎麼做"], normalize=True)
-
-        # print(scores)
-
-        # points = []
-        # for intent, sentences in INTENT_SEEDS.items():
-        #     for text in sentences:
-        #         dense = db.embed(text)
-        #
-        #         points.append(
-        #             PointStruct(
-        #                 id=str(uuid.uuid4()),
-        #                 vector={
-        #                     "dense": dense,
-        #                 },
-        #                 payload={
-        #                     "intent": intent,
-        #                     "original_text": text,
-        #                 }
-        #             )
-        #         )
-        #
-        text = "高麗菜可以做什麼料理"
-
-        await db.upsert_points([
-            PointStruct(
-                id=str(uuid.uuid4()),
-                vector={
-                    qdrant_settings.vectors_name: db.embed(text)
-                },
-                payload={
-                    "intent": "find_recipes_by_ingredients",
-                    "original_text": text
-                }
-            )
-        ])
-
-
-    asyncio.run(main())
