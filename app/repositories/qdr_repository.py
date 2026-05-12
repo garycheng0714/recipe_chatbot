@@ -14,13 +14,14 @@ class QdrantRepository:
         self.embedder = embedder
 
     async def upsert_recipe(self, chunk: BaseChunk):
+        text = chunk.to_embedding_text()
         await self.client.upsert(
             collection_name=qdrant_settings.recipe_collection_name,
             points=[
                 PointStruct(
                     id=str(uuid.uuid5(uuid.NAMESPACE_DNS, chunk.get_id())),
                     vector={
-                        qdrant_settings.vectors_name: chunk.to_vector(self.embedder),
+                        qdrant_settings.vectors_name: self.embedder.embed(text),
                     },
                     payload=chunk.get_payload().model_dump()
                 )

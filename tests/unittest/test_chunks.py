@@ -41,11 +41,10 @@ def test_main_chunk_from_recipe(recipe):
 
 
 def test_main_chunk_embed_semantics(recipe):
-    embedder = MagicMock()
     chunk = MainChunk.from_recipe(recipe)
-    chunk.to_vector(embedder)
+    text = chunk.to_embedding_text()
 
-    embedder.embed.assert_called_once_with(chunk.semantics)
+    assert text == chunk.semantics
 
 
 def test_main_chunk_get_payload(recipe):
@@ -63,12 +62,10 @@ def test_overview_chunk_from_recipe(recipe):
 
 
 def test_overview_chunk_embed_content(recipe):
-    embedder = MagicMock()
     chunk = OverviewChunk.from_recipe(recipe)
-    chunk.to_vector(embedder)
+    text = chunk.to_embedding_text()
 
-    embedder.embed.assert_called_once_with(chunk.content)
-
+    assert text == chunk.content
 
 def test_overview_chunk_get_payload(recipe):
     chunk = OverviewChunk.from_recipe(recipe)
@@ -85,11 +82,10 @@ def test_instruction_chunk_from_recipe(recipe):
 
 
 def test_instruction_chunk_embed_content(recipe):
-    embedder = MagicMock()
     chunk = InstructionChunk.from_recipe(recipe)
-    chunk.to_vector(embedder)
+    text = chunk.to_embedding_text()
 
-    embedder.embed.assert_called_once_with(chunk.content)
+    assert text == chunk.content
 
 
 def test_instruction_chunk_get_payload(recipe):

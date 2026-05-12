@@ -3,12 +3,11 @@ from typing import Protocol, Literal
 from pydantic import BaseModel
 
 from app.domain.models.chunk_payload_model import MainChunkPayload, ChunkPayload
-from app.embedder.embedder import Embedder
 from web_crawler.schema.tasty_note_detail_schema import TastyNoteRecipe
 
 
 class BaseChunk(Protocol):
-    def to_vector(self, embedder: Embedder) -> list[float]:
+    def to_embedding_text(self) -> str:
         ...
 
     def get_payload(self) -> ChunkPayload:
@@ -44,8 +43,8 @@ class MainChunk(BaseModel):
             )
         )
 
-    def to_vector(self, embedder: Embedder) -> list[float]:
-        return embedder.embed(self.semantics)
+    def to_embedding_text(self) -> str:
+        return self.semantics
 
     def get_id(self) -> str:
         return self.id
@@ -67,8 +66,8 @@ class ChildChunk(BaseModel):
     chunk_type: Literal["overview", "instruction"]
     content: str
 
-    def to_vector(self, embedder: Embedder) -> list[float]:
-        return embedder.embed(self.content)
+    def to_embedding_text(self) -> str:
+        return self.content
 
     def get_id(self) -> str:
         return self.id
