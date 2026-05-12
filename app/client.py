@@ -2,7 +2,7 @@ from elasticsearch import AsyncElasticsearch
 from qdrant_client import AsyncQdrantClient
 from typing import AsyncGenerator
 from FlagEmbedding import BGEM3FlagModel
-from app.database import AsyncSessionLocal, ES_URL, QDRANT_URL
+from app.database import ES_URL, QDRANT_URL
 from app.embedder.embedder import BGEEmbedder
 from app.repositories import (
     PgRepository,
@@ -14,24 +14,12 @@ from app.repositories.qdr_repository import QdrantRepository
 
 # --- 1. PostgreSQL (SQLAlchemy) 設定 ---
 async def get_db() -> AsyncGenerator:
-    async with AsyncSessionLocal() as session:
-        # 將 session 注入到你的 Class 中
-        db_instance = PgRepository(session)
-        try:
-            yield db_instance
-        finally:
-            await session.close()
-
+    db_instance = PgRepository()
+    yield db_instance
 
 async def get_outbox_db() -> AsyncGenerator:
-    async with AsyncSessionLocal() as session:
-        # 將 session 注入到你的 Class 中
-        db_instance = OutboxRepository(session)
-        try:
-            yield db_instance
-        finally:
-            await session.close()
-
+    db_instance = OutboxRepository()
+    yield db_instance
 
 
 # --- 2. ElasticSearch 設定 ---

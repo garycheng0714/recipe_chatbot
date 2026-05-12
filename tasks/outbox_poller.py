@@ -15,7 +15,7 @@ async def _dispatch_fn(payload: DistributedPayload) -> None:
     await sync_to_distributed_db.kiq(payload)
 
 async def poll_outbox(
-    outbox_repo: OutboxRepository,
+    outbox_repo: OutboxRepository = OutboxRepository(),
     dispatch_fn: Callable[[DistributedPayload], Awaitable[None]] = _dispatch_fn,
     session_factory=AsyncSessionLocal
 ):
@@ -49,11 +49,9 @@ async def poll_outbox(
 
 
 async def run_poller(interval_seconds: int = 5):
-    outbox_repo = OutboxRepository()
-
     while True:
         try:
-            await poll_outbox(outbox_repo)
+            await poll_outbox()
         except Exception as e:
             print(f"Poller error: {e}")
             logger.exception(e)

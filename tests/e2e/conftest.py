@@ -4,14 +4,15 @@ import pytest
 import pytest_asyncio
 from elasticsearch import AsyncElasticsearch
 from qdrant_client import AsyncQdrantClient
-from taskiq import InMemoryBroker
 from testcontainers.elasticsearch import ElasticSearchContainer
 from testcontainers.postgres import PostgresContainer
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
-from testcontainers.qdrant import QdrantContainer
+from qdrant_client.models import VectorParams, Distance
 
 from app.database import Base
-from tasks.tasks import redis_broker
+from app.infrastructure.elasticsearch.config import get_index_name, get_body_config, AnalyzerMode
+from app.infrastructure.qdrant.config import qdrant_settings
+from app.repositories import ElasticSearchRepository
 
 
 @pytest.fixture(scope="session")
@@ -21,7 +22,7 @@ def postgres_container():
         yield pg
 
 @pytest.fixture(scope="session")
-def elasticsearch():
+def es_container():
     with ElasticSearchContainer("elasticsearch:9.1.4") as es:
         yield es
 
@@ -42,18 +43,41 @@ async def es_client(es_container):
     yield client
     await client.close()
 
-@pytest.fixture(scope="session")
-def qdrant():
-    with QdrantContainer("qdrant/qdrant:latest")\
-        .with_exposed_ports(6333) as q:
-        yield q
+@pytest_asyncio.fixture(scope="session")
+async def es_repo(es_client):
+    """建立 index，回傳 repo，session 結束後刪掉 index"""
+    # 建立 index（含 mapping）
+    index_name = get_index_name()
+
+    if not await es_client.indices.exists(index=index_name):
+        await es_client.indices.create(
+            index=index_name,
+            body=get_body_config(AnalyzerMode.STANDARD)
+        )
+    repo = ElasticSearchRepository(es_client)
+    yield repo
+    await es_client.indices.delete(index=index_name, ignore_unavailable=True)
 
 @pytest.fixture(scope="session")
-def qdrant_client(qdrant):
-    return AsyncQdrantClient(
-        host="localhost",
-        port=qdrant.get_exposed_port(6333)
-    )
+async def qdrant_client():
+    collection_name = qdrant_settings.recipe_collection_name
+
+    client = AsyncQdrantClient(":memory:")
+
+    if not await client.collection_exists(collection_name):
+        await client.create_collection(
+            collection_name=collection_name,
+            vectors_config={
+                qdrant_settings.vectors_name: VectorParams(
+                    size=qdrant_settings.vectors_size,  # BGE-M3 的維度
+                    distance=Distance.COSINE
+                )
+            }
+        )
+
+    yield client
+
+    await client.close()
 
 
 @pytest_asyncio.fixture(scope="session")

@@ -3,12 +3,18 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from app.domain.models import PgRecipeModel, OutboxModel, PgRecipeChunkModel
-from app.repositories import PgRepository
+from app.domain.chunks import MainChunk, OverviewChunk, InstructionChunk
+from app.domain.models import PgRecipeModel, OutboxModel, PgRecipeChunkModel, EsPointsModel
+from app.dto.distributed_payload import DistributedPayload
+from app.embedder.embedder import BGEEmbedder
+from app.repositories import PgRepository, QdrantRepository
+from app.repositories.outbox_repository import OutboxRepository
+from app.services.event.recipe_event import RecipeEvent
 from app.services.ingestion import get_ingestion_service
 from app.worker.stale_event_reset_worker import StaleEventResetWorker
 from app.worker.storage import StorageWorker
 from app.worker.url_producer import UrlProducer
+from tasks.tasks import sync_to_distributed_db
 from web_crawler.consumer.url_consumer import STOP_SIGNAL
 from web_crawler.schema.crawl_result_schema import CrawlResult
 from web_crawler.schema.tasty_note_detail_schema import TastyNoteRecipe, Ingredient, SeasoningItem, Step
@@ -53,7 +59,6 @@ async def clean_db(session):
 
 pytestmark = pytest.mark.asyncio(loop_scope="session")
 
-# @pytest.mark.asyncio
 async def test_app_get_pending_urls_then_update_recipe_table_and_insert_outbox_table(session, session_factory, recipe, fake_recipe):
     url_queue = asyncio.Queue(maxsize=1)
     result_queue = asyncio.Queue(maxsize=1)
@@ -132,3 +137,45 @@ async def test_app_get_pending_urls_then_update_recipe_table_and_insert_outbox_t
 
         row = result.scalar_one()
         assert row.status == "pending"
+
+
+async def test_get_outbox_pending_event_then_insert_data_to_es_and_qdr(session, session_factory, fake_recipe, es_repo, qdrant_client):
+    outbox_repo = OutboxRepository()
+    outbox_event = RecipeEvent.create(fake_recipe)
+
+    async with session_factory() as session:
+        async with session.begin():
+            await outbox_repo.insert_event(session, outbox_event)
+
+    payload = DistributedPayload(
+        event_id=str(outbox_event.event_id),
+        main_chunk=MainChunk.from_recipe(fake_recipe),
+        overview_chunk=OverviewChunk.from_recipe(fake_recipe),
+        instruction_chunk=InstructionChunk.from_recipe(fake_recipe),
+    )
+
+    qdr_repo = QdrantRepository(qdrant_client, BGEEmbedder())
+
+    await sync_to_distributed_db(
+        payload=payload,
+        es=es_repo,
+        qdr=qdr_repo,
+        outbox_db=OutboxRepository(),
+        session_factory=session_factory,
+    )
+
+    result = await es_repo.search("banana")
+    hits = EsPointsModel(**result).hits.hits
+
+    assert len(hits) == 1
+
+    qdr_result = await qdr_repo.search_recipe("banana")
+    assert len(qdr_result.points) == 3
+
+    async with session_factory() as session:
+        result = await session.execute(
+            select(OutboxModel).where(OutboxModel.aggregate_id == "123")
+        )
+
+        row = result.scalar_one()
+        assert row.status == "completed"
