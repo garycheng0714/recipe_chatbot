@@ -1,4 +1,7 @@
+from typing import List
+
 from elasticsearch import AsyncElasticsearch
+from elasticsearch.helpers import async_bulk
 
 from app.domain.chunks import BaseChunk
 from app.infrastructure.elasticsearch.config import get_index_name
@@ -13,6 +16,23 @@ class ElasticSearchRepository:
         await self.client.index(
             index=self.index_name,
             document=chunk.get_payload().model_dump()
+        )
+
+    async def index_bulk_chunk(self, chunks: List[BaseChunk]):
+        if not chunks:
+            return
+
+        actions = [
+            {
+                "_index": self.index_name,
+                "_source": chunk.get_payload().model_dump(),
+            }
+            for chunk in chunks
+        ]
+
+        await async_bulk(
+            client=self.client,
+            actions=actions,
         )
 
     async def search(self, query_text: str, size: int = 5):

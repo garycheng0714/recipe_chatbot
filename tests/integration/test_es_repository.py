@@ -85,7 +85,7 @@ def index_name():
 pytestmark = pytest.mark.asyncio(loop_scope="session")
 
 
-@pytest_asyncio.fixture(autouse=True)
+@pytest_asyncio.fixture
 async def setup(es_repo, es_client, recipe, index_name):
     main = MainChunk.from_recipe(recipe)
     overview = OverviewChunk.from_recipe(recipe)
@@ -98,12 +98,24 @@ async def setup(es_repo, es_client, recipe, index_name):
     await es_client.indices.refresh(index=index_name)
 
 
-async def test_indexes_parent_and_children(recipe, es_repo, es_client, index_name):
+@pytest_asyncio.fixture
+async def bulk_setup(es_client, es_repo, index_name, recipe):
+    main = MainChunk.from_recipe(recipe)
+    overview = OverviewChunk.from_recipe(recipe)
+    instruction = InstructionChunk.from_recipe(recipe)
+
+    chunks = [main, overview, instruction]
+
+    await es_repo.index_bulk_chunk(chunks)
+    await es_client.indices.refresh(index=index_name)
+
+
+async def test_indexes_parent_and_children(setup, recipe, es_repo, es_client, index_name):
     result = await es_client.count(index=index_name)
     assert result["count"] == 3  # 至少 parent chunk 存進去了
 
 
-async def test_search_name_in_parent_chunk(recipe, es_repo, es_client, index_name):
+async def test_search_name_in_parent_chunk(setup, recipe, es_repo, es_client, index_name):
     result = await es_repo.search("banana")
     hits = EsPointsModel(**result).hits.hits
 
@@ -111,13 +123,13 @@ async def test_search_name_in_parent_chunk(recipe, es_repo, es_client, index_nam
     assert hits[0].field_source.name == "banana"
 
 
-async def test_search_keyword_in_parent_and_child_chunk(recipe, es_repo, es_client, index_name):
+async def test_search_keyword_in_parent_and_child_chunk(setup, recipe, es_repo, es_client, index_name):
     result = await es_repo.search("jp")
     hits = EsPointsModel(**result).hits.hits
     assert len(hits) == 1
 
 
-async def test_search_description(recipe, es_repo, es_client, index_name):
+async def test_search_description(setup, recipe, es_repo, es_client, index_name):
     result = await es_repo.search("Good fruit")
     hits = EsPointsModel(**result).hits.hits
 
@@ -129,7 +141,7 @@ async def test_search_description(recipe, es_repo, es_client, index_name):
     assert data.id == f"{recipe.id}_overview"
 
 
-async def test_search_instruction(recipe, es_repo, es_client, index_name):
+async def test_search_instruction(setup, recipe, es_repo, es_client, index_name):
     result = await es_repo.search("搗碎")
     hits = EsPointsModel(**result).hits.hits
 
@@ -153,8 +165,13 @@ async def test_search_instruction(recipe, es_repo, es_client, index_name):
 #     assert hits[0].field_source.id == "r1"
 
 
-async def test_search_no_results(recipe, es_repo, es_client, index_name):
+async def test_search_no_results(setup, recipe, es_repo, es_client, index_name):
     result = await es_repo.search("apple")
     hits = EsPointsModel(**result).hits.hits
 
     assert len(hits) == 0
+
+
+async def test_index_bulk_chunk(bulk_setup, recipe, es_client, index_name):
+    result = await es_client.count(index=index_name)
+    assert result["count"] == 3
