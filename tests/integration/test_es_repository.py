@@ -106,7 +106,7 @@ async def bulk_setup(es_client, es_repo, index_name, recipe):
 
     chunks = [main, overview, instruction]
 
-    await es_repo.index_bulk_chunk(chunks)
+    await es_repo.index_batch_chunk(chunks)
     await es_client.indices.refresh(index=index_name)
 
 

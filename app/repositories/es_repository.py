@@ -18,7 +18,7 @@ class ElasticSearchRepository:
             document=chunk.get_payload().model_dump()
         )
 
-    async def index_bulk_chunk(self, chunks: List[BaseChunk]):
+    async def index_batch_chunk(self, chunks: List[BaseChunk]):
         if not chunks:
             return
 

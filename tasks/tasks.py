@@ -33,15 +33,11 @@ async def sync_to_distributed_db(
 
     try:
         chunks = [payload.main_chunk, payload.overview_chunk, payload.instruction_chunk]
-        writers = [es.index_chunk, qdr.upsert_recipe]
 
-        tasks = [
-            w(chunk)
-            for w in writers
-            for chunk in chunks
-        ]
-
-        await asyncio.gather(*tasks)
+        await asyncio.gather(
+            es.index_batch_chunk(chunks),
+            qdr.upsert_batch_recipe(chunks),
+        )
 
         async with session_factory() as session:
             async with session.begin():

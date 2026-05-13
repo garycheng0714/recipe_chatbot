@@ -38,7 +38,7 @@ def fake_recipe():
         name="banana",
         source_url="https://example.com",
         category="tw",
-        description="A delicious banana",
+        description="A delicious fruit",
         quantity="1",
         ingredients=[Ingredient(name="banana", amount="1"), Ingredient(name="cake", amount="2")],
         seasoning=[SeasoningItem(name="salt", amount="1")],
@@ -116,7 +116,7 @@ async def test_app_get_pending_urls_then_update_recipe_table_and_insert_outbox_t
 
         row = result.scalar_one()
         assert row.parent_id == "123"
-        assert row.content == "A delicious banana"
+        assert row.content == "A delicious fruit"
         assert row.chunk_type == "overview"
 
     async with session_factory() as session:
@@ -167,6 +167,14 @@ async def test_get_outbox_pending_event_then_insert_data_to_es_and_qdr(session, 
     result = await es_repo.search("banana")
     hits = EsPointsModel(**result).hits.hits
 
+    assert len(hits) == 1
+
+    overview_result = await es_repo.search("delicious fruit")
+    hits = EsPointsModel(**overview_result).hits.hits
+    assert len(hits) == 1
+
+    instruction_result = await es_repo.search("剝皮")
+    hits = EsPointsModel(**instruction_result).hits.hits
     assert len(hits) == 1
 
     qdr_result = await qdr_repo.search_recipe("banana")
