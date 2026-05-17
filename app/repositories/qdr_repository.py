@@ -1,27 +1,52 @@
+from concurrent.futures import ThreadPoolExecutor
 from typing import List
+
+from httpx import AsyncClient
 from qdrant_client import AsyncQdrantClient
 from qdrant_client.http.models import PointStruct, Filter, FieldCondition, MatchValue
 
 from app.domain.chunks import BaseChunk
-from app.embedder.embedder import BGEEmbedder
 from app.infrastructure.qdrant.config import qdrant_settings
 import uuid
 
+_embed_executor = ThreadPoolExecutor(max_workers=1)  # 限制只用 1 條線跑 embedding
 
 class QdrantRepository:
-    def __init__(self, client: AsyncQdrantClient, embedder: BGEEmbedder):
+    def __init__(self, client: AsyncQdrantClient, embed_client: AsyncClient):
         self.client = client
-        self.embedder = embedder
+        self.embed_client = embed_client
+
+    # 實作進入點
+    async def __aenter__(self):
+        # 如果需要可以在這裡做額外的初始化
+        return self
+
+    # 實作結束點，確保離開時自動關閉
+    async def __aexit__(self, exc_type, exc_val, exc_tb):
+        await self.client.close()
+        await self.embed_client.aclose()
+
+    async def _compute_embeddings(self, texts: list[str]) -> list[list[float]]:
+        resp = await self.embed_client.post(
+            "/embeddings",
+            json={
+                "model": "BAAI/bge-m3",
+                "input": texts  # batch 一次送，不用 loop
+            }
+        )
+        resp.raise_for_status()
+        return [item["embedding"] for item in resp.json()["data"]]
 
     async def upsert_recipe(self, chunk: BaseChunk):
         text = chunk.to_embedding_text()
+        vectors = await self._compute_embeddings([text])
         await self.client.upsert(
             collection_name=qdrant_settings.recipe_collection_name,
             points=[
                 PointStruct(
                     id=str(uuid.uuid5(uuid.NAMESPACE_DNS, chunk.get_id())),
                     vector={
-                        qdrant_settings.vectors_name: self.embedder.embed(text),
+                        qdrant_settings.vectors_name: vectors[0],
                     },
                     payload=chunk.get_payload().model_dump()
                 )
@@ -30,7 +55,8 @@ class QdrantRepository:
 
     async def upsert_batch_recipe(self, chunks: List[BaseChunk]):
         texts = [chunk.to_embedding_text() for chunk in chunks]
-        vectors = self.embedder.embed_batch(texts)
+
+        vectors = await self._compute_embeddings(texts)
 
         points = []
 

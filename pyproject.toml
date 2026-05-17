@@ -36,4 +36,7 @@ dependencies = [
     "testcontainers[postgres]>=4.14.1",
     "pytest-httpx>=0.36.0",
     "aiolimiter>=1.2.1",
+    "infinity-emb>=0.0.45",
+    "prometheus-fastapi-instrumentator>=7.1.0",
+    "orjson>=3.11.9",
 ]
