@@ -19,6 +19,9 @@ class StaleEventResetWorker:
         self.interval_minutes = interval_minutes
 
     async def run(self):
+        # 1. 啟動時立即執行第一次檢查與清理
+        await self._reset_stale_events(datetime.now(UTC))
+
         while not self.stop_event.is_set():
             try:
                 await asyncio.wait_for(

@@ -27,7 +27,7 @@ async def test_stale_worker_reset_event_when_meet_the_timeout(repo, stop_event):
     stop_event.set()
 
     await asyncio.wait_for(task, timeout=1)
-    assert worker._reset_stale_events.call_count >= 1
+    assert worker._reset_stale_events.call_count == 2
     assert task.done()
 
 
@@ -42,4 +42,4 @@ async def test_stale_worker_stop_right_now_when_receive_stop_event(repo, stop_ev
 
     await asyncio.wait_for(task, timeout=1)
     assert task.done()
-    worker._reset_stale_events.assert_not_called()
+    worker._reset_stale_events.assert_called_once()

@@ -197,12 +197,23 @@ class PgRepository:
         return obj_list
 
     async def reset_stale_events(self, session: AsyncSession, cut_off: datetime):
-        stmt = (
-            update(PgRecipeModel)
+        # 1. 先找出過期的 ID，並鎖定它們（自動跳過已被其他實例鎖定的資料）
+        select_stmt = (
+            select(PgRecipeModel.id)
             .where(
                 PgRecipeModel.status == "processing",
-                PgRecipeModel.updated_at < cut_off
+                PgRecipeModel.updated_at <= cut_off
             )
-            .values(status="pending")
+            .with_for_update(skip_locked=True)  # 關鍵：別人鎖定的我就跳過
         )
-        await session.execute(stmt)
+        result = await session.execute(select_stmt)
+        target_ids = result.scalars().all()
+
+        # 2. 如果有找到資料，再進行更新
+        if target_ids:
+            update_stmt = (
+                update(PgRecipeModel)
+                .where(PgRecipeModel.id.in_(target_ids))
+                .values(status="pending")
+            )
+            await session.execute(update_stmt)
