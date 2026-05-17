@@ -1,4 +1,4 @@
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, AsyncMock, patch
 
 import pytest
 import pytest_asyncio
@@ -50,80 +50,91 @@ def recipe():
 
 @pytest.mark.asyncio
 async def test_qdr_repository_upsert_main_chunk(qdrant_client, recipe):
-    mock_embedder = MagicMock()
-    mock_embedder.embed = MagicMock(return_value=[0.1]*1024)
+    mock_embedder_client = MagicMock()
+    mock_embedder_client.post = AsyncMock()
 
-    qdr_repo = QdrantRepository(qdrant_client, mock_embedder)
+    qdr_repo = QdrantRepository(qdrant_client, mock_embedder_client)
 
-    chunk = MainChunk.from_recipe(recipe)
+    with patch.object(qdr_repo, "_compute_embeddings", new_callable=AsyncMock) as mock_compute_embeddings:
+        mock_compute_embeddings.return_value = [[0.1] * 1024]
 
-    await qdr_repo.upsert_recipe(chunk)
+        chunk = MainChunk.from_recipe(recipe)
 
-    result = await qdr_repo.search_recipe("banana")
+        await qdr_repo.upsert_recipe(chunk)
 
-    assert len(result.points) == 1
+        result = await qdr_repo.search_recipe("banana")
 
-    point = result.points[0]
-    assert point.payload["id"] == "123"
-    assert point.payload["name"] == "banana"
+        assert len(result.points) == 1
+
+        point = result.points[0]
+        assert point.payload["id"] == "123"
+        assert point.payload["name"] == "banana"
 
 
 @pytest.mark.asyncio
 async def test_qdr_repository_upsert_overview_chunk(qdrant_client, recipe):
-    mock_embedder = MagicMock()
-    mock_embedder.embed = MagicMock(return_value=[0.1]*1024)
+    mock_embedder_client = MagicMock()
+    mock_embedder_client.post = AsyncMock()
 
-    qdr_repo = QdrantRepository(qdrant_client, mock_embedder)
+    qdr_repo = QdrantRepository(qdrant_client, mock_embedder_client)
 
-    chunk = OverviewChunk.from_recipe(recipe)
+    with patch.object(qdr_repo, "_compute_embeddings", new_callable=AsyncMock) as mock_compute_embeddings:
+        mock_compute_embeddings.return_value = [[0.1] * 1024]
 
-    await qdr_repo.upsert_recipe(chunk)
+        chunk = OverviewChunk.from_recipe(recipe)
 
-    result = await qdr_repo.search_recipe("fruit")
+        await qdr_repo.upsert_recipe(chunk)
 
-    assert len(result.points) == 1
+        result = await qdr_repo.search_recipe("fruit")
 
-    point = result.points[0]
-    assert point.payload["parent_id"] == "123"
-    assert point.payload["content"] == "Good fruit"
+        assert len(result.points) == 1
+
+        point = result.points[0]
+        assert point.payload["parent_id"] == "123"
+        assert point.payload["content"] == "Good fruit"
 
 
 @pytest.mark.asyncio
 async def test_qdr_repository_upsert_instruction_chunk(qdrant_client, recipe):
-    mock_embedder = MagicMock()
-    mock_embedder.embed = MagicMock(return_value=[0.1]*1024)
+    mock_embedder_client = MagicMock()
+    mock_embedder_client.post = AsyncMock()
 
-    qdr_repo = QdrantRepository(qdrant_client, mock_embedder)
+    qdr_repo = QdrantRepository(qdrant_client, mock_embedder_client)
 
-    chunk = InstructionChunk.from_recipe(recipe)
+    with patch.object(qdr_repo, "_compute_embeddings", new_callable=AsyncMock) as mock_compute_embeddings:
+        mock_compute_embeddings.return_value = [[0.1] * 1024]
 
-    await qdr_repo.upsert_recipe(chunk)
+        chunk = InstructionChunk.from_recipe(recipe)
 
-    result = await qdr_repo.search_recipe("搗碎")
+        await qdr_repo.upsert_recipe(chunk)
 
-    assert len(result.points) == 1
+        result = await qdr_repo.search_recipe("搗碎")
 
-    point = result.points[0]
-    assert point.payload["parent_id"] == "123"
-    assert point.payload["content"] == "搗碎"
+        assert len(result.points) == 1
+
+        point = result.points[0]
+        assert point.payload["parent_id"] == "123"
+        assert point.payload["content"] == "搗碎"
 
 
 @pytest.mark.asyncio
 async def test_qdr_repository_bulk_upsert_then_search(qdrant_client, recipe):
-    mock_embedder = MagicMock()
-    mock_embedder.embed = MagicMock(return_value=[0.1]*1024)
-    mock_embedder.embed_batch = MagicMock(return_value=[[0.1] * 1024, [0.1] * 1024, [0.1] * 1024])
+    mock_embedder_client = MagicMock()
+    mock_embedder_client.post = AsyncMock()
 
-    qdr_repo = QdrantRepository(qdrant_client, mock_embedder)
+    qdr_repo = QdrantRepository(qdrant_client, mock_embedder_client)
 
-    chunks = [
-        MainChunk.from_recipe(recipe),
-        OverviewChunk.from_recipe(recipe),
-        InstructionChunk.from_recipe(recipe),
-    ]
+    with patch.object(qdr_repo, "_compute_embeddings", new_callable=AsyncMock) as mock_compute_embeddings:
+        mock_compute_embeddings.return_value = [[0.1] * 1024, [0.1] * 1024, [0.1] * 1024]
 
-    await qdr_repo.upsert_batch_recipe(chunks)
+        chunks = [
+            MainChunk.from_recipe(recipe),
+            OverviewChunk.from_recipe(recipe),
+            InstructionChunk.from_recipe(recipe),
+        ]
 
-    result = await qdr_repo.search_recipe("banana")
+        await qdr_repo.upsert_batch_recipe(chunks)
 
-    assert len(result.points) == 3
+        result = await qdr_repo.search_recipe("banana")
+
+        assert len(result.points) == 3

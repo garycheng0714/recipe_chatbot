@@ -90,7 +90,9 @@ class QdrantRepository:
 
     async def query_points(self, query_text, k: int, collection_name: str):
         # 1. 處理 Dense 向量 (轉成普通 list)
-        query_dense = self.embedder.embed(query_text)
+        embedding_list = await self._compute_embeddings(query_text)
+
+        query_dense = embedding_list[0]
 
         # 同樣取得 query 的 dense 與 sparse 向量
         return await self.client.query_points(
