@@ -106,6 +106,9 @@ async def test_claim_event_success(repo, session, outbox_event):
     await repo.insert_event(session, outbox_event)
     await session.flush()
 
+    await repo.get_pending_events(session)
+    await session.flush()
+
     claimed = await repo.claim_event(session, str(outbox_event.event_id))
 
     assert claimed is not None
@@ -115,6 +118,9 @@ async def test_claim_event_success(repo, session, outbox_event):
 async def test_claim_event_returns_none_if_already_processing(repo, session, outbox_event):
     """已經是 PROCESSING 的 event，不能再被 claim"""
     await repo.insert_event(session, outbox_event)
+    await session.flush()
+
+    await repo.get_pending_events(session)
     await session.flush()
 
     event_id = str(outbox_event.event_id)
@@ -147,6 +153,10 @@ async def test_claim_event_concurrent(engine, outbox_event, outbox_cleaner):
         async with s.begin():
             await OutboxRepository().insert_event(s, outbox_event)
 
+    async with session_factory() as s:
+        async with s.begin():
+            await OutboxRepository().get_pending_events(s)
+
     # Step 2：兩個 coroutine 同時 claim 同一個 event_id
     async def try_claim():
         async with session_factory() as s:
@@ -165,6 +175,9 @@ async def test_claim_event_concurrent(engine, outbox_event, outbox_cleaner):
 
 async def test_mark_event_completed(repo, session, outbox_event):
     await repo.insert_event(session, outbox_event)
+    await session.flush()
+
+    await repo.get_pending_events(session)
     await session.flush()
 
     event_id = str(outbox_event.event_id)
@@ -208,8 +221,10 @@ async def test_reset_stale_events(repo, session, outbox_event):
     await repo.insert_event(session, outbox_event)
     await session.flush()
 
+    await repo.get_pending_events(session)
+    await session.flush()
+
     event_id = str(outbox_event.event_id)
-    await repo.claim_event(session, event_id)
 
     # 手動把 updated_at 設成很久以前，模擬卡住的 event
     await session.execute(
@@ -234,8 +249,10 @@ async def test_reset_stale_events_ignores_recent(repo, session, outbox_event):
     await repo.insert_event(session, outbox_event)
     await session.flush()
 
+    await repo.get_pending_events(session)
+    await session.flush()
+
     event_id = str(outbox_event.event_id)
-    await repo.claim_event(session, event_id)
     # updated_at 是剛剛，不超時
     await repo.reset_stale_events(session, timeout_minutes=30)
     await session.flush()
@@ -245,7 +262,7 @@ async def test_reset_stale_events_ignores_recent(repo, session, outbox_event):
         .where(OutboxModel.event_id == event_id)
     )
 
-    assert result.scalar() == "processing"  # 不應該被動到
+    assert result.scalar() == "dispatching"  # 不應該被動到
 
 
 async def test_mark_event_failed(repo, session, outbox_event):
@@ -274,3 +291,6 @@ async def test_get_pending_event(repo, session, outbox_event, outbox_event_2):
     rows = await repo.get_pending_events(session)
 
     assert len(rows) == 2
+
+    for row in rows:
+        assert row.status == "dispatching"

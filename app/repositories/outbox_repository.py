@@ -14,6 +14,7 @@ from app.services.event.recipe_event import OutboxEvent
 
 class EventStatus(Enum):
     PENDING = auto()
+    DISPATCHING = auto()
     PROCESSING = auto()
     COMPLETED = auto()
     FAILED = auto()
@@ -77,14 +78,23 @@ class OutboxRepository:
     async def get_pending_events(self, session: AsyncSession, limit: int = 50):
         # 呼叫方必須在 session.begin() context 內
         # SELECT FOR UPDATE SKIP LOCKED 避免多個 worker 重複處理
-        result = await session.execute(
-            select(OutboxModel)
+        cte = (
+            select(OutboxModel.event_id)
             .where(OutboxModel.status == EventStatus.PENDING.name.lower())
             .order_by(OutboxModel.created_at)
             .limit(limit)
             .with_for_update(skip_locked=True)
+            .cte("claimed_events")
         )
 
+        stmt = (
+            update(OutboxModel)
+            .where(OutboxModel.event_id.in_(select(cte.c.event_id)))
+            .values(status=EventStatus.DISPATCHING.name.lower())
+            .returning(OutboxModel)
+        )
+
+        result = await session.execute(stmt)
         return result.scalars().all()
 
     async def claim_event(self, session: AsyncSession, event_id: str):
@@ -92,7 +102,7 @@ class OutboxRepository:
             update(OutboxModel)
             .where(
                 OutboxModel.event_id == event_id,
-                OutboxModel.status == EventStatus.PENDING.name.lower()
+                OutboxModel.status == EventStatus.DISPATCHING.name.lower()
             )
             .values(
                 status=EventStatus.PROCESSING.name.lower(),
@@ -107,7 +117,7 @@ class OutboxRepository:
         stmt = (
             update(OutboxModel)
             .where(
-                OutboxModel.status == EventStatus.PROCESSING.name.lower(),
+                OutboxModel.status == EventStatus.DISPATCHING.name.lower(),
                 OutboxModel.updated_at < datetime.now(UTC) - timedelta(minutes=timeout_minutes)
             )
             .values(status=EventStatus.PENDING.name.lower())
