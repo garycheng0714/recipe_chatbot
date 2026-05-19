@@ -16,16 +16,6 @@ class QdrantRepository:
         self.client = client
         self.embed_client = embed_client
 
-    # 實作進入點
-    async def __aenter__(self):
-        # 如果需要可以在這裡做額外的初始化
-        return self
-
-    # 實作結束點，確保離開時自動關閉
-    async def __aexit__(self, exc_type, exc_val, exc_tb):
-        await self.client.close()
-        await self.embed_client.aclose()
-
     async def _compute_embeddings(self, texts: list[str]) -> list[list[float]]:
         resp = await self.embed_client.post(
             "/embeddings",

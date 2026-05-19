@@ -72,6 +72,30 @@ async def test_qdr_repository_upsert_main_chunk(qdrant_client, recipe):
 
 
 @pytest.mark.asyncio
+async def test_qdr_repository_upsert_chunk_idempotence(qdrant_client, recipe):
+    mock_embedder_client = MagicMock()
+    mock_embedder_client.post = AsyncMock()
+
+    qdr_repo = QdrantRepository(qdrant_client, mock_embedder_client)
+
+    with patch.object(qdr_repo, "_compute_embeddings", new_callable=AsyncMock) as mock_compute_embeddings:
+        mock_compute_embeddings.return_value = [[0.1] * 1024]
+
+        chunk = MainChunk.from_recipe(recipe)
+
+        for _ in range(3):
+            await qdr_repo.upsert_recipe(chunk)
+
+        result = await qdr_repo.search_recipe("banana")
+
+        assert len(result.points) == 1
+
+        point = result.points[0]
+        assert point.payload["id"] == "123"
+        assert point.payload["name"] == "banana"
+
+
+@pytest.mark.asyncio
 async def test_qdr_repository_upsert_overview_chunk(qdrant_client, recipe):
     mock_embedder_client = MagicMock()
     mock_embedder_client.post = AsyncMock()
