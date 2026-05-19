@@ -1,12 +1,14 @@
 import asyncio
+import subprocess
+import time
 from unittest.mock import MagicMock
 
+import httpx
 import pytest
 
 from app.domain.chunks import MainChunk, OverviewChunk, InstructionChunk
 from app.domain.models import PgRecipeModel, OutboxModel, PgRecipeChunkModel, EsPointsModel
 from app.dto.distributed_payload import DistributedPayload
-from app.embedder.embedder import BGEEmbedder
 from app.repositories import PgRepository, QdrantRepository
 from app.repositories.outbox_repository import OutboxRepository
 from app.services.event.recipe_event import RecipeEvent
@@ -46,6 +48,13 @@ def fake_recipe():
         tags=["fruit"]
     )
 
+@pytest.fixture
+def embed_client() -> httpx.AsyncClient:
+    return httpx.AsyncClient(
+        base_url="http://localhost:8081",
+        timeout=30.0
+    )
+
 
 @pytest.fixture(autouse=True)
 async def clean_db(session):
@@ -55,6 +64,27 @@ async def clean_db(session):
         await session.execute(delete(OutboxModel))
         await session.execute(delete(PgRecipeChunkModel))
         await session.execute(delete(PgRecipeModel))  # 注意 FK 順序
+
+
+@pytest.fixture(scope="session", autouse=True)
+def infinity_service():
+    proc = subprocess.Popen([
+        "infinity_emb", "v2",
+        "--model-id", "BAAI/bge-m3",
+        "--device", "mps",
+        "--port", "8081"  # 用不同 port 避免衝突
+    ])
+
+    # 等待 ready
+    for _ in range(30):
+        try:
+            httpx.get("http://localhost:8081/health")
+            break
+        except httpx.ConnectError:
+            time.sleep(2)
+
+    yield
+    proc.terminate()
 
 
 pytestmark = pytest.mark.asyncio(loop_scope="session")
@@ -139,13 +169,17 @@ async def test_app_get_pending_urls_then_update_recipe_table_and_insert_outbox_t
         assert row.status == "pending"
 
 
-async def test_get_outbox_pending_event_then_insert_data_to_es_and_qdr(session, session_factory, fake_recipe, es_repo, qdrant_client):
+async def test_get_outbox_pending_event_then_insert_data_to_es_and_qdr(session, session_factory, fake_recipe, es_repo, qdrant_client, embed_client):
     outbox_repo = OutboxRepository()
     outbox_event = RecipeEvent.create(fake_recipe)
 
     async with session_factory() as session:
         async with session.begin():
             await outbox_repo.insert_event(session, outbox_event)
+
+    async with session_factory() as session:
+        async with session.begin():
+            await outbox_repo.get_pending_events(session)
 
     payload = DistributedPayload(
         event_id=str(outbox_event.event_id),
@@ -154,7 +188,7 @@ async def test_get_outbox_pending_event_then_insert_data_to_es_and_qdr(session, 
         instruction_chunk=InstructionChunk.from_recipe(fake_recipe),
     )
 
-    qdr_repo = QdrantRepository(qdrant_client, BGEEmbedder())
+    qdr_repo = QdrantRepository(qdrant_client, embed_client)
 
     await sync_to_distributed_db(
         payload=payload,
