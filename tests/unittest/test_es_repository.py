@@ -1,3 +1,4 @@
+import uuid
 from unittest.mock import AsyncMock
 
 import pytest
@@ -33,7 +34,9 @@ async def test_es_repo_index_main_chunk(recipe):
     expected_payload = {'id': '123', 'name': 'Test', 'quantity': '1', 'ingredients': ['a', 'b'], 'category': 'tw', 'tags': ['jp']}
 
     client.index.assert_called_once_with(
-        index="recipes", document=expected_payload
+        index="recipes",
+        id=str(uuid.uuid5(uuid.NAMESPACE_DNS, chunk.get_id())),
+        document=expected_payload
     )
 
 
@@ -53,7 +56,9 @@ async def test_es_repo_index_overview_chunk(recipe):
     }
 
     client.index.assert_called_once_with(
-        index="recipes", document=expected_payload
+        index="recipes",
+        id=str(uuid.uuid5(uuid.NAMESPACE_DNS, chunk.get_id())),
+        document=expected_payload
     )
 
 
@@ -73,5 +78,7 @@ async def test_es_repo_index_instruction_chunk(recipe):
     }
 
     client.index.assert_called_once_with(
-        index="recipes", document=expected_payload
+        index="recipes",
+        id=str(uuid.uuid5(uuid.NAMESPACE_DNS, chunk.get_id())),
+        document=expected_payload
     )

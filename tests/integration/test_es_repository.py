@@ -58,6 +58,7 @@ async def cleanup_docs(es_client):
     await es_client.delete_by_query(
         index=get_index_name(),
         body={"query": {"match_all": {}}},
+        conflicts="proceed",
         refresh=True,
     )
 
@@ -123,6 +124,17 @@ async def test_search_name_in_parent_chunk(setup, recipe, es_repo, es_client, in
     assert hits[0].field_source.name == "banana"
 
 
+async def test_index_twice_then_search_one_result(setup, recipe, es_repo, es_client, index_name):
+    main = MainChunk.from_recipe(recipe)
+
+    await es_repo.index_chunk(main)
+    await es_client.indices.refresh(index=index_name)
+
+    result = await es_repo.search("banana")
+    hits = EsPointsModel(**result).hits.hits
+    assert len(hits) == 1
+
+
 async def test_search_keyword_in_parent_and_child_chunk(setup, recipe, es_repo, es_client, index_name):
     result = await es_repo.search("jp")
     hits = EsPointsModel(**result).hits.hits
@@ -173,5 +185,19 @@ async def test_search_no_results(setup, recipe, es_repo, es_client, index_name):
 
 
 async def test_index_bulk_chunk(bulk_setup, recipe, es_client, index_name):
+    result = await es_client.count(index=index_name)
+    assert result["count"] == 3
+
+
+async def test_the_idempotence_of_index_bulk_chunk(bulk_setup, recipe, es_client, es_repo, index_name):
+    main = MainChunk.from_recipe(recipe)
+    overview = OverviewChunk.from_recipe(recipe)
+    instruction = InstructionChunk.from_recipe(recipe)
+
+    chunks = [main, overview, instruction]
+
+    await es_repo.index_batch_chunk(chunks)
+    await es_client.indices.refresh(index=index_name)
+
     result = await es_client.count(index=index_name)
     assert result["count"] == 3

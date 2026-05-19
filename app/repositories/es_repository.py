@@ -1,3 +1,4 @@
+import uuid
 from typing import List
 
 from elasticsearch import AsyncElasticsearch
@@ -15,6 +16,7 @@ class ElasticSearchRepository:
     async def index_chunk(self, chunk: BaseChunk):
         await self.client.index(
             index=self.index_name,
+            id=str(uuid.uuid5(uuid.NAMESPACE_DNS, chunk.get_id())),
             document=chunk.get_payload().model_dump()
         )
 
@@ -25,6 +27,7 @@ class ElasticSearchRepository:
         actions = [
             {
                 "_index": self.index_name,
+                "_id": str(uuid.uuid5(uuid.NAMESPACE_DNS, chunk.get_id())),
                 "_source": chunk.get_payload().model_dump(),
             }
             for chunk in chunks
