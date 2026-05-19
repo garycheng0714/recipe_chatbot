@@ -211,6 +211,65 @@ async def test_reset_stale_event(engine, session, repo, recipe_url):
 
     assert result.scalar_one() == "pending"
 
+
+async def test_reset_multiple_stale_event(engine, session, repo, recipe_url, recipe_url2):
+    await repo.insert_pending_url(session, recipe_url)
+    await repo.insert_pending_url(session, recipe_url2)
+    await session.flush()
+
+    await repo.get_next_url_batch(session, 2)
+    await session.flush()
+
+    cut_off = datetime.datetime.now(datetime.UTC) + datetime.timedelta(minutes=1)
+
+    await repo.reset_stale_events(session, cut_off)
+    await session.flush()
+
+    result = await session.execute(
+        select(PgRecipeModel)
+        .where(PgRecipeModel.status == "pending")
+    )
+
+    assert len(result.scalars().all()) == 2
+
+
+async def test_reset_stale_event_no_timeout_events(engine, session, repo, recipe_url):
+    await repo.insert_pending_url(session, recipe_url)
+    await session.flush()
+
+    await repo.get_next_url_batch(session, 1)
+    await session.flush()
+
+    cut_off = datetime.datetime.now(datetime.UTC) - datetime.timedelta(minutes=30)
+
+    await repo.reset_stale_events(session, cut_off)
+    await session.flush()
+
+    result = await session.execute(
+        select(PgRecipeModel.status)
+        .where(PgRecipeModel.source_url == recipe_url.source_url)
+    )
+
+    assert result.scalar_one() == "processing"
+
+
+async def test_reset_stale_event_no_processing_events(engine, session, repo, recipe_url):
+    await repo.insert_pending_url(session, recipe_url)
+    await session.flush()
+
+    cut_off = datetime.datetime.now(datetime.UTC) + datetime.timedelta(minutes=1)
+
+    await repo.reset_stale_events(session, cut_off)
+    await session.flush()
+
+    result = await session.execute(
+        select(PgRecipeModel.status)
+        .where(PgRecipeModel.source_url == recipe_url.source_url)
+    )
+
+    assert result.scalar_one() == "pending"
+
+
 async def test_update_recipe_content(session, recipe_url, recipe_data, repo):
     await repo.insert_pending_url(session, recipe_url)
     await session.flush()
