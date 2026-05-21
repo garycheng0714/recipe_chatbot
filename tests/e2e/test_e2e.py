@@ -1,11 +1,12 @@
 import asyncio
 import subprocess
 import time
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, AsyncMock
 
 import httpx
 import pytest
 
+from app.dependencies.url_consumer_deps import UrlConsumerDeps
 from app.domain.chunks import MainChunk, OverviewChunk, InstructionChunk
 from app.domain.models import PgRecipeModel, OutboxModel, PgRecipeChunkModel, EsPointsModel
 from app.dto.distributed_payload import DistributedPayload
@@ -17,8 +18,7 @@ from app.worker.stale_event_reset_worker import StaleEventResetWorker
 from app.worker.storage import StorageWorker
 from app.worker.url_producer import UrlProducer
 from tasks.tasks import sync_to_distributed_db
-from web_crawler.consumer.url_consumer import STOP_SIGNAL
-from web_crawler.schema.crawl_result_schema import CrawlResult
+from web_crawler.consumer.url_consumer import UrlConsumer
 from web_crawler.schema.tasty_note_detail_schema import TastyNoteRecipe, Ingredient, SeasoningItem, Step
 from web_crawler.service.crawler_app import CrawlerApp
 
@@ -100,25 +100,27 @@ async def test_app_get_pending_urls_then_update_recipe_table_and_insert_outbox_t
             await PgRepository().insert_pending_url(session, recipe)
 
     # 2. 假的 consumer，不真的爬網頁，直接回傳假資料
-    async def fake_consumer_run():
-        while True:
-            url = await url_queue.get()
-            url_queue.task_done()
-            if url is STOP_SIGNAL:
-                break
-            await result_queue.put(
-                CrawlResult(source_url=url, status="completed", data=fake_recipe)
+    def consumer_factory():
+        consumer = UrlConsumer(
+            url_queue=url_queue,
+            deps=UrlConsumerDeps(
+                crawler=MagicMock(),
+                requester=MagicMock(),
+                result_queue=result_queue,
+                limiter=MagicMock(),
             )
+        )
 
-    fake_consumer = MagicMock()
-    fake_consumer.run = fake_consumer_run
+        consumer._get_recipe = AsyncMock(return_value=fake_recipe)
+
+        return consumer
 
     app = CrawlerApp(
         stop_event=stop_event,
         producer=UrlProducer(PgRepository(), url_queue, stop_event, session_factory),
         stale_event_worker=StaleEventResetWorker(PgRepository(), stop_event, session_factory),
         storage_worker=StorageWorker(get_ingestion_service(), result_queue, stop_event, session_factory=session_factory),
-        consumer_factory=lambda: fake_consumer,
+        consumer_factory=consumer_factory,
         url_queue=url_queue,
         result_queue=result_queue,
     )
