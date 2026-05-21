@@ -4,7 +4,9 @@ from unittest.mock import MagicMock, AsyncMock
 import httpx
 import pytest
 
-from web_crawler.consumer.url_consumer import UrlConsumer, STOP_SIGNAL
+from app.dependencies.url_consumer_deps import UrlConsumerDeps
+from app.utils.queue_iterator import STOP_SIGNAL
+from web_crawler.consumer.url_consumer import UrlConsumer
 from web_crawler.exceptions import RequestFatalError, RequestBlockedError, RequestRetryableError, ContentParsingError
 from web_crawler.schema.tasty_note_detail_schema import TastyNoteRecipe
 
@@ -13,9 +15,15 @@ from web_crawler.schema.tasty_note_detail_schema import TastyNoteRecipe
 def queue():
     return asyncio.Queue()
 
+
 @pytest.fixture
-def result_queue():
-    return asyncio.Queue()
+def deps():
+    return UrlConsumerDeps(
+        crawler=MagicMock(),
+        requester=MagicMock(),
+        result_queue=asyncio.Queue(),
+        limiter=MagicMock()
+    )
 
 @pytest.fixture
 def recipe():
@@ -26,16 +34,13 @@ def recipe():
     )
 
 @pytest.mark.asyncio
-async def test_consumer_stop_when_no_task_in_queue(queue, result_queue, recipe):
+async def test_consumer_stop_when_no_task_in_queue(queue, deps, recipe):
     await queue.put(recipe.source_url)
     await queue.put(STOP_SIGNAL)
 
     consumer = UrlConsumer(
-        detail_crawler=MagicMock(),
-        requester=MagicMock(),
         url_queue=queue,
-        result_queue=result_queue,
-        limiter=MagicMock()
+        deps=deps
     )
 
     consumer._get_recipe = AsyncMock(side_effect=[recipe])
@@ -45,26 +50,23 @@ async def test_consumer_stop_when_no_task_in_queue(queue, result_queue, recipe):
     # join() 應該立刻結束，不會卡住
     await asyncio.wait_for(queue.join(), timeout=1.0)
 
-    assert result_queue.qsize() == 1
+    assert deps.result_queue.qsize() == 1
 
-    result = await result_queue.get()
+    result = await deps.result_queue.get()
     assert result.source_url == recipe.source_url
     assert result.status == "completed"
     assert result.data == recipe
 
 
 @pytest.mark.asyncio
-async def test_consumer_handle_multiple_results(queue, result_queue, recipe):
+async def test_consumer_handle_multiple_results(queue, deps, recipe):
     await queue.put("https://example.com")
     await queue.put("https://example2.com")
     await queue.put(STOP_SIGNAL)
 
     consumer = UrlConsumer(
-        detail_crawler=MagicMock(),
-        requester=MagicMock(),
         url_queue=queue,
-        result_queue=result_queue,
-        limiter=MagicMock()
+        deps=deps
     )
 
     consumer._get_recipe = AsyncMock(side_effect=[
@@ -75,9 +77,9 @@ async def test_consumer_handle_multiple_results(queue, result_queue, recipe):
     await consumer.run()
 
     await asyncio.wait_for(queue.join(), timeout=1.0)
-    assert result_queue.qsize() == 2
+    assert deps.result_queue.qsize() == 2
 
-    result = [await result_queue.get() for _ in range(2)]
+    result = [await deps.result_queue.get() for _ in range(2)]
     statuses = {r.source_url: r.status for r in result}
     assert statuses["https://example.com"] == "completed"
     assert statuses["https://example2.com"] == "failed"
@@ -91,16 +93,13 @@ async def test_consumer_handle_multiple_results(queue, result_queue, recipe):
     (ContentParsingError("Parsing Error"), "parsing_error"),
     (httpx.ConnectTimeout("Unknown Error", request=MagicMock()), "failed"),
 ])
-async def test_consumer_raises_fatal_exception(queue, result_queue, recipe, exception, status):
+async def test_consumer_raises_fatal_exception(queue, deps, recipe, exception, status):
     await queue.put(recipe.source_url)
     await queue.put(STOP_SIGNAL)
 
     consumer = UrlConsumer(
-        detail_crawler=MagicMock(),
-        requester=MagicMock(),
         url_queue=queue,
-        result_queue=result_queue,
-        limiter=MagicMock()
+        deps=deps
     )
 
     consumer._get_recipe = AsyncMock(side_effect=[
@@ -112,9 +111,9 @@ async def test_consumer_raises_fatal_exception(queue, result_queue, recipe, exce
     # join() 應該立刻結束，不會卡住
     await asyncio.wait_for(queue.join(), timeout=1.0)
 
-    assert result_queue.qsize() == 1
+    assert deps.result_queue.qsize() == 1
 
-    result = await result_queue.get()
+    result = await deps.result_queue.get()
     assert result.source_url == recipe.source_url
     assert result.status == status
     assert result.data is None

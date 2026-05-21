@@ -1,35 +1,22 @@
 import asyncio
 import random
 
-from aiolimiter import AsyncLimiter
-
+from app.dependencies.url_consumer_deps import UrlConsumerDeps
+from app.worker.async_worker import AsyncWorker
 from web_crawler.exceptions import RequestFatalError, RequestBlockedError, ContentParsingError, RequestRetryableError
-from web_crawler.detail_crawler import TastyNoteDetailCrawler
-from web_crawler.requester import HttpxRequester
 from web_crawler.schema.crawl_result_schema import CrawlResult
 from web_crawler.schema.tasty_note_detail_schema import TastyNoteRecipe
 from loguru import logger
 
-class StopSignal: pass
 
-STOP_SIGNAL = StopSignal()
-
-class UrlConsumer:
+class UrlConsumer(AsyncWorker):
     def __init__(
         self,
-        detail_crawler: TastyNoteDetailCrawler,
-        requester: HttpxRequester,
         url_queue: asyncio.Queue,
-        result_queue: asyncio.Queue[CrawlResult],
-        limiter: AsyncLimiter,
+        deps: UrlConsumerDeps,
     ):
-        self._detail_crawler = detail_crawler
-        self._requester = requester
-        self._url_queue = url_queue
-        self._result_queue = result_queue
-        # 每 1 秒只允許發出 2 個請求 (2 requests per 1 second)
-        self._limiter = limiter
-
+        super().__init__(url_queue)
+        self.deps = deps
 
     async def _random_sleep(self):
         await asyncio.sleep(random.uniform(0.1, 0.5))
@@ -37,29 +24,22 @@ class UrlConsumer:
 
     async def _get_recipe(self, url: str) -> TastyNoteRecipe:
         # 在發起請求前，必須先獲得「許可證」
-        async with self._limiter:
-            html = await self._requester.request(url)
-            return self._detail_crawler.crawl(html)
+        async with self.deps.limiter:
+            html = await self.deps.requester.request(url)
+            return self.deps.crawler.crawl(html)
 
 
-    async def run(self):
-        while True:
-            url = await self._url_queue.get()
-            if url is STOP_SIGNAL:
-                self._url_queue.task_done()
-                break
-            try:
-                recipe = await self._get_recipe(url)
-                await self._result_queue.put(
-                    CrawlResult(source_url=url, status="completed", data=recipe)
-                )
-                logger.info(f"Fetched {url}")
-            except Exception as e:
-                await self._handle_crawler_error(url, e, self._result_queue)
-            finally:
-                # 這是關鍵！不論成功失敗，都要告訴 queue「這件事我做完了」
-                # 這樣最外層的 await url_queue.join() 才會通過
-                self._url_queue.task_done()
+    async def handle(self, item):
+        # item is the source url
+        recipe = await self._get_recipe(item)
+        await self.deps.result_queue.put(
+            CrawlResult(source_url=item, status="completed", data=recipe)
+        )
+        logger.info(f"url_consumer: Fetched {item}")
+
+
+    async def handle_exception(self, item, exception):
+        await self._handle_crawler_error(item, exception, self.deps.result_queue)
 
 
     async def _handle_crawler_error(self, url: str, exc: Exception, queue: asyncio.Queue[CrawlResult]):
