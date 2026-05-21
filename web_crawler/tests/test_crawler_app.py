@@ -3,7 +3,7 @@ from unittest.mock import patch, AsyncMock
 
 import pytest
 
-from web_crawler.consumer.url_consumer import STOP_SIGNAL
+from app.utils.queue_iterator import STOP_SIGNAL
 
 
 @pytest.mark.asyncio
