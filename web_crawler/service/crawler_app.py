@@ -1,10 +1,12 @@
 import asyncio
 from typing import Callable
 from loguru import logger
+
+from app.core.signals import STOP_SIGNAL
 from app.worker.stale_event_reset_worker import StaleEventResetWorker
 from app.worker.storage import StorageWorker
 from app.worker.url_producer import UrlProducer
-from web_crawler.consumer.url_consumer import UrlConsumer, STOP_SIGNAL
+from web_crawler.consumer.url_consumer import UrlConsumer
 
 
 class CrawlerApp:
@@ -17,7 +19,7 @@ class CrawlerApp:
         consumer_factory: Callable[[], UrlConsumer],  # 因為有多個 Consumer，傳入 Factory
         url_queue: asyncio.Queue,
         result_queue: asyncio.Queue,
-        max_workers: int = 5
+        max_workers: int = 2
     ):
         self.stop_event = stop_event
         self.producer = producer
@@ -97,5 +99,5 @@ class CrawlerApp:
 
     async def _stop_storage(self):
         # 發出取消請求
-        self._storage_task.cancel()
+        await self.result_queue.put(STOP_SIGNAL)
         await asyncio.gather(self._storage_task, return_exceptions=True)
