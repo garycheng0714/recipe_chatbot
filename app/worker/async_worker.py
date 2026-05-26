@@ -1,6 +1,6 @@
 import asyncio
 
-from app.utils.queue_iterator import QueueIterator
+from app.core.signals import STOP_SIGNAL
 
 
 class AsyncWorker:
@@ -14,8 +14,18 @@ class AsyncWorker:
         return NotImplemented
 
     async def run(self):
-        async for item in QueueIterator(self.input_queue):
+        while True:
+            item = await self.input_queue.get()
+
+            stop_received = item is STOP_SIGNAL
+
             try:
-                await self.handle(item)
+                if not stop_received:
+                    await self.handle(item)
             except Exception as e:
                 await self.handle_exception(item, e)
+            finally:
+                self.input_queue.task_done()
+
+            if stop_received:
+                break
