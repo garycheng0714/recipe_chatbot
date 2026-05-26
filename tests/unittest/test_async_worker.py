@@ -3,7 +3,7 @@ from unittest.mock import AsyncMock
 
 import pytest
 
-from app.utils.queue_iterator import STOP_SIGNAL
+from app.core.signals import STOP_SIGNAL
 from app.worker.async_worker import AsyncWorker
 
 
@@ -34,6 +34,7 @@ async def test_async_worker_handle_the_items(input_queue):
     await worker.run()
 
     assert worker.result == [1, 2]
+    await asyncio.wait_for(input_queue.join(), timeout=1)
 
 
 @pytest.mark.asyncio
@@ -49,3 +50,4 @@ async def test_async_worker_handle_the_exception(input_queue):
     await worker.run()
 
     worker.handle_exception.assert_called_once()
+    await asyncio.wait_for(input_queue.join(), timeout=1)

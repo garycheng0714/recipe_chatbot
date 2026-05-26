@@ -5,7 +5,7 @@ import httpx
 import pytest
 
 from app.dependencies.url_consumer_deps import UrlConsumerDeps
-from app.utils.queue_iterator import STOP_SIGNAL
+from app.core.signals import STOP_SIGNAL
 from web_crawler.consumer.url_consumer import UrlConsumer
 from web_crawler.exceptions import RequestFatalError, RequestBlockedError, RequestRetryableError, ContentParsingError
 from web_crawler.schema.tasty_note_detail_schema import TastyNoteRecipe
