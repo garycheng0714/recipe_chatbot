@@ -3,6 +3,7 @@ from unittest.mock import MagicMock, AsyncMock, patch
 
 import pytest
 
+from app.core.signals import STOP_SIGNAL
 from app.worker.storage import _ingest_batch, _ingest_single_result, StorageWorker
 from web_crawler.schema.crawl_result_schema import CrawlResult
 
@@ -100,7 +101,6 @@ async def test_storage_ingest_single_result_with_fail_items(mock_session_factory
 @pytest.mark.asyncio
 async def test_storage_ingest_batch_with_fallback_when_ingest_success(mock_session_factory):
     queue = asyncio.Queue()
-    stop_event = asyncio.Event()
 
     mock_service = MagicMock()
     mock_service.ingest_crawl_bulk_data = AsyncMock()
@@ -116,7 +116,6 @@ async def test_storage_ingest_batch_with_fallback_when_ingest_success(mock_sessi
     worker = StorageWorker(
         service=mock_service,
         queue=queue,
-        stop_event=stop_event,
         session_factory=mock_session_factory,
         loguru_logger=mock_logger
     )
@@ -131,7 +130,6 @@ async def test_storage_ingest_batch_with_fallback_when_ingest_success(mock_sessi
 @pytest.mark.asyncio
 async def test_storage_ingest_batch_with_fallback_when_ingest_batch_raise_exception(mock_session_factory):
     queue = asyncio.Queue()
-    stop_event = asyncio.Event()
 
     mock_service = MagicMock()
     mock_service.ingest_crawl_bulk_data = AsyncMock(side_effect=Exception("Boom!"))
@@ -147,7 +145,6 @@ async def test_storage_ingest_batch_with_fallback_when_ingest_batch_raise_except
     worker = StorageWorker(
         service=mock_service,
         queue=queue,
-        stop_event=stop_event,
         session_factory=mock_session_factory,
         loguru_logger=mock_logger
     )
@@ -161,7 +158,6 @@ async def test_storage_ingest_batch_with_fallback_when_ingest_batch_raise_except
 @pytest.mark.asyncio
 async def test_storage_ingest_batch_with_fallback_when_ingest_fail(mock_session_factory):
     queue = asyncio.Queue()
-    stop_event = asyncio.Event()
 
     mock_service = MagicMock()
     mock_service.ingest_crawl_bulk_data = AsyncMock(side_effect=Exception("Boom!"))
@@ -177,7 +173,6 @@ async def test_storage_ingest_batch_with_fallback_when_ingest_fail(mock_session_
     worker = StorageWorker(
         service=mock_service,
         queue=queue,
-        stop_event=stop_event,
         session_factory=mock_session_factory,
         loguru_logger=mock_logger
     )
@@ -191,7 +186,6 @@ async def test_storage_ingest_batch_with_fallback_when_ingest_fail(mock_session_
 @pytest.mark.asyncio
 async def test_storage_run_with_empty_batch(mock_session_factory):
     queue = asyncio.Queue()
-    stop_event = asyncio.Event()
 
     mock_logger = MagicMock()
     mock_logger.exception = MagicMock()
@@ -199,7 +193,6 @@ async def test_storage_run_with_empty_batch(mock_session_factory):
     worker = StorageWorker(
         service=MagicMock(),
         queue=queue,
-        stop_event=stop_event,
         session_factory=mock_session_factory,
         loguru_logger=mock_logger
     )
@@ -211,9 +204,6 @@ async def test_storage_run_with_empty_batch(mock_session_factory):
         mock_ingest.assert_not_called()
         mock_logger.exception.assert_not_called()
 
-        stop_event.set()
-
-
 
 @pytest.mark.asyncio
 async def test_storage_run_with_batch_items(mock_session_factory):
@@ -221,16 +211,13 @@ async def test_storage_run_with_batch_items(mock_session_factory):
     await queue.put("a")
     await queue.put("b")
 
-    stop_event = asyncio.Event()
-
     mock_logger = MagicMock()
     mock_logger.exception = MagicMock()
 
     worker = StorageWorker(
         service=MagicMock(),
         queue=queue,
-        collect_timeout=0.1,
-        stop_event=stop_event,
+        batch_size=2,
         session_factory=mock_session_factory,
         loguru_logger=mock_logger
     )
@@ -239,23 +226,20 @@ async def test_storage_run_with_batch_items(mock_session_factory):
 
         asyncio.create_task(worker.run())
 
-        await queue.join()
+        await asyncio.wait_for(queue.join(), timeout=1)
 
         await queue.put("c")
-        await queue.join()
+        await queue.put(STOP_SIGNAL)
+        await asyncio.wait_for(queue.join(), timeout=1)
 
         assert mock_ingest.call_count == 2
         mock_logger.exception.assert_not_called()
-
-        stop_event.set()
 
 
 @pytest.mark.asyncio
 async def test_storage_run_with_exception_occur(mock_session_factory):
     queue = asyncio.Queue()
     await queue.put("a")
-
-    stop_event = asyncio.Event()
 
     mock_logger = MagicMock()
     mock_logger.exception = MagicMock()
@@ -264,7 +248,6 @@ async def test_storage_run_with_exception_occur(mock_session_factory):
         service=MagicMock(),
         queue=queue,
         collect_timeout=0.1,
-        stop_event=stop_event,
         session_factory=mock_session_factory,
         loguru_logger=mock_logger
     )
@@ -278,5 +261,3 @@ async def test_storage_run_with_exception_occur(mock_session_factory):
 
         assert mock_ingest.call_count == 1
         mock_logger.exception.assert_called_once()
-
-        stop_event.set()

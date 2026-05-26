@@ -7,7 +7,7 @@ from sqlalchemy.exc import OperationalError, DisconnectionError
 
 from app.database import AsyncSessionLocal
 from app.services.ingestion import IngestionService
-from app.utils.batch_queue import collect_batch
+from app.worker.async_batch_worker import AsyncBatchWorker
 from web_crawler.schema.crawl_result_schema import CrawlResult
 from loguru import logger
 
@@ -55,47 +55,32 @@ async def _ingest_single_result(service: IngestionService, result: CrawlResult, 
 """
 是否也要用 poison pill
 """
-class StorageWorker:
+class StorageWorker(AsyncBatchWorker):
     def __init__(
         self,
         service: IngestionService,
         queue: asyncio.Queue[CrawlResult],
-        stop_event: asyncio.Event,
         collect_timeout: float = 5.0,
+        batch_size: int = 50,
         session_factory = AsyncSessionLocal,
         loguru_logger = logger,
     ):
+        super().__init__(queue, collect_timeout, batch_size)
         self.service = service
-        self.queue = queue
-        self.stop_event = stop_event
-        self.collect_timeout = collect_timeout
         self.session_factory = session_factory
         self.logger = loguru_logger
 
-    async def run(self):
-        """
-        這是一個獨立的工人，專門搬運資料庫
-        每次都建立一個獨立的 session
-        """
-        while True:
-            batch: List[CrawlResult] = []
-            try:
-                if self.stop_event.is_set():
-                    break
-                # 這裡就是 "Session-per-task" 的體現
-                batch = await collect_batch(self.queue, self.collect_timeout)
-                if batch:
-                    await self._ingest_batch_with_fallback(batch)
-            except Exception as e:
-                self.logger.exception(f"ingestion error: {e}")
-                # TODO: custom DB exception
-            finally:
-                for _ in batch:
-                    self.queue.task_done()
+    async def handle_batch(self, batch):
+        if batch:
+            await self._ingest_batch_with_fallback(batch)
+
+    async def handle_exception(self, exception):
+        self.logger.exception(f"ingestion error: {exception}")
 
     async def _ingest_batch_with_fallback(self, batch: List[CrawlResult]):
         try:
             await _ingest_batch(self.service, batch, self.session_factory)
+            print(f"storage worker: Ingest {batch}")
         except Exception as e:
             self.logger.exception(f"Ingestion bulk data error: {e}")
             for result in batch:
