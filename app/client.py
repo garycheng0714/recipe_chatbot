@@ -1,9 +1,8 @@
+import httpx
 from elasticsearch import AsyncElasticsearch
 from qdrant_client import AsyncQdrantClient
 from typing import AsyncGenerator
-from FlagEmbedding import BGEM3FlagModel
-from app.database import ES_URL, QDRANT_URL
-from app.embedder.embedder import BGEEmbedder
+from app.database import ES_URL, QDRANT_URL, EMBED_URL
 from app.repositories import (
     PgRepository,
     ElasticSearchRepository
@@ -37,12 +36,22 @@ async def get_es():
 
 # --- 3. Qdrant 設定 ---
 qdr_client = AsyncQdrantClient(url=QDRANT_URL)
-embedder = BGEEmbedder()
+embed_client = httpx.AsyncClient(base_url=EMBED_URL, timeout=60.0)
 
 # 載入 BGE-M3 模型
-model = BGEM3FlagModel('BAAI/bge-m3',use_fp16=False)
+# model = BGEM3FlagModel('BAAI/bge-m3',use_fp16=False)
 # Setting use_fp16 to True speeds up computation with a slight performance degradation
 # reranker = FlagReranker('BAAI/bge-reranker-v2-m3', use_fp16=False)
 
+def create_qdr_client() -> AsyncQdrantClient:
+    return AsyncQdrantClient(url=QDRANT_URL)
+
+def create_embed_client() -> httpx.AsyncClient:
+    return httpx.AsyncClient(
+        base_url=EMBED_URL,
+        timeout=30.0
+    )
+
 async def get_qdrant():
-    return QdrantRepository(qdr_client, embedder)
+    qdr_repo = QdrantRepository(qdr_client, embed_client)
+    yield qdr_repo

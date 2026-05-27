@@ -1,22 +1,35 @@
 import asyncio
-from app.client import get_es, get_qdrant, get_outbox_db
+from app.client import get_es, get_outbox_db, create_embed_client, create_qdr_client
+from app.dependencies.qdrant import get_qdrant
 from app.database import AsyncSessionLocal
 from app.dto.distributed_payload import DistributedPayload
 from app.repositories import ElasticSearchRepository, QdrantRepository
 from app.repositories.outbox_repository import OutboxRepository
 from taskiq_redis import ListQueueBroker
-from taskiq import TaskiqDepends, SmartRetryMiddleware, Context
+from taskiq import TaskiqDepends, SmartRetryMiddleware, Context, TaskiqEvents
 from loguru import logger
 
 # 建立 Broker
 redis_broker = ListQueueBroker("redis://localhost:6379/0").with_middlewares(
     SmartRetryMiddleware(
-        default_retry_count=3,
+        # default_retry_count=3,
         use_delay_exponent=True,
     )
 )
 
-@redis_broker.task(retry_on_error=True, max_retries=3)
+@redis_broker.on_event(TaskiqEvents.WORKER_STARTUP)
+async def startup(state):
+    state.embed_client = create_embed_client()
+    state.qdr_client = create_qdr_client()
+
+
+@redis_broker.on_event(TaskiqEvents.WORKER_SHUTDOWN)
+async def shutdown(state):
+    await state.embed_client.aclose()
+    await state.qdr_client.close()
+
+
+@redis_broker.task
 async def sync_to_distributed_db(
     payload: DistributedPayload,
     es: ElasticSearchRepository = TaskiqDepends(get_es),
@@ -34,15 +47,13 @@ async def sync_to_distributed_db(
     try:
         chunks = [payload.main_chunk, payload.overview_chunk, payload.instruction_chunk]
 
-        await asyncio.gather(
-            es.index_batch_chunk(chunks),
-            qdr.upsert_batch_recipe(chunks),
-        )
+        await es.index_batch_chunk(chunks)
+        await qdr.upsert_batch_recipe(chunks)
 
         async with session_factory() as session:
             async with session.begin():
                 await outbox_db.mark_event_completed(session, event_id=payload.event_id)
-                print(f"Syncing {payload.main_chunk.id} to ES and Qdrant...")
+                print(f"Sync {payload.main_chunk.id} to ES and Qdrant...")
     except Exception as e:
         # 這裡不 mark failed，交給 reset_stale_events 讓它回歸 pending 重跑
         # 或者你可以 mark 一個 'error' 狀態並記錄錯誤訊息

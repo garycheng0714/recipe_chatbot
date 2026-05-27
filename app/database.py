@@ -12,6 +12,7 @@ import os
 POSTGRES_URL = f"postgresql+asyncpg://postgres:{os.getenv("OPENAI_API_KEY")}@localhost:5432/recipe_orm_db"
 ES_URL = os.getenv("ES_URL", "http://localhost:9200")
 QDRANT_URL = os.getenv("QDRANT_URL", "http://localhost:6333")
+EMBED_URL = os.getenv("EMBED_URL", "http://localhost:7997")
 
 # 建立連線引擎
 engine = create_async_engine(
