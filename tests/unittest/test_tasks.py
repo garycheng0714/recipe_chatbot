@@ -35,7 +35,6 @@ async def test_no_pending_events_will_stop_tasks(mock_session_factory):
         es,
         qdr,
         outbox,
-        MagicMock(),
         mock_session_factory
     )
 
@@ -62,7 +61,6 @@ async def test_mark_event_completed(mock_session_factory):
         es,
         qdr,
         outbox,
-        MagicMock(),
         mock_session_factory
     )
 
@@ -88,8 +86,8 @@ async def test_qdr_upsert_fail_will_mark_event_failed(mock_session_factory):
     outbox.mark_event_completed = AsyncMock()
     outbox.mark_event_failed = AsyncMock()
 
-    context = MagicMock()
-    context.message.labels.get = MagicMock(return_value=2)
+    # context = MagicMock()
+    # context.message.labels.get = MagicMock(return_value=2)
 
     with pytest.raises(Exception):
         await sync_to_distributed_db(
@@ -97,7 +95,6 @@ async def test_qdr_upsert_fail_will_mark_event_failed(mock_session_factory):
             es,
             qdr,
             outbox,
-            context,
             mock_session_factory
         )
 
@@ -121,8 +118,8 @@ async def test_es_index_fail_will_mark_event_failed(mock_session_factory):
     outbox.mark_event_completed = AsyncMock()
     outbox.mark_event_failed = AsyncMock()
 
-    context = MagicMock()
-    context.message.labels.get = MagicMock(return_value=2)
+    # context = MagicMock()
+    # context.message.labels.get = MagicMock(return_value=2)
 
     with pytest.raises(Exception):
         await sync_to_distributed_db(
@@ -130,7 +127,6 @@ async def test_es_index_fail_will_mark_event_failed(mock_session_factory):
             es,
             qdr,
             outbox,
-            context,
             mock_session_factory
         )
 
