@@ -1,9 +1,11 @@
+import asyncio
 from typing import List
 from urllib.parse import urlparse
 from bs4 import BeautifulSoup, Tag
 
 from web_crawler.detail_crawler import BaseDetailCrawler
 from web_crawler.exceptions import ContentParsingError
+from web_crawler.requester import HttpxRequester
 from web_crawler.schema.tasty_note_detail_schema import TastyNoteRecipe
 import re
 
@@ -35,7 +37,7 @@ class TastyNoteDetailCrawler(BaseDetailCrawler):
         return [
             {
                 "img": step.select_one('img')['src'],
-                "step": f"{step.select_one('span').text}. {step.select_one('p').text}",
+                "step": f"{step.select_one('span').text}. {step.select_one('p').text if step.select_one('p') else ''}",
             }
             for step in steps_tag.select('dl')
         ]
@@ -77,21 +79,32 @@ class TastyNoteDetailCrawler(BaseDetailCrawler):
 
         ingredients_content = soup.select_one('section[class="l-single-meet"]')
 
-        quantity = re.sub(
-            re.compile(f'[()（）]'),
-            "",
-            ingredients_content.select_one("h2 span").get_text(strip=True)
-        )
+        if ingredients_content:
+            quantity = re.sub(
+                re.compile(f'[()（）]'),
+                "",
+                ingredients_content.select_one("h2 span").get_text(strip=True)
+            )
 
-        recipe_info["quantity"] = quantity
+            recipe_info["quantity"] = quantity
 
-        recipe_info["ingredients"] = self._get_ingredients(ingredients_content)
-        seasoning = self._get_seasoning(ingredients_content)
+            recipe_info["ingredients"] = self._get_ingredients(ingredients_content)
+            seasoning = self._get_seasoning(ingredients_content)
 
-        if seasoning:
-            recipe_info["seasoning"] = seasoning
+            if seasoning:
+                recipe_info["seasoning"] = seasoning
 
         recipe_info["steps"] = self._get_steps(soup)
         recipe_info["tags"] = self._get_tags(soup)
 
         return recipe_info
+
+if __name__ == '__main__':
+    async def main():
+        requester = HttpxRequester()
+        crawler = TastyNoteDetailCrawler()
+        html = await requester.request("https://tasty-note.com/%e8%94%a5%e6%b3%a1%e8%8f%9c/")
+        recipe = crawler.crawl(html)
+        print(recipe)
+
+    asyncio.run(main())
