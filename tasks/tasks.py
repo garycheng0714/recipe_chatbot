@@ -1,4 +1,3 @@
-import asyncio
 from app.client import get_es, get_outbox_db, create_embed_client, create_qdr_client
 from app.dependencies.qdrant import get_qdrant
 from app.database import AsyncSessionLocal
@@ -35,7 +34,7 @@ async def sync_to_distributed_db(
     es: ElasticSearchRepository = TaskiqDepends(get_es),
     qdr: QdrantRepository = TaskiqDepends(get_qdrant),
     outbox_db: OutboxRepository = TaskiqDepends(get_outbox_db),
-    context: Context = TaskiqDepends(),  # 注入 task metadata
+    # context: Context = TaskiqDepends(),  # 注入 task metadata
     session_factory=AsyncSessionLocal,
 ):
     async with session_factory() as session:
@@ -55,15 +54,15 @@ async def sync_to_distributed_db(
                 await outbox_db.mark_event_completed(session, event_id=payload.event_id)
                 print(f"Sync {payload.main_chunk.id} to ES and Qdrant...")
     except Exception as e:
+        async with session_factory() as session:
+            async with session.begin():
+                await outbox_db.mark_event_failed(session, payload.event_id, str(e))
         # 這裡不 mark failed，交給 reset_stale_events 讓它回歸 pending 重跑
         # 或者你可以 mark 一個 'error' 狀態並記錄錯誤訊息
         # print(context.__dict__)
-        await asyncio.sleep(5)
-        is_last_retry = context.message.labels.get("_retries", 0) + 1 >= 3
-        if is_last_retry:
-            async with session_factory() as session:
-                async with session.begin():
-                    await outbox_db.mark_event_failed(session, payload.event_id, str(e))
-        logger.exception(f"同步失敗，準備重試: {e}")
+        # await asyncio.sleep(5)
+        # is_last_retry = context.message.labels.get("_retries", 0) + 1 >= 3
+        # if is_last_retry:
+        logger.exception(f"同步失敗: {e}")
         raise  # 讓 TaskIQ retry
 
