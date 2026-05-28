@@ -56,9 +56,9 @@ class CrawlerApp:
 
 
     async def graceful_shutdown(self):
-        # Consumer 用 Poison Pill：因為需要先排空 url_queue 才能停止
-        # StorageWorker 用 cancel()：因為 result_queue.join() 已確保資料寫完
-        # ResetWorker 用 stop_event：因為它天然支援 event-driven 停止
+        # Consumer 用 STOP_SIGNAL：因為需要先排空 url_queue 才能停止
+        # StorageWorker 用 STOP_SIGNAL：因為 result_queue.join() 已確保資料寫完
+        # ResetWorker 用 stop_event：因為它與 queue 無關，屬於 application level worker
         self.stop_event.set()
         await self._drain_url_queue()
         await self._stop_consumers()
