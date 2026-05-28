@@ -7,6 +7,9 @@ from aiolimiter import AsyncLimiter
 import asyncio, random
 
 
+# 總頁數會在第 2 頁之後顯示
+# <title>「十分鐘料理 」一覽 - 第 3 頁，總計 70 頁 - 日本男子的日式家庭料理 | tasty-note | 每天都有新食譜！</title>
+
 LIST_URL = "https://tasty-note.com/tag/ten-minutes/page/{}/"
 START_PAGE = 2
 MAX_PAGE = 69
