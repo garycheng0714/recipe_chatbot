@@ -1,5 +1,5 @@
 
-.PHONY: unittest e2e integration poller taskiq crawler emb
+.PHONY: unittest e2e integration poller taskiq crawler emb service diff
 
 # 預設目標：顯示說明
 help:
@@ -11,6 +11,8 @@ help:
 	@echo "  make taskiq       - 啟動 taskiq"
 	@echo "  make crawler      - 啟動 crawler"
 	@echo "  make emb          - 啟動 embedding server"
+	@echo "  make service      - 啟動相關 service"
+	@echo "  make diff         - 查看 es 和 qdrant 的差異"
 
 unittest:
 	pytest --ignore=tests/integration/ --ignore=tests/e2e/
@@ -28,7 +30,13 @@ taskiq:
 	uv run taskiq worker tasks.tasks:redis_broker --workers 2 --max-async-tasks 1
 
 crawler:
-	uv run python -m web_crawler.service.crawler_app
+	uv run python -m web_crawler.main
 
 emb:
 	uv run infinity_emb v2 --model-id BAAI/bge-m3 --device mps
+
+service:
+	honcho start
+
+diff:
+	uv run python qdrant_es_diff.py
