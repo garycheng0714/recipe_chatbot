@@ -10,6 +10,8 @@ import os
 
 # 資料庫連線位置 (SQLite)
 POSTGRES_URL = f"postgresql+asyncpg://postgres:{os.getenv("OPENAI_API_KEY")}@localhost:5432/recipe_orm_db"
+POSTGRES_DSN = f"postgresql://postgres:{os.getenv("OPENAI_API_KEY")}@localhost:5432/recipe_orm_db"
+REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379")
 ES_URL = os.getenv("ES_URL", "http://localhost:9200")
 QDRANT_URL = os.getenv("QDRANT_URL", "http://localhost:6333")
 EMBED_URL = os.getenv("EMBED_URL", "http://localhost:7997")
