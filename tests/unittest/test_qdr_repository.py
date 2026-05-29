@@ -23,6 +23,19 @@ def recipe():
     )
 
 
+@pytest.fixture
+def recipe_without_ingredients():
+    return TastyNoteRecipe(
+        id="123",
+        name="Test",
+        source_url="https://example.com",
+        category="tw",
+        description="Test",
+        steps=[Step(img="jpg", step="a"), Step(img="img", step="b")],
+        tags=["jp"],
+    )
+
+
 @pytest.mark.asyncio
 async def test_qdr_repository_upsert_main_chunk(recipe):
     client = AsyncMock()
@@ -50,6 +63,37 @@ async def test_qdr_repository_upsert_main_chunk(recipe):
             "name": "Test",
             "quantity": "1",
             "ingredients": ["a", "b"],
+            "category": "tw",
+            "tags": ["jp"],
+        }
+        assert point.payload == expected_payload
+
+
+@pytest.mark.asyncio
+async def test_qdr_repository_upsert_main_chunk_without_ingredients(recipe_without_ingredients):
+    client = AsyncMock()
+    embed_client = MagicMock()
+    embed_client.post = AsyncMock()
+
+    repository = QdrantRepository(client, embed_client)
+
+    chunk = MainChunk.from_recipe(recipe_without_ingredients)
+
+    with patch.object(repository, "_compute_embeddings", new_callable=AsyncMock) as mock_computer_embeddings:
+        mock_computer_embeddings.return_value = [[1, 2, 3]]
+        await repository.upsert_recipe(chunk)
+
+        mock_computer_embeddings.assert_called_once_with([chunk.semantics])
+
+        client.upsert.assert_called_once()
+        point = client.upsert.call_args.kwargs["points"][0]
+
+        assert point.vector[qdrant_settings.vectors_name] == [1, 2, 3]
+        assert point.id == "37813542-0dca-5a8a-b2a2-b69c2d45583f"
+
+        expected_payload = {
+            "id": "123",
+            "name": "Test",
             "category": "tw",
             "tags": ["jp"],
         }
@@ -140,3 +184,35 @@ async def test_qdr_repository_upsert_batch_chunk(recipe):
         client.upsert.assert_called_once()
         points = client.upsert.call_args.kwargs["points"]
         assert len(points) == 3
+
+
+@pytest.mark.asyncio
+async def test_qdr_repository_upsert_batch_chunk(recipe_without_ingredients):
+    client = AsyncMock()
+    embed_client = MagicMock()
+    embed_client.post = AsyncMock()
+
+    repository = QdrantRepository(client, embed_client)
+
+    chunks = [
+        MainChunk.from_recipe(recipe_without_ingredients),
+        OverviewChunk.from_recipe(recipe_without_ingredients),
+        InstructionChunk.from_recipe(recipe_without_ingredients)
+    ]
+
+    with patch.object(repository, "_compute_embeddings", new_callable=AsyncMock) as mock_computer_embeddings:
+        mock_computer_embeddings.return_value = [[1], [2], [3]]
+        await repository.upsert_batch_recipe(chunks)
+
+        mock_computer_embeddings.assert_called_once()
+        client.upsert.assert_called_once()
+        points = client.upsert.call_args.kwargs["points"]
+        assert len(points) == 3
+
+        expected_payload = {
+            "id": "123_instruction",
+            "parent_id": "123",
+            "chunk_type": "instruction",
+            "content": "ab"
+        }
+        assert expected_payload in [p.payload for p in points]

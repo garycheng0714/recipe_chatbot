@@ -38,10 +38,17 @@ class QdrantRepository:
                     vector={
                         qdrant_settings.vectors_name: vectors[0],
                     },
-                    payload=chunk.get_payload().model_dump()
+                    payload=self._create_payload(chunk),
                 )
             ]
         )
+
+    def _create_payload(self, chunk: BaseChunk):
+        return {
+            k: v
+            for k, v in chunk.get_payload().model_dump().items()
+            if v is not None
+        }
 
     async def upsert_batch_recipe(self, chunks: List[BaseChunk]):
         texts = [chunk.to_embedding_text() for chunk in chunks]
@@ -57,7 +64,7 @@ class QdrantRepository:
                     vector={
                         qdrant_settings.vectors_name: vector,
                     },
-                    payload=chunk.get_payload().model_dump()
+                    payload=self._create_payload(chunk)
                 )
             )
 
