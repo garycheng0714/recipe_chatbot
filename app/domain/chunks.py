@@ -20,8 +20,8 @@ class BaseChunk(Protocol):
 class MainChunk(BaseModel):
     id: str
     name: str
-    quantity: str
-    ingredients: list[str]
+    quantity: str | None
+    ingredients: list[str] | None
     category: str
     tags: list[str]
     semantics: str
@@ -32,7 +32,7 @@ class MainChunk(BaseModel):
             id=recipe.id,
             name=recipe.name,
             quantity=recipe.quantity,
-            ingredients=[i.name for i in recipe.ingredients],
+            ingredients=[i.name for i in recipe.ingredients] if recipe.ingredients else None,
             category=recipe.category,
             tags=recipe.tags,
             semantics=(
@@ -40,7 +40,11 @@ class MainChunk(BaseModel):
                 f"材料：{','.join([i.name for i in recipe.ingredients])}\n"
                 f"分類：{recipe.category}\n"
                 f"tags：{recipe.tags}\n"
-            )
+            ) if recipe.ingredients else (
+                f"食譜名稱：{recipe.name}\n"
+                f"分類：{recipe.category}\n"
+                f"tags：{recipe.tags}\n"
+            ),
         )
 
     def to_embedding_text(self) -> str:

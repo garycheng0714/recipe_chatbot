@@ -9,8 +9,8 @@ class ChunkPayload(BaseModel):
 class MainChunkPayload(ChunkPayload):
     id: str
     name: str
-    quantity: str
-    ingredients: list[str]
+    quantity: str | None
+    ingredients: list[str] | None
     category: str
     tags: list[str]
 
