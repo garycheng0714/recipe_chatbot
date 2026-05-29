@@ -24,12 +24,12 @@ class Step(BaseModel):
 
 class TastyNoteRecipe(BaseModel):
     id: str
-    name: str
+    name: str = None
     source_url: str
-    category: str
-    description: str
-    quantity: str
-    ingredients: list[Ingredient]
+    category: str = None
+    description: str = None
+    quantity: str = None
+    ingredients: list[Ingredient] = None
     seasoning: list[SeasoningItem] | None = None
-    steps: list[Step]
-    tags: list[str]
+    steps: list[Step] = None
+    tags: list[str] = None
