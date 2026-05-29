@@ -1,6 +1,7 @@
 import asyncio
 from typing import List, Callable, Awaitable
 
+from app.bootstrap import wait_postgres, wait_redis, wait_embedding_service
 from app.domain.chunks import MainChunk, OverviewChunk, InstructionChunk
 from app.dto.distributed_payload import DistributedPayload
 from app.repositories.outbox_repository import OutboxRepository
@@ -32,6 +33,9 @@ async def poll_outbox(
         # 1. 開啟邊界：抓取並標記為處理中
         async with session.begin():
             events = await outbox_repo.get_pending_events(session, limit=10)
+            if len(events) == 0:
+                print("No pending events")
+                return
             for event in events:
                 recipe = TastyNoteRecipe(**event.payload)
                 events_to_dispatch.append(
@@ -49,12 +53,19 @@ async def poll_outbox(
 
 
 async def run_poller(interval_seconds: int = 5):
+    await asyncio.gather(
+        wait_postgres(),
+        wait_redis(),
+        wait_embedding_service()
+    )
+
     while True:
         try:
             await poll_outbox()
         except Exception as e:
             print(f"Poller error: {e}")
             logger.exception(e)
+        print(f"Poller sleeping {interval_seconds} seconds")
         await asyncio.sleep(interval_seconds)
 
 

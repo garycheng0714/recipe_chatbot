@@ -1,3 +1,6 @@
+import asyncio
+
+from app.bootstrap import wait_postgres, wait_redis, wait_embedding_service
 from app.client import get_es, get_outbox_db, create_embed_client, create_qdr_client
 from app.dependencies.qdrant import get_qdrant
 from app.database import AsyncSessionLocal
@@ -17,7 +20,13 @@ redis_broker = ListQueueBroker("redis://localhost:6379/0").with_middlewares(
 )
 
 @redis_broker.on_event(TaskiqEvents.WORKER_STARTUP)
-async def startup(state):
+async def on_startup(state):
+    await asyncio.gather(
+        wait_postgres(),
+        wait_redis(),
+        wait_embedding_service()
+    )
+
     state.embed_client = create_embed_client()
     state.qdr_client = create_qdr_client()
 
