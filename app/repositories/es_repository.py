@@ -13,11 +13,18 @@ class ElasticSearchRepository:
         self.client = es_client
         self.index_name = get_index_name()
 
+    def _create_payload(self, chunk: BaseChunk):
+        return {
+            k: v
+            for k, v in chunk.get_payload().model_dump().items()
+            if v is not None
+        }
+
     async def index_chunk(self, chunk: BaseChunk):
         await self.client.index(
             index=self.index_name,
             id=str(uuid.uuid5(uuid.NAMESPACE_DNS, chunk.get_id())),
-            document=chunk.get_payload().model_dump()
+            document=self._create_payload(chunk)
         )
 
     async def index_batch_chunk(self, chunks: List[BaseChunk]):
@@ -28,7 +35,7 @@ class ElasticSearchRepository:
             {
                 "_index": self.index_name,
                 "_id": str(uuid.uuid5(uuid.NAMESPACE_DNS, chunk.get_id())),
-                "_source": chunk.get_payload().model_dump(),
+                "_source": self._create_payload(chunk),
             }
             for chunk in chunks
         ]
