@@ -1,5 +1,5 @@
 
-.PHONY: unittest e2e integration poller taskiq crawler emb service diff
+.PHONY: unittest e2e integration poller taskiq crawler emb service diff fastapi
 
 # 預設目標：顯示說明
 help:
@@ -13,6 +13,7 @@ help:
 	@echo "  make emb          - 啟動 embedding server"
 	@echo "  make service      - 啟動相關 service"
 	@echo "  make diff         - 查看 es 和 qdrant 的差異"
+	@echo "  make fastapi      - 啟動 Fastapi"
 
 unittest:
 	pytest --ignore=tests/integration/ --ignore=tests/e2e/
@@ -40,3 +41,6 @@ service:
 
 diff:
 	uv run python qdrant_es_diff.py
+
+fastapi:
+	uvicorn app.main:app --reload
