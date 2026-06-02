@@ -1,10 +1,14 @@
+from typing import TypeVar, List
+
 from app.schema import RRFResult
 
+
+T = TypeVar('T')
 
 class RRFRanker:
 
     @staticmethod
-    def reciprocal_rank_fusion(search_results_list, k=60) -> list[RRFResult]:
+    def reciprocal_rank_fusion(search_results_list: List[List[T]], k=60) -> list[RRFResult]:
         """
         search_results_list: 一個列表的列表，例如 [[doc_id1, doc_id2], [doc_id2, doc_id3]]
         k: 平滑常數，預設 60
@@ -29,6 +33,6 @@ class RRFRanker:
         sorted_results = sorted(fused_scores.items(), key=lambda x: x[1], reverse=True)
 
         return [
-            RRFResult(id=idx, score=score)
+            RRFResult(item=idx, score=score)
             for idx, score in sorted_results
         ]
