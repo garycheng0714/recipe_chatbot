@@ -23,6 +23,21 @@ def response():
         }
     }
 
+@pytest.fixture
+def empty_response():
+    return {
+        'took': 2,
+        'timed_out': False,
+        '_shards': {'total': 1, 'successful': 1, 'skipped': 0, 'failed': 0},
+        'hits': {
+            'total': {
+                'value': 0, 'relation': 'eq'
+            },
+            'max_score': None,
+            'hits': []
+        }
+    }
+
 
 @pytest.mark.asyncio
 async def test_es_retriever_fetch_result(response):
@@ -31,12 +46,26 @@ async def test_es_retriever_fetch_result(response):
 
     retriever = ElasticSearchRetriever(mock_es_repo)
 
-    resp = await retriever.retrieve("tofu-kimuchi", 1)
+    resp = await retriever.retrieve("豆腐", 1)
 
     recipe = resp[0]
 
-    mock_es_repo.search.assert_called_with("tofu-kimuchi", 1)
+    mock_es_repo.search.assert_called_with("豆腐", 1)
 
     assert recipe.id == "tofu-kimuchi"
     assert recipe.score == 44.751045
     assert recipe.content == response["hits"]["hits"][0]["_source"]
+
+
+@pytest.mark.asyncio
+async def test_es_retriever_fetch_empty_result(empty_response):
+    mock_es_repo = MagicMock()
+    mock_es_repo.search = AsyncMock(side_effect=[empty_response])
+
+    retriever = ElasticSearchRetriever(mock_es_repo)
+
+    resp = await retriever.retrieve("越野跑", 1)
+
+    mock_es_repo.search.assert_called_with("越野跑", 1)
+
+    assert len(resp) == 0
