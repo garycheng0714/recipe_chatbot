@@ -9,6 +9,8 @@ from app.repositories import (
 )
 from app.repositories.outbox_repository import OutboxRepository
 from app.repositories.qdr_repository import QdrantRepository
+from app.retrieval.es_retriever import ElasticSearchRetriever
+from app.retrieval.qdr_retriever import QdrantRetriever
 
 
 # --- 1. PostgreSQL (SQLAlchemy) 設定 ---
@@ -33,6 +35,11 @@ es_client = AsyncElasticsearch(
 async def get_es():
     return ElasticSearchRepository(es_client)
 
+async def get_es_retriever():
+    return ElasticSearchRetriever(
+        ElasticSearchRepository(es_client)
+    )
+
 
 # --- 3. Qdrant 設定 ---
 qdr_client = AsyncQdrantClient(url=QDRANT_URL)
@@ -55,3 +62,7 @@ def create_embed_client() -> httpx.AsyncClient:
 async def get_qdrant():
     qdr_repo = QdrantRepository(qdr_client, embed_client)
     yield qdr_repo
+
+async def get_qdr_retriever():
+    qdr_repo = QdrantRepository(qdr_client, embed_client)
+    return QdrantRetriever(qdr_repo)
