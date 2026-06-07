@@ -23,6 +23,8 @@ class PgRecipeModel(Base):
     seasoning = Column(JSONB, nullable=True)
     category = Column(Text, nullable=True)
     tags = Column(ARRAY(String), nullable=True)
+    description = Column(Text, nullable=True)
+    steps = Column(Text, nullable=True)
 
     # 時間戳 (這對 Backfill 非常有用)
     created_at = Column(DateTime(timezone=True), default=func.now())
