@@ -47,6 +47,6 @@ fastapi:
 	uvicorn app.main:app --reload
 
 pg_backup:
-	# $$ 是為了防止 make 將其誤認為 Makefile 內建的變數
-	# date：呼叫系統時間, +%Y%m%d_%H%M%S：將日期時間格式化為 年月日_時分秒
+	@# $$ 是為了防止 make 將其誤認為 Makefile 內建的變數
+	@# date：呼叫系統時間, +%Y%m%d_%H%M%S：將日期時間格式化為 年月日_時分秒
 	pg_dump -h localhost -U postgres -d recipe_orm_db -Fc -f ~/Desktop/db_backup/recipe_db_backup_$$(date +%Y%m%d_%H%M%S).dump
