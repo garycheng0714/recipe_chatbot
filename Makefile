@@ -1,5 +1,6 @@
 
-.PHONY: unittest e2e integration poller taskiq crawler emb service diff fastapi pg_backup
+.PHONY: unittest e2e integration poller taskiq crawler \
+		emb service diff fastapi pg_backup migration
 
 # 預設目標：顯示說明
 help:
@@ -15,6 +16,7 @@ help:
 	@echo "  make diff         - 查看 es 和 qdrant 的差異"
 	@echo "  make fastapi      - 啟動 Fastapi"
 	@echo "  make pg_backup    - 備份 Postgresql"
+	@echo "  make migration    - Migration Postgresql"
 
 unittest:
 	pytest --ignore=tests/integration/ --ignore=tests/e2e/
@@ -50,3 +52,10 @@ pg_backup:
 	@# $$ 是為了防止 make 將其誤認為 Makefile 內建的變數
 	@# date：呼叫系統時間, +%Y%m%d_%H%M%S：將日期時間格式化為 年月日_時分秒
 	pg_dump -h localhost -U postgres -d recipe_orm_db -Fc -f ~/Desktop/db_backup/recipe_db_backup_$$(date +%Y%m%d_%H%M%S).dump
+
+migration:
+	@if [ -z "$(msg)" ]; then \
+		echo "錯誤：請使用 msg 變數！例如：make migration msg='add phone to user'"; \
+		exit 1; \
+	fi
+	alembic revision --autogenerate -m "$(msg)"
