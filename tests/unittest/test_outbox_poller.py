@@ -10,6 +10,7 @@ def patch_transformers():
          patch("tasks.outbox_poller.MainChunk"), \
          patch("tasks.outbox_poller.OverviewChunk"), \
          patch("tasks.outbox_poller.InstructionChunk"), \
+         patch("tasks.outbox_poller.RecipeDocument"), \
          patch("tasks.outbox_poller.DistributedPayload"):
         yield
 

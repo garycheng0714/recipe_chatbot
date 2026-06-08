@@ -55,7 +55,7 @@ async def sync_to_distributed_db(
     try:
         chunks = [payload.main_chunk, payload.overview_chunk, payload.instruction_chunk]
 
-        await es.index_batch_chunk(chunks)
+        await es.index_document(payload.document)
         await qdr.upsert_batch_recipe(chunks)
 
         async with session_factory() as session:

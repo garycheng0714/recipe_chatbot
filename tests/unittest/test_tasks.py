@@ -47,7 +47,7 @@ async def test_mark_event_completed(mock_session_factory):
     payload = MagicMock()
 
     es = MagicMock()
-    es.index_batch_chunk = AsyncMock()
+    es.index_document = AsyncMock()
 
     qdr = MagicMock()
     qdr.upsert_batch_recipe = AsyncMock()
@@ -67,7 +67,7 @@ async def test_mark_event_completed(mock_session_factory):
     outbox.claim_event.assert_called_once()
     outbox.mark_event_completed.assert_called_once()
 
-    assert es.index_batch_chunk.call_count == 1
+    assert es.index_document.call_count == 1
     assert qdr.upsert_batch_recipe.call_count == 1
 
 
@@ -76,7 +76,7 @@ async def test_qdr_upsert_fail_will_mark_event_failed(mock_session_factory):
     payload = MagicMock()
 
     es = MagicMock()
-    es.index_batch_chunk = AsyncMock()
+    es.index_document = AsyncMock()
 
     qdr = MagicMock()
     qdr.upsert_batch_recipe = AsyncMock(side_effect=Exception("boom"))
@@ -102,13 +102,16 @@ async def test_qdr_upsert_fail_will_mark_event_failed(mock_session_factory):
     outbox.mark_event_completed.assert_not_called()
     outbox.mark_event_failed.assert_called_once()
 
+    assert es.index_document.call_count == 1
+    assert qdr.upsert_batch_recipe.call_count == 1
+
 
 @pytest.mark.asyncio
 async def test_es_index_fail_will_mark_event_failed(mock_session_factory):
     payload = MagicMock()
 
     es = MagicMock()
-    es.index_batch_chunk = AsyncMock(side_effect=Exception("boom"))
+    es.index_document = AsyncMock(side_effect=Exception("boom"))
 
     qdr = MagicMock()
     qdr.upsert_batch_recipe = AsyncMock()
@@ -134,6 +137,8 @@ async def test_es_index_fail_will_mark_event_failed(mock_session_factory):
     outbox.mark_event_completed.assert_not_called()
     outbox.mark_event_failed.assert_called_once()
 
+    assert es.index_document.call_count == 1
+
 
 # @pytest.mark.asyncio
 # @pytest.mark.parametrize("retry_label", [0, 1])
@@ -141,7 +146,7 @@ async def test_es_index_fail_will_mark_event_failed(mock_session_factory):
 #     payload = MagicMock()
 #
 #     es = MagicMock()
-#     es.index_batch_chunk = AsyncMock()
+#     es.index_document = AsyncMock()
 #
 #     qdr = MagicMock()
 #     qdr.upsert_batch_recipe = AsyncMock(side_effect=Exception("boom"))

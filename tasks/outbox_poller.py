@@ -3,6 +3,7 @@ from typing import List, Callable, Awaitable
 
 from app.bootstrap import wait_postgres, wait_redis, wait_embedding_service
 from app.domain.chunks import MainChunk, OverviewChunk, InstructionChunk
+from app.domain.document import RecipeDocument
 from app.dto.distributed_payload import DistributedPayload
 from app.repositories.outbox_repository import OutboxRepository
 from tasks.tasks import sync_to_distributed_db
@@ -41,6 +42,7 @@ async def poll_outbox(
                 events_to_dispatch.append(
                     DistributedPayload(
                         event_id=str(event.event_id),
+                        document=RecipeDocument.from_recipe(recipe),
                         main_chunk=MainChunk.from_recipe(recipe),
                         overview_chunk=OverviewChunk.from_recipe(recipe),
                         instruction_chunk=InstructionChunk.from_recipe(recipe),
