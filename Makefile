@@ -3,6 +3,8 @@
 		emb service diff fastapi pg_backup alembic_migration \
 		alembic_upgrade
 
+# rg "index_batch_chunk": 「快速在整個專案裡搜尋字串」
+
 # 預設目標：顯示說明
 help:
 	@echo "可用指令："
