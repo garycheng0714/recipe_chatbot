@@ -8,6 +8,7 @@ import pytest
 
 from app.dependencies.url_consumer_deps import UrlConsumerDeps
 from app.domain.chunks import MainChunk, OverviewChunk, InstructionChunk
+from app.domain.document import RecipeDocument
 from app.domain.models import PgRecipeModel, OutboxModel, PgRecipeChunkModel, EsPointsModel
 from app.dto.distributed_payload import DistributedPayload
 from app.repositories import PgRepository, QdrantRepository
@@ -185,6 +186,7 @@ async def test_get_outbox_pending_event_then_insert_data_to_es_and_qdr(session, 
 
     payload = DistributedPayload(
         event_id=str(outbox_event.event_id),
+        document=RecipeDocument.from_recipe(fake_recipe),
         main_chunk=MainChunk.from_recipe(fake_recipe),
         overview_chunk=OverviewChunk.from_recipe(fake_recipe),
         instruction_chunk=InstructionChunk.from_recipe(fake_recipe),
