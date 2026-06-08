@@ -3,7 +3,7 @@ import pytest_asyncio
 from elasticsearch import AsyncElasticsearch
 from testcontainers.elasticsearch import ElasticSearchContainer
 
-from app.domain.chunks import MainChunk, OverviewChunk, InstructionChunk
+from app.domain.document import RecipeDocument
 from app.repositories import ElasticSearchRepository
 
 from app.infrastructure.elasticsearch.config import get_index_name, get_body_config, AnalyzerMode
@@ -88,12 +88,9 @@ pytestmark = pytest.mark.asyncio(loop_scope="session")
 
 @pytest_asyncio.fixture
 async def setup(es_repo, es_client, recipe, index_name):
-    main = MainChunk.from_recipe(recipe)
-    overview = OverviewChunk.from_recipe(recipe)
-    instruction = InstructionChunk.from_recipe(recipe)
+    document = RecipeDocument.from_recipe(recipe)
 
-    for chunk in [main, overview, instruction]:
-        await es_repo.index_chunk(chunk)
+    await es_repo.index_document(document)
 
     # refresh 讓文件立刻可被搜尋
     await es_client.indices.refresh(index=index_name)
@@ -101,19 +98,15 @@ async def setup(es_repo, es_client, recipe, index_name):
 
 @pytest_asyncio.fixture
 async def bulk_setup(es_client, es_repo, index_name, recipe):
-    main = MainChunk.from_recipe(recipe)
-    overview = OverviewChunk.from_recipe(recipe)
-    instruction = InstructionChunk.from_recipe(recipe)
+    document = RecipeDocument.from_recipe(recipe)
 
-    chunks = [main, overview, instruction]
-
-    await es_repo.index_batch_chunk(chunks)
+    await es_repo.index_batch_document([document])
     await es_client.indices.refresh(index=index_name)
 
 
 async def test_indexes_parent_and_children(setup, recipe, es_repo, es_client, index_name):
     result = await es_client.count(index=index_name)
-    assert result["count"] == 3  # 至少 parent chunk 存進去了
+    assert result["count"] == 1  # 至少 parent chunk 存進去了
 
 
 async def test_search_name_in_parent_chunk(setup, recipe, es_repo, es_client, index_name):
@@ -125,9 +118,9 @@ async def test_search_name_in_parent_chunk(setup, recipe, es_repo, es_client, in
 
 
 async def test_index_twice_then_search_one_result(setup, recipe, es_repo, es_client, index_name):
-    main = MainChunk.from_recipe(recipe)
+    document = RecipeDocument.from_recipe(recipe)
 
-    await es_repo.index_chunk(main)
+    await es_repo.index_document(document)
     await es_client.indices.refresh(index=index_name)
 
     result = await es_repo.search("banana")
@@ -148,9 +141,8 @@ async def test_search_description(setup, recipe, es_repo, es_client, index_name)
     assert len(hits) == 1
 
     data = hits[0].field_source
-    assert data.content == recipe.description
-    assert data.parent_id == recipe.id
-    assert data.id == f"{recipe.id}_overview"
+    assert data.description == recipe.description
+    assert data.id == f"{recipe.id}"
 
 
 async def test_search_instruction(setup, recipe, es_repo, es_client, index_name):
@@ -160,9 +152,8 @@ async def test_search_instruction(setup, recipe, es_repo, es_client, index_name)
     assert len(hits) == 1
 
     data = hits[0].field_source
-    assert data.content == "搗碎"
-    assert data.parent_id == recipe.id
-    assert data.id == f"{recipe.id}_instruction"
+    assert data.steps == "搗碎"
+    assert data.id == f"{recipe.id}"
 
 
 # async def test_name_field_boosted_over_content(es_repo, es_client, index_name):
@@ -186,18 +177,14 @@ async def test_search_no_results(setup, recipe, es_repo, es_client, index_name):
 
 async def test_index_bulk_chunk(bulk_setup, recipe, es_client, index_name):
     result = await es_client.count(index=index_name)
-    assert result["count"] == 3
+    assert result["count"] == 1
 
 
 async def test_the_idempotence_of_index_bulk_chunk(bulk_setup, recipe, es_client, es_repo, index_name):
-    main = MainChunk.from_recipe(recipe)
-    overview = OverviewChunk.from_recipe(recipe)
-    instruction = InstructionChunk.from_recipe(recipe)
+    document = RecipeDocument.from_recipe(recipe)
 
-    chunks = [main, overview, instruction]
-
-    await es_repo.index_batch_chunk(chunks)
+    await es_repo.index_batch_document([document])
     await es_client.indices.refresh(index=index_name)
 
     result = await es_client.count(index=index_name)
-    assert result["count"] == 3
+    assert result["count"] == 1

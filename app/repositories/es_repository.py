@@ -4,7 +4,7 @@ from typing import List
 from elasticsearch import AsyncElasticsearch
 from elasticsearch.helpers import async_bulk
 
-from app.domain.chunks import BaseChunk
+from app.domain.document import BaseDocument
 from app.infrastructure.elasticsearch.config import get_index_name
 
 
@@ -13,31 +13,25 @@ class ElasticSearchRepository:
         self.client = es_client
         self.index_name = get_index_name()
 
-    def _create_payload(self, chunk: BaseChunk):
-        return {
-            k: v
-            for k, v in chunk.get_payload().model_dump().items()
-            if v is not None
-        }
 
-    async def index_chunk(self, chunk: BaseChunk):
+    async def index_document(self, document: BaseDocument):
         await self.client.index(
             index=self.index_name,
-            id=str(uuid.uuid5(uuid.NAMESPACE_DNS, chunk.get_id())),
-            document=self._create_payload(chunk)
+            id=str(uuid.uuid5(uuid.NAMESPACE_DNS, document.get_id())),
+            document=document.get_payload().model_dump(exclude_none=True),
         )
 
-    async def index_batch_chunk(self, chunks: List[BaseChunk]):
-        if not chunks:
+    async def index_batch_document(self, documents: List[BaseDocument]):
+        if not documents:
             return
 
         actions = [
             {
                 "_index": self.index_name,
-                "_id": str(uuid.uuid5(uuid.NAMESPACE_DNS, chunk.get_id())),
-                "_source": self._create_payload(chunk),
+                "_id": str(uuid.uuid5(uuid.NAMESPACE_DNS, document.get_id())),
+                "_source": document.get_payload().model_dump(exclude_none=True),
             }
-            for chunk in chunks
+            for document in documents
         ]
 
         await async_bulk(
@@ -57,7 +51,13 @@ class ElasticSearchRepository:
                         {
                             "multi_match": {
                                 "query": query_text,
-                                "fields": ["name^5", "ingredients^3", "content", "tags"]
+                                "fields": [
+                                    "name^5",
+                                    "ingredients^3",
+                                    "description^2",
+                                    "tags",
+                                    "steps"
+                                ]
                             }
                         }
                     ],

@@ -21,14 +21,14 @@ class Total(BaseModel):
 
 class FieldSource(BaseModel):
     id: str
-    parent_id: str | None = None
-    chunk_type: str | None = None
-    content: str | None = None
     name: str | None = None
     quantity: str | None = None
     ingredients: list[str] | None = None
     category: str | None = None
     tags: list[str] | None = None
+    description: str | None = None
+    seasoning: list[str] | None = None
+    steps: str | None = None
 
 
 class Hit(BaseModel):
