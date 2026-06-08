@@ -7,7 +7,6 @@ from qdrant_client.http.models import PointStruct, Filter, FieldCondition, Match
 
 from app.domain.chunks import BaseChunk
 from app.infrastructure.qdrant.config import qdrant_settings
-import uuid
 
 _embed_executor = ThreadPoolExecutor(max_workers=1)  # 限制只用 1 條線跑 embedding
 
@@ -34,21 +33,14 @@ class QdrantRepository:
             collection_name=qdrant_settings.recipe_collection_name,
             points=[
                 PointStruct(
-                    id=str(uuid.uuid5(uuid.NAMESPACE_DNS, chunk.get_id())),
+                    id=chunk.get_point_id(),
                     vector={
                         qdrant_settings.vectors_name: vectors[0],
                     },
-                    payload=self._create_payload(chunk),
+                    payload=chunk.get_payload().model_dump(exclude_none=True),
                 )
             ]
         )
-
-    def _create_payload(self, chunk: BaseChunk):
-        return {
-            k: v
-            for k, v in chunk.get_payload().model_dump().items()
-            if v is not None
-        }
 
     async def upsert_batch_recipe(self, chunks: List[BaseChunk]):
         texts = [chunk.to_embedding_text() for chunk in chunks]
@@ -60,11 +52,11 @@ class QdrantRepository:
         for chunk, vector in zip(chunks, vectors):
             points.append(
                 PointStruct(
-                    id=str(uuid.uuid5(uuid.NAMESPACE_DNS, chunk.get_id())),
+                    id=chunk.get_point_id(),
                     vector={
                         qdrant_settings.vectors_name: vector,
                     },
-                    payload=self._create_payload(chunk)
+                    payload=chunk.get_payload().model_dump(exclude_none=True),
                 )
             )
 

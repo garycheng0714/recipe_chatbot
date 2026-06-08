@@ -152,7 +152,7 @@ async def test_qdr_repository_upsert_overview_chunk(qdrant_client, recipe):
         assert len(result.points) == 1
 
         point = result.points[0]
-        assert point.payload["parent_id"] == "123"
+        assert point.payload["id"] == "123"
         assert point.payload["content"] == "Good fruit"
 
 
@@ -175,7 +175,7 @@ async def test_qdr_repository_upsert_instruction_chunk(qdrant_client, recipe):
         assert len(result.points) == 1
 
         point = result.points[0]
-        assert point.payload["parent_id"] == "123"
+        assert point.payload["id"] == "123"
         assert point.payload["content"] == "搗碎"
 
 

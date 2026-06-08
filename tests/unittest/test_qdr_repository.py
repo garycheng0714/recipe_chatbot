@@ -1,3 +1,4 @@
+import uuid
 from unittest.mock import MagicMock, AsyncMock, patch
 
 import pytest
@@ -56,7 +57,7 @@ async def test_qdr_repository_upsert_main_chunk(recipe):
         point = client.upsert.call_args.kwargs["points"][0]
 
         assert point.vector[qdrant_settings.vectors_name] == [1, 2, 3]
-        assert point.id == "37813542-0dca-5a8a-b2a2-b69c2d45583f"
+        assert point.id == str(uuid.uuid5(uuid.NAMESPACE_DNS, f"{chunk.id}:{chunk.chunk_type}"))
 
         expected_payload = {
             "id": "123",
@@ -89,7 +90,7 @@ async def test_qdr_repository_upsert_main_chunk_without_ingredients(recipe_witho
         point = client.upsert.call_args.kwargs["points"][0]
 
         assert point.vector[qdrant_settings.vectors_name] == [1, 2, 3]
-        assert point.id == "37813542-0dca-5a8a-b2a2-b69c2d45583f"
+        assert point.id == str(uuid.uuid5(uuid.NAMESPACE_DNS, f"{chunk.id}:{chunk.chunk_type}"))
 
         expected_payload = {
             "id": "123",
@@ -120,11 +121,10 @@ async def test_qdr_repository_upsert_overview_chunk(recipe):
         point = client.upsert.call_args.kwargs["points"][0]
 
         assert point.vector[qdrant_settings.vectors_name] == [1, 2, 3]
-        assert point.id == "961ffb13-8c66-57b5-8a36-cbf261fbc6c0"
+        assert point.id == str(uuid.uuid5(uuid.NAMESPACE_DNS, f"{chunk.id}:{chunk.chunk_type}"))
 
         expected_payload = {
-            "id": "123_overview",
-            "parent_id": "123",
+            "id": "123",
             "chunk_type": "overview",
             "content": "Test"
         }
@@ -151,11 +151,10 @@ async def test_qdr_repository_upsert_instruction_chunk(recipe):
         point = client.upsert.call_args.kwargs["points"][0]
 
         assert point.vector[qdrant_settings.vectors_name] == [1, 2, 3]
-        assert point.id == "ddb05d6d-dca7-55ad-898d-afe107bfbf8a"
+        assert point.id == str(uuid.uuid5(uuid.NAMESPACE_DNS, f"{chunk.id}:{chunk.chunk_type}"))
 
         expected_payload = {
-            "id": "123_instruction",
-            "parent_id": "123",
+            "id": "123",
             "chunk_type": "instruction",
             "content": "ab"
         }
@@ -210,8 +209,7 @@ async def test_qdr_repository_upsert_batch_chunk(recipe_without_ingredients):
         assert len(points) == 3
 
         expected_payload = {
-            "id": "123_instruction",
-            "parent_id": "123",
+            "id": "123",
             "chunk_type": "instruction",
             "content": "ab"
         }

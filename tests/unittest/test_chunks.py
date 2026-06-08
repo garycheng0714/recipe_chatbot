@@ -94,8 +94,7 @@ def test_main_chunk_get_payload_without_ingredient(recipe_without_ingredient):
 def test_overview_chunk_from_recipe(recipe):
     chunk = OverviewChunk.from_recipe(recipe)
 
-    assert chunk.id == "123_overview"
-    assert chunk.parent_id == "123"
+    assert chunk.id == "123"
     assert chunk.chunk_type == "overview"
     assert chunk.content == "Test"
 
@@ -114,8 +113,7 @@ def test_overview_chunk_get_payload(recipe):
 def test_instruction_chunk_from_recipe(recipe):
     chunk = InstructionChunk.from_recipe(recipe)
 
-    assert chunk.id == "123_instruction"
-    assert chunk.parent_id == "123"
+    assert chunk.id == "123"
     assert chunk.chunk_type == "instruction"
     assert chunk.content == "ab"
 
