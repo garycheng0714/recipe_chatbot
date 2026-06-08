@@ -15,7 +15,7 @@ help:
 	@echo "  make taskiq       			- 啟動 taskiq"
 	@echo "  make crawler      			- 啟動 crawler"
 	@echo "  make emb          			- 啟動 embedding server"
-	@echo "  make service      			- 啟動相關 service"
+	@echo "  make service      			- 啟動 Procfile 內的服物"
 	@echo "  make diff        			- 查看 es 和 qdrant 的差異"
 	@echo "  make fastapi      			- 啟動 Fastapi"
 	@echo "  make pg_backup    			- 備份 Postgresql"
