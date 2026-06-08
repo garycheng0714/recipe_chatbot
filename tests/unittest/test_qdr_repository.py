@@ -66,6 +66,7 @@ async def test_qdr_repository_upsert_main_chunk(recipe):
             "ingredients": ["a", "b"],
             "category": "tw",
             "tags": ["jp"],
+            "chunk_type": "title",
         }
         assert point.payload == expected_payload
 
@@ -97,6 +98,7 @@ async def test_qdr_repository_upsert_main_chunk_without_ingredients(recipe_witho
             "name": "Test",
             "category": "tw",
             "tags": ["jp"],
+            "chunk_type": "title",
         }
         assert point.payload == expected_payload
 

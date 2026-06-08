@@ -13,6 +13,7 @@ class MainChunkPayload(ChunkPayload):
     ingredients: list[str] | None
     category: str
     tags: list[str]
+    chunk_type: str
 
 
 class ChunkPayload(ChunkPayload):

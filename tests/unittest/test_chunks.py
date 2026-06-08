@@ -70,6 +70,7 @@ def test_main_chunk_from_recipe(param_recipe, quantity_result, ingredients_resul
     assert chunk.category == "tw"
     assert chunk.tags == ["jp"]
     assert chunk.semantics == semantics_result
+    assert chunk.chunk_type == "title"
 
 
 def test_main_chunk_embed_semantics(recipe):
@@ -81,7 +82,16 @@ def test_main_chunk_embed_semantics(recipe):
 
 def test_main_chunk_get_payload(recipe):
     chunk = MainChunk.from_recipe(recipe)
-    assert isinstance(chunk.get_payload(), MainChunkPayload)
+    payload = chunk.get_payload()
+
+    assert isinstance(payload, MainChunkPayload)
+
+    assert payload.id == "123"
+    assert payload.name == "Test"
+    assert payload.quantity == "1"
+    assert payload.category == "tw"
+    assert payload.tags == ["jp"]
+    assert payload.chunk_type == "title"
 
 
 def test_main_chunk_get_payload_without_ingredient(recipe_without_ingredient):
