@@ -195,7 +195,7 @@ async def test_get_outbox_pending_event_then_insert_data_to_es_and_qdr(session, 
     qdr_repo = QdrantRepository(qdrant_client, embed_client)
 
     await sync_to_distributed_db(
-        payload=payload,
+        payloads=[payload],
         es=es_repo,
         qdr=qdr_repo,
         outbox_db=OutboxRepository(),

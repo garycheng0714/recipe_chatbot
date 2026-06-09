@@ -57,11 +57,12 @@ async def test_qdr_repository_upsert_main_chunk(recipe):
         point = client.upsert.call_args.kwargs["points"][0]
 
         assert point.vector[qdrant_settings.vectors_name] == [1, 2, 3]
-        assert point.id == str(uuid.uuid5(uuid.NAMESPACE_DNS, f"{chunk.id}:{chunk.chunk_type}"))
+        assert point.id == chunk.get_point_id()
 
         expected_payload = {
             "id": "123",
             "name": "Test",
+            "source": "tasty-note",
             "quantity": "1",
             "ingredients": ["a", "b"],
             "category": "tw",
@@ -91,11 +92,12 @@ async def test_qdr_repository_upsert_main_chunk_without_ingredients(recipe_witho
         point = client.upsert.call_args.kwargs["points"][0]
 
         assert point.vector[qdrant_settings.vectors_name] == [1, 2, 3]
-        assert point.id == str(uuid.uuid5(uuid.NAMESPACE_DNS, f"{chunk.id}:{chunk.chunk_type}"))
+        assert point.id == chunk.get_point_id()
 
         expected_payload = {
             "id": "123",
             "name": "Test",
+            "source": "tasty-note",
             "category": "tw",
             "tags": ["jp"],
             "chunk_type": "title",
@@ -123,10 +125,11 @@ async def test_qdr_repository_upsert_overview_chunk(recipe):
         point = client.upsert.call_args.kwargs["points"][0]
 
         assert point.vector[qdrant_settings.vectors_name] == [1, 2, 3]
-        assert point.id == str(uuid.uuid5(uuid.NAMESPACE_DNS, f"{chunk.id}:{chunk.chunk_type}"))
+        assert point.id == chunk.get_point_id()
 
         expected_payload = {
             "id": "123",
+            "source": "tasty-note",
             "chunk_type": "overview",
             "content": "Test"
         }
@@ -153,10 +156,11 @@ async def test_qdr_repository_upsert_instruction_chunk(recipe):
         point = client.upsert.call_args.kwargs["points"][0]
 
         assert point.vector[qdrant_settings.vectors_name] == [1, 2, 3]
-        assert point.id == str(uuid.uuid5(uuid.NAMESPACE_DNS, f"{chunk.id}:{chunk.chunk_type}"))
+        assert point.id == chunk.get_point_id()
 
         expected_payload = {
             "id": "123",
+            "source": "tasty-note",
             "chunk_type": "instruction",
             "content": "ab"
         }
@@ -212,6 +216,7 @@ async def test_qdr_repository_upsert_batch_chunk(recipe_without_ingredients):
 
         expected_payload = {
             "id": "123",
+            "source": "tasty-note",
             "chunk_type": "instruction",
             "content": "ab"
         }

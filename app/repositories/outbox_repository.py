@@ -42,18 +42,11 @@ class OutboxRepository:
 
         await session.execute(stmt)
 
-    @staticmethod
-    def make_event_id(recipe_id: str, event_type: str) -> uuid.UUID:
-        return uuid.uuid5(
-            uuid.NAMESPACE_URL,
-            f"recipe:{recipe_id}:{event_type}"
-        )
-
-    async def mark_event_completed(self, session: AsyncSession, event_id: str):
+    async def mark_event_completed(self, session: AsyncSession, event_ids: List[str]):
         stmt = (
             update(OutboxModel)
             .where(
-                OutboxModel.event_id == event_id,
+                OutboxModel.event_id.in_(event_ids),
                 OutboxModel.status == EventStatus.PROCESSING.name.lower()
             )
             .values(status=EventStatus.COMPLETED.name.lower(), updated_at=datetime.now(UTC))
@@ -75,7 +68,7 @@ class OutboxRepository:
         await session.execute(stmt)
 
     # TODO: write test
-    async def get_pending_events(self, session: AsyncSession, limit: int = 50):
+    async def get_pending_events(self, session: AsyncSession, limit: int = 10):
         # 呼叫方必須在 session.begin() context 內
         # SELECT FOR UPDATE SKIP LOCKED 避免多個 worker 重複處理
         cte = (
@@ -97,11 +90,11 @@ class OutboxRepository:
         result = await session.execute(stmt)
         return result.scalars().all()
 
-    async def claim_event(self, session: AsyncSession, event_id: str):
+    async def claim_events(self, session: AsyncSession, event_ids: List[str]):
         stmt = (
             update(OutboxModel)
             .where(
-                OutboxModel.event_id == event_id,
+                OutboxModel.event_id.in_(event_ids),
                 OutboxModel.status == EventStatus.DISPATCHING.name.lower()
             )
             .values(
@@ -111,7 +104,7 @@ class OutboxRepository:
             .returning(OutboxModel)
         )
         result = await session.execute(stmt)
-        return result.scalars().first()
+        return result.scalars().all()
 
     async def reset_stale_events(self, session: AsyncSession, timeout_minutes: int = 30):
         stmt = (

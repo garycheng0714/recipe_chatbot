@@ -102,17 +102,21 @@ async def test_insert_event_idempotent(repo, session, outbox_event):
 # claim_event
 # ──────────────────────────────────────────
 
-async def test_claim_event_success(repo, session, outbox_event):
+async def test_claim_event_success(repo, session, outbox_event, outbox_event_2):
     await repo.insert_event(session, outbox_event)
+    await repo.insert_event(session, outbox_event_2)
     await session.flush()
 
     await repo.get_pending_events(session)
     await session.flush()
 
-    claimed = await repo.claim_event(session, str(outbox_event.event_id))
+    claimed = await repo.claim_events(session, [str(outbox_event.event_id), str(outbox_event_2.event_id)])
 
     assert claimed is not None
-    assert claimed.status == "processing"
+    assert len(claimed) == 2
+
+    for c in claimed:
+        assert c.status == "processing"
 
 
 async def test_claim_event_returns_none_if_already_processing(repo, session, outbox_event):
@@ -123,12 +127,12 @@ async def test_claim_event_returns_none_if_already_processing(repo, session, out
     await repo.get_pending_events(session)
     await session.flush()
 
-    event_id = str(outbox_event.event_id)
-    first = await repo.claim_event(session, event_id)
-    second = await repo.claim_event(session, event_id)  # 已經是 PROCESSING
+    event_id = [str(outbox_event.event_id)]
+    first = await repo.claim_events(session, event_id)
+    second = await repo.claim_events(session, event_id)  # 已經是 PROCESSING
 
-    assert first is not None
-    assert second is None  # 搶不到
+    assert len(first) == 1
+    assert len(second) == 0  # 搶不到
 
 
 @pytest_asyncio.fixture(loop_scope="session")
@@ -161,10 +165,10 @@ async def test_claim_event_concurrent(engine, outbox_event, outbox_cleaner):
     async def try_claim():
         async with session_factory() as s:
             async with s.begin():
-                return await OutboxRepository().claim_event(s, str(outbox_event.event_id))
+                return await OutboxRepository().claim_events(s, [str(outbox_event.event_id)])
 
     results = await asyncio.gather(try_claim(), try_claim())
-    successful_claims = [r for r in results if r is not None]
+    successful_claims = [r for r in results if len(r) != 0]
 
     assert len(successful_claims) == 1  # 只有一個 worker 能 claim 成功
 
@@ -181,8 +185,8 @@ async def test_mark_event_completed(repo, session, outbox_event):
     await session.flush()
 
     event_id = str(outbox_event.event_id)
-    await repo.claim_event(session, event_id)
-    await repo.mark_event_completed(session, event_id)
+    await repo.claim_events(session, [event_id])
+    await repo.mark_event_completed(session, [event_id])
     await session.flush()
 
     result = await session.execute(
@@ -201,7 +205,7 @@ async def test_mark_event_only_updates_processing(repo, session, outbox_event):
     event_id = str(outbox_event.event_id)
 
     # 不 claim，直接 mark（還在 PENDING）
-    await repo.mark_event_completed(session, event_id)
+    await repo.mark_event_completed(session, [event_id])
     await session.flush()
 
     result = await session.execute(

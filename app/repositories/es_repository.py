@@ -17,7 +17,7 @@ class ElasticSearchRepository:
     async def index_document(self, document: BaseDocument):
         await self.client.index(
             index=self.index_name,
-            id=str(uuid.uuid5(uuid.NAMESPACE_DNS, document.get_id())),
+            id=document.get_id(),
             document=document.get_payload().model_dump(exclude_none=True),
         )
 
@@ -28,7 +28,7 @@ class ElasticSearchRepository:
         actions = [
             {
                 "_index": self.index_name,
-                "_id": str(uuid.uuid5(uuid.NAMESPACE_DNS, document.get_id())),
+                "_id": document.get_id(),
                 "_source": document.get_payload().model_dump(exclude_none=True),
             }
             for document in documents
@@ -36,7 +36,7 @@ class ElasticSearchRepository:
 
         await async_bulk(
             client=self.client,
-            actions=actions,
+            actions=actions
         )
 
     async def search(self, query_text: str, size: int = 5):
@@ -53,9 +53,9 @@ class ElasticSearchRepository:
                                 "query": query_text,
                                 "fields": [
                                     "name^5",
+                                    "tags^3",
                                     "ingredients^3",
                                     "description^2",
-                                    "tags",
                                     "steps"
                                 ]
                             }

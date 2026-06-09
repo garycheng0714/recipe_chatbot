@@ -2,6 +2,7 @@ from typing import Protocol
 
 from pydantic import BaseModel
 
+from app.domain.identity import create_canonical_id
 from app.domain.models.document_payload_model import DocumentPayload, RecipeDocumentPayload
 from web_crawler.schema.tasty_note_detail_schema import TastyNoteRecipe
 
@@ -42,7 +43,7 @@ class RecipeDocument(BaseModel):
         )
 
     def get_id(self) -> str:
-        return f"recipe:{self.source}:{self.id}"
+        return create_canonical_id("recipe", self.source, self.id)
 
     def get_payload(self) -> DocumentPayload:
         return RecipeDocumentPayload(

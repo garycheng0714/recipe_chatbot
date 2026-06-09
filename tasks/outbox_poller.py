@@ -13,12 +13,12 @@ from loguru import logger
 from web_crawler.schema.tasty_note_detail_schema import TastyNoteRecipe
 
 
-async def _dispatch_fn(payload: DistributedPayload) -> None:
-    await sync_to_distributed_db.kiq(payload)
+async def _dispatch_fn(payloads: List[DistributedPayload]) -> None:
+    await sync_to_distributed_db.kiq(payloads)
 
 async def poll_outbox(
     outbox_repo: OutboxRepository = OutboxRepository(),
-    dispatch_fn: Callable[[DistributedPayload], Awaitable[None]] = _dispatch_fn,
+    dispatch_fn: Callable[[List[DistributedPayload]], Awaitable[None]] = _dispatch_fn,
     session_factory=AsyncSessionLocal
 ):
     # 建議：不要在一個 transaction 處理所有事情，
@@ -49,8 +49,7 @@ async def poll_outbox(
                     ))
 
     # commit 之後再丟 queue，確保 DB 狀態已落地
-    for event_data in events_to_dispatch:
-        await dispatch_fn(event_data)
+    await dispatch_fn(events_to_dispatch)
 
 
 

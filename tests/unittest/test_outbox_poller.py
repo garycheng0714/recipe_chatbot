@@ -67,7 +67,7 @@ async def test_outbox_poller_handle_multiple_pending_event(patch_transformers, m
 
     outbox_repo.reset_stale_events.assert_called_once()
     outbox_repo.get_pending_events.assert_called_once()
-    assert dispatch_fn.call_count == 3
+    assert dispatch_fn.call_count == 1
 
 
 @pytest.mark.asyncio

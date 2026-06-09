@@ -57,7 +57,7 @@ async def test_es_repo_index_recipe_document(recipe):
 
     client.index.assert_called_once_with(
         index="recipes",
-        id=str(uuid.uuid5(uuid.NAMESPACE_DNS, document.get_id())),
+        id=document.get_id(),
         document=expected_payload
     )
 
@@ -81,7 +81,7 @@ async def test_es_repo_index_recipe_document_without_ingredients(recipe_without_
 
     client.index.assert_called_once_with(
         index="recipes",
-        id=str(uuid.uuid5(uuid.NAMESPACE_DNS, document.get_id())),
+        id=document.get_id(),
         document=expected_payload
     )
 
@@ -122,12 +122,12 @@ async def test_es_repo_index_batch_recipe_document(recipe, recipe_without_ingred
             actions=[
                 {
                     "_index": "recipes",
-                    "_id": str(uuid.uuid5(uuid.NAMESPACE_DNS, document.get_id())),
+                    "_id": document.get_id(),
                     "_source": expected_payload
                 },
                 {
                     "_index": "recipes",
-                    "_id": str(uuid.uuid5(uuid.NAMESPACE_DNS, document2.get_id())),
+                    "_id": document2.get_id(),
                     "_source": expected_payload2
                 }
             ],

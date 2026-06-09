@@ -3,6 +3,7 @@ from typing import Protocol, Literal
 
 from pydantic import BaseModel
 
+from app.domain.identity import create_canonical_id
 from app.domain.models.chunk_payload_model import MainChunkPayload, ChunkPayload
 from web_crawler.schema.tasty_note_detail_schema import TastyNoteRecipe
 
@@ -21,6 +22,7 @@ class BaseChunk(Protocol):
 class MainChunk(BaseModel):
     id: str
     name: str
+    source: str
     quantity: str | None
     ingredients: list[str] | None
     category: str
@@ -33,6 +35,7 @@ class MainChunk(BaseModel):
         return cls(
             id=recipe.id,
             name=recipe.name,
+            source=recipe.source,
             quantity=recipe.quantity,
             ingredients=[i.name for i in recipe.ingredients] if recipe.ingredients else None,
             category=recipe.category,
@@ -53,7 +56,8 @@ class MainChunk(BaseModel):
         return self.semantics
 
     def get_point_id(self) -> str:
-        return str(uuid.uuid5(uuid.NAMESPACE_DNS, f"{self.id}:{self.chunk_type}"))
+        return create_canonical_id("recipe", self.source, self.id, self.chunk_type)
+        return str(uuid.uuid5(uuid.NAMESPACE_DNS, f"recipe:{self.source}:{self.id}:{self.chunk_type}"))
 
     def get_payload(self) -> ChunkPayload:
         return MainChunkPayload(
@@ -63,6 +67,7 @@ class MainChunk(BaseModel):
 
 class ChildChunk(BaseModel):
     id: str
+    source: str
     chunk_type: Literal["overview", "instruction"]
     content: str
 
@@ -70,7 +75,7 @@ class ChildChunk(BaseModel):
         return self.content
 
     def get_point_id(self) -> str:
-        return str(uuid.uuid5(uuid.NAMESPACE_DNS, f"{self.id}:{self.chunk_type}"))
+        return create_canonical_id("recipe", self.source, self.id, self.chunk_type)
 
     def get_payload(self) -> ChunkPayload:
         return ChunkPayload(
@@ -83,6 +88,7 @@ class OverviewChunk(ChildChunk):
     def from_recipe(cls, recipe: TastyNoteRecipe):
         return cls(
             id=f"{recipe.id}",
+            source=recipe.source,
             chunk_type="overview",
             content=recipe.description
         )
@@ -93,6 +99,7 @@ class InstructionChunk(ChildChunk):
     def from_recipe(cls, recipe: TastyNoteRecipe):
         return cls(
             id=f"{recipe.id}",
+            source=recipe.source,
             chunk_type="instruction",
             content="".join([s.step for s in recipe.steps])
         )

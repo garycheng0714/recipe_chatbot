@@ -88,6 +88,7 @@ def test_main_chunk_get_payload(recipe):
 
     assert payload.id == "123"
     assert payload.name == "Test"
+    assert payload.source == "tasty-note"
     assert payload.quantity == "1"
     assert payload.category == "tw"
     assert payload.tags == ["jp"]

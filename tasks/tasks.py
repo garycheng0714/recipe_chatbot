@@ -1,4 +1,5 @@
 import asyncio
+from typing import List
 
 from app.bootstrap import wait_postgres, wait_redis, wait_embedding_service
 from app.client import get_es, get_outbox_db, create_embed_client, create_qdr_client
@@ -39,7 +40,7 @@ async def shutdown(state):
 
 @redis_broker.task
 async def sync_to_distributed_db(
-    payload: DistributedPayload,
+    payloads: List[DistributedPayload],
     es: ElasticSearchRepository = TaskiqDepends(get_es),
     qdr: QdrantRepository = TaskiqDepends(get_qdrant),
     outbox_db: OutboxRepository = TaskiqDepends(get_outbox_db),
@@ -48,24 +49,34 @@ async def sync_to_distributed_db(
 ):
     async with session_factory() as session:
         async with session.begin():
-            claimed = await outbox_db.claim_event(session, payload.event_id)
+            ids = [p.event_id for p in payloads]
+            claimed = await outbox_db.claim_events(session, ids)
             if claimed is None:
                 return
 
     try:
-        chunks = [payload.main_chunk, payload.overview_chunk, payload.instruction_chunk]
+        chunks = [
+            chunk
+            for p in payloads
+            for chunk in (p.main_chunk, p.overview_chunk, p.instruction_chunk)
+        ]
 
-        await es.index_document(payload.document)
+        documents = [
+            p.document
+            for p in payloads
+        ]
+
+        await es.index_batch_document(documents)
         await qdr.upsert_batch_recipe(chunks)
 
         async with session_factory() as session:
             async with session.begin():
-                await outbox_db.mark_event_completed(session, event_id=payload.event_id)
-                print(f"Sync {payload.main_chunk.id} to ES and Qdrant...")
+                await outbox_db.mark_event_completed(session, event_ids=ids)
+                print(f"Sync {ids} to ES and Qdrant...")
     except Exception as e:
-        async with session_factory() as session:
-            async with session.begin():
-                await outbox_db.mark_event_failed(session, payload.event_id, str(e))
+        # async with session_factory() as session:
+        #     async with session.begin():
+        #         await outbox_db.mark_event_failed(session, ids, str(e))
         # 這裡不 mark failed，交給 reset_stale_events 讓它回歸 pending 重跑
         # 或者你可以 mark 一個 'error' 狀態並記錄錯誤訊息
         # print(context.__dict__)
