@@ -141,12 +141,6 @@ class PgRepository:
 
         await session.execute(stmt, rows)
 
-
-    #TODO: 注意冪等性
-    async def add_recipe_chunk(self, session: AsyncSession, models: List[PgRecipeChunkModel]):
-        for model in models:
-            session.add(model)
-
     async def add_bulk_recipe_chunk(self, session: AsyncSession, models: List[PgRecipeChunkModel]):
         rows = [
             {

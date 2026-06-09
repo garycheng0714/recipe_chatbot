@@ -20,12 +20,6 @@ class IngestionService:
         chunk = PgConverter.to_main_chunk(recipe)
         await self.pg_repo.update_recipe(session, chunk)
 
-        chunks = [
-            PgConverter.to_overview_chunk(recipe),
-            PgConverter.to_instruction_chunk(recipe)
-        ]
-        await self.pg_repo.add_recipe_chunk(session, chunks)
-
         outbox_event = RecipeEvent.create(recipe)
 
         await self.outbox_repo.insert_event(session, outbox_event)
@@ -38,13 +32,6 @@ class IngestionService:
             for recipe in recipes
         ]
         await self.pg_repo.update_bulk_recipe(session, models)
-
-        child_models = []
-        for recipe in recipes:
-            child_models.append(PgConverter.to_overview_chunk(recipe))
-            child_models.append(PgConverter.to_instruction_chunk(recipe))
-
-        await self.pg_repo.add_bulk_recipe_chunk(session, child_models)
 
         outbox_events = [RecipeEvent.create(recipe) for recipe in recipes]
 

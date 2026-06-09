@@ -42,16 +42,10 @@ async def test_ingest_crawl_completed_data(crawl_result):
     await ingestion_service.ingest_crawl_completed_data(MagicMock(), crawl_result)
 
     mock_pg_repo.update_recipe.assert_awaited_once()
-    mock_pg_repo.add_recipe_chunk.assert_awaited_once()
     mock_outbox_repo.insert_event.assert_awaited_once()
 
     args, _ = mock_pg_repo.update_recipe.call_args
     assert isinstance(args[1], PgRecipeModel)
-
-    args, _ = mock_pg_repo.add_recipe_chunk.call_args
-    assert isinstance(args[1], List)
-    for chunk in args[1]:
-        assert isinstance(chunk, PgRecipeChunkModel)
 
     args, _ = mock_outbox_repo.insert_event.call_args
     assert isinstance(args[1], OutboxEvent)
@@ -66,18 +60,12 @@ async def test_ingest_crawl_bulk_data(crawl_result):
     await ingestion_service.ingest_crawl_bulk_data(MagicMock(), [crawl_result])
 
     mock_pg_repo.update_bulk_recipe.assert_awaited_once()
-    mock_pg_repo.add_bulk_recipe_chunk.assert_awaited_once()
     mock_outbox_repo.insert_bulk_event.assert_awaited_once()
 
     args, _ = mock_pg_repo.update_bulk_recipe.call_args
     assert isinstance(args[1], List)
     for arg in args[1]:
         assert isinstance(arg, PgRecipeModel)
-
-    args, _ = mock_pg_repo.add_bulk_recipe_chunk.call_args
-    assert isinstance(args[1], List)
-    for arg in args[1]:
-        assert isinstance(arg, PgRecipeChunkModel)
 
     args, _ = mock_outbox_repo.insert_bulk_event.call_args
     assert isinstance(args[1], List)
