@@ -49,10 +49,12 @@ def get_body_config(mode: AnalyzerMode):
                     "id": {
                         "type": "keyword"
                     },
-                    "parent_id": {
-                        "type": "keyword"
+                    "description": {
+                        "type": "text",
+                        "analyzer": "zh_analyzer",
+                        "search_analyzer": "zh_analyzer"
                     },
-                    "content": {
+                    "steps": {
                         "type": "text",
                         "analyzer": "zh_analyzer",
                         "search_analyzer": "zh_analyzer"
