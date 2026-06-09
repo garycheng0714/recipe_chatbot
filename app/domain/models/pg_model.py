@@ -11,6 +11,7 @@ class PgRecipeModel(Base):
 
     # --- 第一階段就能確定的欄位 (Non-nullable) ---
     id: Mapped[str] = mapped_column(String(100), primary_key=True)
+    source = Column(String(100))
     source_url: Mapped[str] = mapped_column(Text, unique=True, index=True)
 
     # 狀態管理: pending (待爬取), processing, completed, failed (永久失敗)
