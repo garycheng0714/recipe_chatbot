@@ -56,6 +56,7 @@ class PgRepository:
         await session.execute(
             insert(PgRecipeModel).values(
                 id=recipe.id,
+                source=recipe.source,
                 source_url=recipe.source_url,
                 status="pending",
             ).on_conflict_do_nothing(index_elements=['source_url'])

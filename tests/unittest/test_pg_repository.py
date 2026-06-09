@@ -71,6 +71,7 @@ async def test_insert_recipe_create_pending_status(session, repo, recipe_url):
     row = result.scalar_one()
     assert row is not None
     assert row.status == "pending"
+    assert row.source == "tasty-note"
     assert row.source_url == recipe_url.source_url
 
 
