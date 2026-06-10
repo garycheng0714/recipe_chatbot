@@ -1,4 +1,4 @@
-from sqlalchemy import Column, String, Text, DateTime, ForeignKey, Integer
+from sqlalchemy import Column, String, Text, DateTime, Integer
 from sqlalchemy.sql import func
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.dialects.postgresql import ARRAY
@@ -34,16 +34,3 @@ class PgRecipeModel(Base):
     # 重試與錯誤記錄
     retry_count = Column(Integer, default=0, nullable=True)
     last_error = Column(Text, nullable=True)  # 存儲最後一次的錯誤訊息或 Traceback
-
-    chunks = relationship("PgRecipeChunkModel", back_populates="recipe", cascade="all, delete-orphan")
-
-
-class PgRecipeChunkModel(Base):
-    __tablename__ = 'recipe_chunks'
-
-    id: Mapped[str] = mapped_column(String(100), primary_key=True)
-    parent_id = Column(String(100), ForeignKey('recipes.id', ondelete="CASCADE"), nullable=False)
-    chunk_type = Column(String(30))
-    content = Column(Text)
-
-    recipe = relationship("PgRecipeModel", back_populates="chunks")

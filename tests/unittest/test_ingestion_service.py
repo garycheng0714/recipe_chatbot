@@ -3,7 +3,7 @@ from unittest.mock import MagicMock, AsyncMock
 
 import pytest
 
-from app.domain.models import PgRecipeModel, PgRecipeChunkModel
+from app.domain.models import PgRecipeModel
 from app.services.event.recipe_event import OutboxEvent
 from app.services.ingestion import IngestionService
 from web_crawler.schema.crawl_result_schema import CrawlResult

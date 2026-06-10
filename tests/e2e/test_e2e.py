@@ -9,7 +9,7 @@ import pytest
 from app.dependencies.url_consumer_deps import UrlConsumerDeps
 from app.domain.chunks import MainChunk, OverviewChunk, InstructionChunk
 from app.domain.document import RecipeDocument
-from app.domain.models import PgRecipeModel, OutboxModel, PgRecipeChunkModel, EsPointsModel
+from app.domain.models import PgRecipeModel, OutboxModel, EsPointsModel
 from app.dto.distributed_payload import DistributedPayload
 from app.repositories import PgRepository, QdrantRepository
 from app.repositories.outbox_repository import OutboxRepository
@@ -63,7 +63,6 @@ async def clean_db(session):
     # 測試結束後清理
     async with session.begin():
         await session.execute(delete(OutboxModel))
-        await session.execute(delete(PgRecipeChunkModel))
         await session.execute(delete(PgRecipeModel))  # 注意 FK 順序
 
 
@@ -141,26 +140,8 @@ async def test_app_get_pending_urls_then_update_recipe_table_and_insert_outbox_t
         row = result.scalar_one()
         assert row.source_url == "https://example.com"
         assert row.status == "completed"
-
-    async with session_factory() as session:
-        result = await session.execute(
-            select(PgRecipeChunkModel).where(PgRecipeChunkModel.id == "123_overview")
-        )
-
-        row = result.scalar_one()
-        assert row.parent_id == "123"
-        assert row.content == "A delicious fruit"
-        assert row.chunk_type == "overview"
-
-    async with session_factory() as session:
-        result = await session.execute(
-            select(PgRecipeChunkModel).where(PgRecipeChunkModel.id == "123_instruction")
-        )
-
-        row = result.scalar_one()
-        assert row.parent_id == "123"
-        assert row.content == "1.剝皮2.切塊"
-        assert row.chunk_type == "instruction"
+        assert row.description == "A delicious fruit"
+        assert row.steps == "1.剝皮2.切塊"
 
     # 5. 驗證 outbox
     async with session_factory() as session:

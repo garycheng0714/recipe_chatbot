@@ -3,7 +3,7 @@ import datetime
 import pytest
 from sqlalchemy import select, func
 
-from app.domain.models import PgRecipeModel, PgRecipeChunkModel
+from app.domain.models import PgRecipeModel
 from app.repositories import PgRepository
 from app.services.converter import PgConverter
 from web_crawler.schema.crawl_result_schema import CrawlResult
@@ -291,27 +291,6 @@ async def test_update_recipe_content(session, recipe_url, recipe_data, repo):
     assert row.id == recipe_data.id
     assert row.name == recipe_data.name
     assert row.source_url == recipe_data.source_url
-
-
-async def check_recipe_child_chunks(session, recipe_data):
-    results = await session.execute(
-        select(PgRecipeChunkModel)
-        .where(PgRecipeChunkModel.parent_id == recipe_data.id)
-    )
-
-    rows = {r.chunk_type: r for r in results.scalars().all()}
-    assert len(rows) == 2
-    for chunk_type in ["overview", "instruction"]:
-        row = rows[chunk_type]
-        assert row.id == f"{recipe_data.id}_{chunk_type}"
-        assert row.parent_id == recipe_data.id
-
-        if chunk_type == "overview":
-            content = recipe_data.description
-        else:
-            content = "".join([s.step for s in recipe_data.steps])
-
-        assert row.content == content
 
 
 async def test_update_bulk_recipe(session, recipe_url, recipe_url2, recipe_data, recipe_data2, repo):

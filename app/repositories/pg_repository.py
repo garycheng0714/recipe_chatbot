@@ -4,9 +4,8 @@ from typing import List
 from sqlalchemy import select, update, bindparam, inspect
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio.session import AsyncSession
-from sqlalchemy.orm import selectinload, joinedload
 
-from app.domain.models import PgRecipeModel, PgRecipeChunkModel
+from app.domain.models import PgRecipeModel
 from app.schema import RRFResult
 from web_crawler.schema.crawl_result_schema import CrawlResult
 from web_crawler.schema.tasty_note_detail_schema import TastyNoteRecipe
@@ -142,49 +141,15 @@ class PgRepository:
 
         await session.execute(stmt, rows)
 
-    async def add_bulk_recipe_chunk(self, session: AsyncSession, models: List[PgRecipeChunkModel]):
-        rows = [
-            {
-                "id": model.id,
-                "parent_id": model.parent_id,
-                "chunk_type": model.chunk_type,
-                "content": model.content
-            }
-            for model in models
-        ]
-
-        stmt = insert(PgRecipeChunkModel).values(rows)
-
-        stmt = stmt.on_conflict_do_update(
-            index_elements=["id"],
-            set_={
-                "parent_id": stmt.excluded.parent_id,
-                "chunk_type": stmt.excluded.chunk_type,
-                "content": stmt.excluded.content,  # ✅ 從 stmt 自己取 excluded
-            }
-        )
-
-        await session.execute(stmt)
 
     async def fetch_recipe(self, session: AsyncSession, recipe: list[RRFResult]):
         obj_list = []
 
         for r in recipe:
-            if any(word in r.id for word in ["overview", "instruction"]):
-                stmt = (
-                    select(PgRecipeChunkModel)
-                    .where(PgRecipeChunkModel.id == r.id)
-                    .options(
-                        joinedload(PgRecipeChunkModel.recipe)
-                        .selectinload(PgRecipeModel.chunks)
-                    )
-                )
-            else:
-                stmt = (
-                    select(PgRecipeModel)
-                    .options(selectinload(PgRecipeModel.chunks))
-                    .where(PgRecipeModel.id == r.id)
-                )
+            stmt = (
+                select(PgRecipeModel)
+                .where(PgRecipeModel.id == r.id)
+            )
 
             result = await session.execute(stmt)
             obj_list.append(result.scalar_one_or_none())

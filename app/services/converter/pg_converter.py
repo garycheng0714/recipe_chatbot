@@ -1,4 +1,4 @@
-from app.domain.models import PgRecipeModel, PgRecipeChunkModel
+from app.domain.models import PgRecipeModel
 from web_crawler.schema.tasty_note_detail_schema import TastyNoteRecipe
 
 
