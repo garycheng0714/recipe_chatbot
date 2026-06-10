@@ -3,7 +3,7 @@ from unittest.mock import MagicMock, AsyncMock
 import pytest
 from qdrant_client.http.models import PointGroup, ScoredPoint, GroupsResult
 
-from app.retrieval.qdr_retriever import QdrantRetriever
+from app.retriever.qdr_retriever import QdrantRetriever
 
 
 @pytest.fixture

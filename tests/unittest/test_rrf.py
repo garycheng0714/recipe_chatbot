@@ -1,4 +1,4 @@
-from app.retrieval.rankers.rrf import RRFRanker
+from app.retriever.rankers.rrf import RRFRanker
 
 
 def test_rrf_two_rank_list_then_a_got_top_rank():

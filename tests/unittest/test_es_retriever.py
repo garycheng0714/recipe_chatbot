@@ -2,7 +2,7 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
-from app.retrieval.es_retriever import ElasticSearchRetriever
+from app.retriever.es_retriever import ElasticSearchRetriever
 
 
 @pytest.fixture
