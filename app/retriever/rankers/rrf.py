@@ -33,6 +33,6 @@ class RRFRanker:
         sorted_results = sorted(fused_scores.items(), key=lambda x: x[1], reverse=True)
 
         return [
-            RRFResult(item=idx, score=score)
+            RRFResult(id=idx, score=score)
             for idx, score in sorted_results
         ]
