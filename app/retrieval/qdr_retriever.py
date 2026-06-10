@@ -9,6 +9,9 @@ class QdrantRetriever:
     async def retrieve(self, query_text: str, k: int) -> list[RetrievedDoc]:
         result = await self.qdr_repo.search_recipe_groups(query_text, k)
 
+        if len(result.groups) == 0:
+            return []
+
         docs = [
             RetrievedDoc(
                 id=hit.payload["id"],

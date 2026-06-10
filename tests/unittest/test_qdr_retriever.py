@@ -28,6 +28,12 @@ def response():
         ]
     )
 
+@pytest.fixture
+def empty_response():
+    return GroupsResult(
+        groups=[],
+    )
+
 
 @pytest.mark.asyncio
 async def test_qdr_retriever(response):
@@ -45,3 +51,15 @@ async def test_qdr_retriever(response):
     assert point_group.id == 'tofu-kimuchi'
     assert point_group.content == {'id': 'tofu-kimuchi', 'name': '泡菜炒豆腐', 'source': 'tasty-note', 'quantity': '1-2人份', 'ingredients': ['豆腐', '韓式泡菜'], 'category': '亞洲料理', 'tags': ['十分鐘料理'], 'chunk_type': 'title'}
     assert point_group.score == 0.79685986
+
+
+@pytest.mark.asyncio
+async def test_qdr_retriever_empty_result(empty_response):
+    mock_qdr_repo = MagicMock()
+    mock_qdr_repo.search_recipe_groups = AsyncMock(side_effect=[empty_response])
+
+    qdr_retriever = QdrantRetriever(mock_qdr_repo)
+    result = await qdr_retriever.retrieve(MagicMock(), MagicMock())
+
+    assert mock_qdr_repo.search_recipe_groups.call_count == 1
+    assert len(result) == 0
