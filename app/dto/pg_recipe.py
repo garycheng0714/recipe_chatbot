@@ -2,10 +2,10 @@ from app.domain.models import PgRecipeModel
 from web_crawler.schema.tasty_note_detail_schema import TastyNoteRecipe
 
 
-class PgConverter:
+class PgRecipe:
 
     @staticmethod
-    def to_main_chunk(recipe: TastyNoteRecipe) -> PgRecipeModel:
+    def from_recipe(recipe: TastyNoteRecipe) -> PgRecipeModel:
         return PgRecipeModel(
             id=recipe.id,
             name=recipe.name,

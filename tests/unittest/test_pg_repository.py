@@ -5,7 +5,7 @@ from sqlalchemy import select, func
 
 from app.domain.models import PgRecipeModel
 from app.repositories import PgRepository
-from app.services.converter import PgConverter
+from app.dto import PgRecipe
 from web_crawler.schema.crawl_result_schema import CrawlResult
 from web_crawler.schema.tasty_note_detail_schema import TastyNoteRecipe, Step
 
@@ -275,7 +275,7 @@ async def test_update_recipe_content(session, recipe_url, recipe_data, repo):
     await repo.insert_pending_url(session, recipe_url)
     await session.flush()
 
-    model = PgConverter.to_main_chunk(recipe_data)
+    model = PgRecipe.from_recipe(recipe_data)
 
     await repo.update_recipe(session, model)
     await session.flush()
@@ -300,7 +300,7 @@ async def test_update_bulk_recipe(session, recipe_url, recipe_url2, recipe_data,
 
     recipes = [recipe_data, recipe_data2]
     models = [
-        PgConverter.to_main_chunk(recipe)
+        PgRecipe.from_recipe(recipe)
         for recipe in recipes
     ]
 

@@ -1,9 +1,10 @@
 from typing import List
 
 from sqlalchemy.ext.asyncio.session import AsyncSession
+
+from app.dto import PgRecipe
 from app.repositories import PgRepository
 from app.repositories.outbox_repository import OutboxRepository
-from app.services.converter import PgConverter
 from app.services.event.recipe_event import RecipeEvent
 from web_crawler.schema.crawl_result_schema import CrawlResult
 from web_crawler.schema.tasty_note_detail_schema import TastyNoteRecipe
@@ -17,8 +18,8 @@ class IngestionService:
     async def ingest_crawl_completed_data(self, session: AsyncSession, crawl_result: CrawlResult):
         recipe = crawl_result.data
 
-        chunk = PgConverter.to_main_chunk(recipe)
-        await self.pg_repo.update_recipe(session, chunk)
+        db_model = PgRecipe.from_recipe(recipe)
+        await self.pg_repo.update_recipe(session, db_model)
 
         outbox_event = RecipeEvent.create(recipe)
 
@@ -28,7 +29,7 @@ class IngestionService:
         recipes = [r.data for r in crawl_results]
 
         models = [
-            PgConverter.to_main_chunk(recipe)
+            PgRecipe.from_recipe(recipe)
             for recipe in recipes
         ]
         await self.pg_repo.update_bulk_recipe(session, models)

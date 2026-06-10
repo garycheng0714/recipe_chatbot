@@ -1,6 +1,6 @@
 import pytest
 
-from app.services.converter import PgConverter
+from app.dto import PgRecipe
 from web_crawler.schema.tasty_note_detail_schema import TastyNoteRecipe, Ingredient, Step, SeasoningItem
 
 
@@ -21,7 +21,7 @@ def recipe():
 
 
 def test_pg_converter_convert_to_main_chunk(recipe):
-    model = PgConverter.to_main_chunk(recipe)
+    model = PgRecipe.from_recipe(recipe)
 
     assert model.id == recipe.id
     assert model.name == "Test"
@@ -29,6 +29,8 @@ def test_pg_converter_convert_to_main_chunk(recipe):
     assert model.source_url == "https://example.com"
     assert model.quantity == "1"
     assert model.category == "tw"
+    assert model.description == "Description"
     assert model.ingredients == [{"name": "a", "amount": "1"}, {"name": "b", "amount": "1"}]
     assert model.seasoning == [{"name": "c", "amount": "1"}]
+    assert model.steps == "ab"
     assert model.tags == ["jp"]
