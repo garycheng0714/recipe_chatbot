@@ -3,6 +3,7 @@ from typing import List
 
 from httpx import AsyncClient
 from qdrant_client import AsyncQdrantClient
+from qdrant_client.conversions.common_types import GroupsResult
 from qdrant_client.http.models import PointStruct, Filter, FieldCondition, MatchValue
 
 from app.domain.chunks import BaseChunk
@@ -90,6 +91,23 @@ class QdrantRepository:
             using=qdrant_settings.vectors_name,
             limit=k,
             # query=models.FusionQuery(fusion=models.Fusion.RRF),  # 使用 RRF 融合
+        )
+
+    async def search_recipe_groups(self, query_text: str, k: int = 5):
+        return await self.query_points_groups(query_text, k, qdrant_settings.recipe_collection_name)
+
+    async def query_points_groups(self, query_text, k: int, collection_name: str) -> GroupsResult:
+        embedding_list = await self._compute_embeddings(query_text)
+
+        query_dense = embedding_list[0]
+
+        return await self.client.query_points_groups(
+            collection_name=collection_name,
+            query=query_dense,
+            using=qdrant_settings.vectors_name,
+            group_by="id",
+            limit=k,        # 最多 k 個 recipe
+            group_size=1    # 每個 recipe 最多 1 個 chunk
         )
 
     async def delete(self):
