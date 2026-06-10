@@ -41,9 +41,9 @@ async def test_qdr_retriever(response):
     mock_qdr_repo.search_recipe_groups = AsyncMock(side_effect=[response])
 
     qdr_retriever = QdrantRetriever(mock_qdr_repo)
-    result = await qdr_retriever.retrieve(MagicMock(), MagicMock())
+    result = await qdr_retriever.retrieve('泡菜炒豆腐', 1)
 
-    assert mock_qdr_repo.search_recipe_groups.call_count == 1
+    mock_qdr_repo.search_recipe_groups.assert_called_once_with('泡菜炒豆腐', 1)
     assert len(result) == 1
 
     point_group = result[0]
