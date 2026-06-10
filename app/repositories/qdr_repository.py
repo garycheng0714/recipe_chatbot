@@ -93,7 +93,7 @@ class QdrantRepository:
             # query=models.FusionQuery(fusion=models.Fusion.RRF),  # 使用 RRF 融合
         )
 
-    async def search_recipe_groups(self, query_text: str, k: int = 5):
+    async def search_recipe_groups(self, query_text: str, k: int):
         return await self.query_points_groups(query_text, k, qdrant_settings.recipe_collection_name)
 
     async def query_points_groups(self, query_text, k: int, collection_name: str) -> GroupsResult:

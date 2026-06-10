@@ -1,0 +1,47 @@
+from unittest.mock import MagicMock, AsyncMock
+
+import pytest
+from qdrant_client.http.models import PointGroup, ScoredPoint, GroupsResult
+
+from app.retrieval.qdr_retriever import QdrantRetriever
+
+
+@pytest.fixture
+def response():
+    return GroupsResult(
+        groups=[
+            PointGroup(
+                hits=[
+                    ScoredPoint(
+                        id='52608667-9def-5d13-bb85-cbd51a6ae30d',
+                        version=29,
+                        score=0.79685986,
+                        payload={'id': 'tofu-kimuchi', 'name': '泡菜炒豆腐', 'source': 'tasty-note',
+                                 'quantity': '1-2人份', 'ingredients': ['豆腐', '韓式泡菜'], 'category': '亞洲料理',
+                                 'tags': ['十分鐘料理'], 'chunk_type': 'title'},
+                        vector=None, shard_key=None, order_value=None
+                    )
+                ],
+                id='tofu-kimuchi',
+                lookup=None
+            )
+        ]
+    )
+
+
+@pytest.mark.asyncio
+async def test_qdr_retriever(response):
+    mock_qdr_repo = MagicMock()
+    mock_qdr_repo.search_recipe_groups = AsyncMock(side_effect=[response])
+
+    qdr_retriever = QdrantRetriever(mock_qdr_repo)
+    result = await qdr_retriever.retrieve(MagicMock(), MagicMock())
+
+    assert mock_qdr_repo.search_recipe_groups.call_count == 1
+    assert len(result) == 1
+
+    point_group = result[0]
+
+    assert point_group.id == 'tofu-kimuchi'
+    assert point_group.content == {'id': 'tofu-kimuchi', 'name': '泡菜炒豆腐', 'source': 'tasty-note', 'quantity': '1-2人份', 'ingredients': ['豆腐', '韓式泡菜'], 'category': '亞洲料理', 'tags': ['十分鐘料理'], 'chunk_type': 'title'}
+    assert point_group.score == 0.79685986
