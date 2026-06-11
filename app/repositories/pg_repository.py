@@ -6,7 +6,6 @@ from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio.session import AsyncSession
 
 from app.domain.models import PgRecipeModel
-from app.schema import RRFResult
 from web_crawler.schema.crawl_result_schema import CrawlResult
 from web_crawler.schema.tasty_note_detail_schema import TastyNoteRecipe
 
@@ -142,8 +141,14 @@ class PgRepository:
         await session.execute(stmt, rows)
 
 
-    async def fetch_recipe(self, session: AsyncSession, recipe: list[RRFResult]):
-        obj_list = []
+    async def fetch_recipes(self, session: AsyncSession, ids: list[str]):
+        stmt = (
+            select(PgRecipeModel)
+            .where(PgRecipeModel.id.in_(ids))
+        )
+
+        result = await session.execute(stmt)
+        return result.scalars().all()
 
         for r in recipe:
             stmt = (
