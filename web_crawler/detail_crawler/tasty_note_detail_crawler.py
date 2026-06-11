@@ -1,4 +1,6 @@
 import asyncio
+import hashlib
+import json
 from typing import List
 from urllib.parse import urlparse
 from bs4 import BeautifulSoup, Tag
@@ -21,9 +23,19 @@ class TastyNoteDetailCrawler(BaseDetailCrawler):
             raise ContentParsingError(f"TastyNote 詳情頁解析失敗: {str(e)}")
 
     def _get_url(self, soup: BeautifulSoup) -> str:
-        return soup.select_one('link[rel="canonical"]')['href']
+        script = soup.select_one('script[type="application/ld+json"]')
+        data = json.loads(script.text)
+
+        graph = data.get("@graph", [])
+        for node in graph:
+            if node.get("@type") == "WebPage":
+                return node.get("@id", "")
+
+        return ""
 
     def _get_id(self, soup: BeautifulSoup) -> str:
+        #TODO: use hash id to be id
+        # return hashlib.sha256(self._get_url(soup).encode("utf-8")).hexdigest()
         link = self._get_url(soup)
         id = urlparse(link).path.split("/")[1]
         return id
@@ -103,7 +115,7 @@ if __name__ == '__main__':
     async def main():
         requester = HttpxRequester()
         crawler = TastyNoteDetailCrawler()
-        html = await requester.request("https://tasty-note.com/%e8%94%a5%e6%b3%a1%e8%8f%9c/")
+        html = await requester.request("https://tasty-note.com/dorilocos%e5%a2%a8%e8%a5%bf%e5%93%a5%e9%a2%a8%e5%91%b3%e6%94%a4%e8%bb%8a%e7%be%8e%e9%a3%9f/")
         recipe = crawler.crawl(html)
         print(recipe)
 
