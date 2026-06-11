@@ -51,6 +51,7 @@ async def main():
 
         try:
             await app.run()
+            print(f"Finished")
         finally:
             await asyncio.gather(
                 es_client.close(),
