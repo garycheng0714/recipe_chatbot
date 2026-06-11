@@ -110,6 +110,29 @@ class QdrantRepository:
             group_size=1    # 每個 recipe 最多 1 個 chunk
         )
 
+    async def scroll(self, key: str, value: str):
+        return await self.client.scroll(
+            collection_name=qdrant_settings.recipe_collection_name,
+            scroll_filter=Filter(
+                must=[
+                    FieldCondition(
+                        key=key,
+                        match=MatchValue(
+                            value=value
+                        )
+                    )
+                ]
+            ),
+            limit=100,
+            with_vectors=False
+        )
+
+    async def delete_by_point_id(self, ids: list[str]):
+        await self.client.delete(
+            collection_name=qdrant_settings.recipe_collection_name,
+            points_selector=ids,
+        )
+
     async def delete(self):
         for value in ["overview", "instruction"]:
             await self.client.delete(
