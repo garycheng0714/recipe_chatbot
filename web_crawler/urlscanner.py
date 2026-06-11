@@ -3,11 +3,13 @@ from app.services.ingestion import get_ingestion_service
 from app.worker.ingest_pending_event_worker import IngestPendingEventWorker
 from web_crawler.requester import HttpxRequester
 from web_crawler.service.tasty_note_url_scanner_service import get_tasty_note_url_scanner_service
+from app.bootstrap import wait_postgres
 import asyncio
 
 
 async def main():
     setup_logging(CrawlerSettings())
+    await wait_postgres()
 
     async with HttpxRequester() as requester:
         scanner = await get_tasty_note_url_scanner_service(requester)
