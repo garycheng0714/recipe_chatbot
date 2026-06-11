@@ -1,7 +1,7 @@
 
 .PHONY: unittest e2e integration poller taskiq crawler \
 		emb service diff fastapi pg_backup alembic_migration \
-		alembic_upgrade
+		alembic_upgrade urlscanner
 
 # rg "index_batch_chunk": 「快速在整個專案裡搜尋字串」
 
@@ -14,6 +14,7 @@ help:
 	@echo "  make poller	   			- 啟動 outbox poller"
 	@echo "  make taskiq       			- 啟動 taskiq"
 	@echo "  make crawler      			- 啟動 crawler"
+	@echo "  make urlscanner      		- 啟動 url scanner"
 	@echo "  make emb          			- 啟動 embedding server"
 	@echo "  make service      			- 啟動 Procfile 內的服物"
 	@echo "  make diff        			- 查看 es 和 qdrant 的差異"
@@ -39,6 +40,9 @@ taskiq:
 
 crawler:
 	uv run python -m web_crawler.main
+
+urlscanner:
+	uv run python -m web_crawler.urlscanner
 
 emb:
 	uv run infinity_emb v2 --model-id BAAI/bge-m3 --device mps
