@@ -44,6 +44,7 @@ class CrawlerApp:
                     tg.create_task(self.consumer_factory().run())
                     for _ in range(self.max_workers)
                 ]
+                #TODO: Fix reset task timing issue - reset 和 producer 幾乎同時執行，導致 producer 很快就結束
                 self._reset_task = tg.create_task(self.stale_event_worker.run())
 
                 self._producer_task = tg.create_task(self.producer.run())
