@@ -1,7 +1,6 @@
 from datetime import datetime
 
-from youtube.domain.transcript import TranscriptSegment, SegmenterPayload
-from youtube.domain.video import ChapterDescription, ChapterContent, VideoInfo
+from youtube.domain.video_document import ChapterDescription, Chapter, VideoDocument, TranscriptSegment
 from youtube.transformers.transcript_segmenter import TranscriptSegmenter
 import pytest
 
@@ -22,15 +21,15 @@ def get_transcript_segment(transcripts: list):
     ]
 
 @pytest.fixture
-def payload():
-    return SegmenterPayload(
-        video=VideoInfo(
+def video_document():
+    return VideoDocument(
+            id="123",
             title="Test",
             url=f"https://www.youtube.com/watch?v=123",
             author="AAA",
             language="en",
             published_at=datetime.now(),
-            chapters_descriptions=[
+            description=[
                 ChapterDescription(
                     title="Intro Kilian Jornet",
                     timestamp=0
@@ -39,16 +38,15 @@ def payload():
                     title="How Kilian trains to prep for races",
                     timestamp=208
                 )
-            ]
-        ),
-        transcripts=get_transcript_segment(transcript)
-    )
+            ],
+            transcripts=get_transcript_segment(transcript)
+        )
 
 
-def test_chapter_content_builder(payload):
-    builder = TranscriptSegmenter()
+def test_chapter_content_builder(video_document):
+    stage = TranscriptSegmenter()
 
-    result = builder.transform(payload)
+    result = stage.run(video_document)
 
     chapter1_content = [
         t["text"]
@@ -61,14 +59,14 @@ def test_chapter_content_builder(payload):
     ]
 
     expected = [
-        ChapterContent(
+        Chapter(
             title="Intro Kilian Jornet",
             content=" ".join(chapter1_content)
         ),
-        ChapterContent(
+        Chapter(
             title="How Kilian trains to prep for races",
             content=" ".join(chapter2_content)
         )
     ]
 
-    assert result.chapters_contents == expected
+    assert result.chapters == expected

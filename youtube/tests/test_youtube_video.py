@@ -3,8 +3,7 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from youtube.domain.transcript import TranscriptSegment
-from youtube.domain.video import ChapterDescription, VideoInfo
+from youtube.domain.video_document import ChapterDescription, VideoDocument, TranscriptSegment
 from youtube.video import YouTubeVideo
 
 
@@ -55,7 +54,7 @@ def video_info():
 
 
 def test_extract_chapter_block(description):
-    yt = YouTubeVideo("test")
+    yt = YouTubeVideo()
 
     expected = [
         "0:00 Intro Kilian Jornet",
@@ -69,7 +68,7 @@ def test_extract_chapter_block(description):
 
 
 def test_extract_chapter_description():
-    yt = YouTubeVideo("test")
+    yt = YouTubeVideo()
 
     result = yt._extract_chapter_description("0:00 Intro Kilian Jornet")
 
@@ -79,7 +78,7 @@ def test_extract_chapter_description():
 
 
 def test_get_chapter_info(description):
-    yt = YouTubeVideo("test")
+    yt = YouTubeVideo()
 
     result = yt._get_chapter_description(description)
 
@@ -93,10 +92,10 @@ def test_get_chapter_info(description):
 
 
 def test_get_transcript_segment(transcript):
-    yt = YouTubeVideo("test")
+    yt = YouTubeVideo()
     yt._fetch_transcript = MagicMock(return_value=transcript)
 
-    result = yt.get_transcript_segments()
+    result = yt.get_transcript_segments("test")
 
     expected = [
         TranscriptSegment(text="your upcoming movie with universal", start=201.12, duration=5.839),
@@ -108,18 +107,19 @@ def test_get_transcript_segment(transcript):
 
 
 def test_get_video_info(video_info):
-    yt = YouTubeVideo("123")
+    yt = YouTubeVideo()
 
     yt._fetch_video_info = MagicMock(return_value=video_info)
-    result = yt.get_video_info()
+    result = yt.get_video_info("123")
 
-    expected = VideoInfo(
+    expected = VideoDocument(
+        id="123",
         title="Test",
         url=f"https://www.youtube.com/watch?v=123",
         author="AAA",
         language="en",
         published_at=datetime.fromisoformat(time_str.replace('Z', '+00:00')),
-        chapters_descriptions=yt._get_chapter_description(video_info["description"])
+        description=yt._get_chapter_description(video_info["description"])
     )
 
     assert result == expected

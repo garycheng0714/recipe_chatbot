@@ -5,14 +5,10 @@ import os, re
 
 from youtube_transcript_api import YouTubeTranscriptApi
 
-from youtube.domain.transcript import TranscriptSegment
-from youtube.domain.video import ChapterDescription, VideoInfo
+from youtube.domain.video_document import ChapterDescription, VideoDocument, TranscriptSegment
 
 
 class YouTubeVideo:
-    def __init__(self, video_id):
-        self.video_id = video_id
-
     def _get_chapter_description(self, description) -> list[ChapterDescription]:
         chapters_descriptions = self._extract_chapter_block(description)
 
@@ -32,34 +28,35 @@ class YouTubeVideo:
         time_point_seconds = float(minutes) * 60 + float(seconds)
         return {"title": title.strip(), "timestamp": time_point_seconds}
 
-    def get_video_info(self):
-        snippet = self._fetch_video_info()
+    def get_video_info(self, id: str) -> VideoDocument:
+        snippet = self._fetch_video_info(id)
 
-        return VideoInfo(
+        return VideoDocument(
+            id=id,
             title=snippet["title"],
-            url=f"https://www.youtube.com/watch?v={self.video_id}",
+            url=f"https://www.youtube.com/watch?v={id}",
             author=snippet["channelTitle"],
             language=snippet["defaultAudioLanguage"],
             published_at=snippet['publishedAt'],
-            chapters_descriptions=self._get_chapter_description(snippet["description"])
+            description=self._get_chapter_description(snippet["description"])
         )
 
-    def _fetch_video_info(self):
+    def _fetch_video_info(self, id: str):
         api_key = os.environ.get("GOOGLE_API_KEY")
         assert api_key
         youtube_api = build('youtube', 'v3', developerKey=api_key)
 
         request = youtube_api.videos().list(
             part='snippet',
-            id=self.video_id,
+            id=id,
         )
 
         response = request.execute()
 
         return response["items"][0]["snippet"]
 
-    def get_transcript_segments(self, language: str = 'en') -> list[TranscriptSegment]:
-        transcripts = self._fetch_transcript(language)
+    def get_transcript_segments(self, id: str, language: str = 'en') -> list[TranscriptSegment]:
+        transcripts = self._fetch_transcript(id, language)
 
         if len(transcripts) == 0:
             return []
@@ -69,9 +66,9 @@ class YouTubeVideo:
             for snippet in transcripts
         ]
 
-    def _fetch_transcript(self, language: str) -> list[Dict]:
+    def _fetch_transcript(self, id: str, language: str) -> list[Dict]:
         try:
-            transcript_list = YouTubeTranscriptApi().list(self.video_id)
+            transcript_list = YouTubeTranscriptApi().list(id)
             transcript = transcript_list.find_transcript([language])
             return transcript.fetch().to_raw_data()
         except Exception as e:
