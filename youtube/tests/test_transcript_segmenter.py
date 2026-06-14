@@ -1,5 +1,8 @@
-from youtube.domain.chapter_content import ChapterPayload, ChapterDescription, TranscriptSegment, ChapterContent
-from youtube.transformers.chapter_content_builder import ChapterContentBuilder
+from datetime import datetime
+
+from youtube.domain.transcript import TranscriptSegment, SegmenterPayload
+from youtube.domain.video import ChapterDescription, ChapterContent, VideoInfo
+from youtube.transformers.transcript_segmenter import TranscriptSegmenter
 import pytest
 
 transcript = [
@@ -20,27 +23,32 @@ def get_transcript_segment(transcripts: list):
 
 @pytest.fixture
 def payload():
-    return ChapterPayload(
-        chapters=[
-            ChapterDescription(
-                title="Intro Kilian Jornet",
-                timestamp=0
-            ),
-            ChapterDescription(
-                title="How Kilian trains to prep for races",
-                timestamp=208
-            )
-        ],
+    return SegmenterPayload(
+        video=VideoInfo(
+            title="Test",
+            url=f"https://www.youtube.com/watch?v=123",
+            author="AAA",
+            language="en",
+            published_at=datetime.now(),
+            chapters_descriptions=[
+                ChapterDescription(
+                    title="Intro Kilian Jornet",
+                    timestamp=0
+                ),
+                ChapterDescription(
+                    title="How Kilian trains to prep for races",
+                    timestamp=208
+                )
+            ]
+        ),
         transcripts=get_transcript_segment(transcript)
     )
 
 
 def test_chapter_content_builder(payload):
-    builder = ChapterContentBuilder()
+    builder = TranscriptSegmenter()
 
     result = builder.transform(payload)
-
-    print(result)
 
     chapter1_content = [
         t["text"]
@@ -63,4 +71,4 @@ def test_chapter_content_builder(payload):
         )
     ]
 
-    assert result == expected
+    assert result.chapters_contents == expected

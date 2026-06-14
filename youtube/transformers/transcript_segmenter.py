@@ -1,10 +1,12 @@
-from youtube.domain.chapter_content import ChapterPayload, ChapterContent
+from youtube.domain.transcript import SegmenterPayload
+from youtube.domain.video import ChapterContent, VideoInfo
 from youtube.transformers.base import Transformer
 
 
-class ChapterContentBuilder(Transformer[ChapterPayload, list[ChapterContent]]):
-    def transform(self, data: ChapterPayload) -> list[ChapterContent]:
-        chapters = data.chapters
+class TranscriptSegmenter(Transformer[SegmenterPayload, VideoInfo]):
+    def transform(self, data: SegmenterPayload) -> VideoInfo:
+        video = data.video
+        chapters = video.chapters_descriptions
         transcripts = data.transcripts
 
         chapter_dict = {ch.title: [] for ch in chapters}
@@ -15,7 +17,9 @@ class ChapterContentBuilder(Transformer[ChapterPayload, list[ChapterContent]]):
                     chapter_dict[ch.title].append(sub.text)
                     break
 
-        return [
+        video.chapters_contents = [
             ChapterContent(title=title, content=" ".join(content))
             for title, content in chapter_dict.items()
         ]
+
+        return video
