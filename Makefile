@@ -1,7 +1,7 @@
 
 .PHONY: unittest e2e integration poller taskiq crawler \
 		emb service diff fastapi pg_backup alembic_migration \
-		alembic_upgrade urlscanner
+		alembic_upgrade urlscanner unittest-yt
 
 # rg "index_batch_chunk": 「快速在整個專案裡搜尋字串」
 
@@ -9,6 +9,7 @@
 help:
 	@echo "可用指令："
 	@echo "  make unittest     			- 執行單元測試"
+	@echo "  make unittest-yt     		- 執行 yt 單元測試"
 	@echo "  make e2e          			- 執行 e2e 測試"
 	@echo "  make integration  			- 執行整合測試"
 	@echo "  make poller	   			- 啟動 outbox poller"
@@ -73,3 +74,6 @@ alembic_upgrade:
 	@# alembic history：依時間順序列出專案中所有的遷移腳本
 	@# 執行所有尚未套用的資料庫遷移，將資料庫結構（Schema）更新至最新的版本
 	alembic upgrade head
+
+unittest-yt :
+	pytest --ignore=tests/ --ignore=web_crawler/tests/
