@@ -5,16 +5,15 @@ import os, re
 
 from youtube_transcript_api import YouTubeTranscriptApi
 
-from youtube.domain.chapter_content import ChapterDescription, TranscriptSegment
+from youtube.domain.transcript import TranscriptSegment
+from youtube.domain.video import ChapterDescription, VideoInfo
 
 
 class YouTubeVideo:
     def __init__(self, video_id):
         self.video_id = video_id
 
-    def get_chapter_info(self) -> list[ChapterDescription]:
-        description = self._get_video_description()
-
+    def _get_chapter_description(self, description) -> list[ChapterDescription]:
         chapters_descriptions = self._extract_chapter_block(description)
 
         return [
@@ -33,9 +32,17 @@ class YouTubeVideo:
         time_point_seconds = float(minutes) * 60 + float(seconds)
         return {"title": title.strip(), "timestamp": time_point_seconds}
 
-    def _get_video_description(self):
-        response = self._fetch_video_info()
-        return response["items"][0]["snippet"]["description"]
+    def get_video_info(self):
+        snippet = self._fetch_video_info()
+
+        return VideoInfo(
+            title=snippet["title"],
+            url=f"https://www.youtube.com/watch?v={self.video_id}",
+            author=snippet["channelTitle"],
+            language=snippet["defaultAudioLanguage"],
+            published_at=snippet['publishedAt'],
+            chapters_descriptions=self._get_chapter_description(snippet["description"])
+        )
 
     def _fetch_video_info(self):
         api_key = os.environ.get("GOOGLE_API_KEY")
@@ -47,7 +54,9 @@ class YouTubeVideo:
             id=self.video_id,
         )
 
-        return request.execute()
+        response = request.execute()
+
+        return response["items"][0]["snippet"]
 
     def get_transcript_segments(self, language: str = 'en') -> list[TranscriptSegment]:
         transcripts = self._fetch_transcript(language)
@@ -69,8 +78,3 @@ class YouTubeVideo:
             # 處理該影片可能沒有字幕的情況
             print(f"無法獲取影片腳本：{e}")
             return []
-
-
-if __name__ == "__main__":
-    yt = YouTubeVideo("7E6TNeoOC3Y")
-    print(yt.get_chapter_info())
