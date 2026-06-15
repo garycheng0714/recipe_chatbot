@@ -1,7 +1,7 @@
 from datetime import datetime
 
 from youtube.domain.video_document import ChapterDescription, Chapter, VideoDocument, TranscriptSegment
-from youtube.transformers.transcript_segmenter import TranscriptSegmenter
+from youtube.stage.transcript_segmenter import TranscriptSegmenter
 import pytest
 
 transcript = [
@@ -32,11 +32,11 @@ def video_document():
             description=[
                 ChapterDescription(
                     title="Intro Kilian Jornet",
-                    timestamp=0
+                    start_time=0
                 ),
                 ChapterDescription(
                     title="How Kilian trains to prep for races",
-                    timestamp=208
+                    start_time=208
                 )
             ],
             transcripts=get_transcript_segment(transcript)

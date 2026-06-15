@@ -72,7 +72,7 @@ def test_extract_chapter_description():
 
     result = yt._extract_chapter_description("0:00 Intro Kilian Jornet")
 
-    expected = {"title": "Intro Kilian Jornet", "timestamp": 0}
+    expected = ChapterDescription(title="Intro Kilian Jornet", start_time=0)
 
     assert result == expected
 
@@ -83,9 +83,9 @@ def test_get_chapter_info(description):
     result = yt._get_chapter_description(description)
 
     expected = [
-        ChapterDescription(title="Intro Kilian Jornet", timestamp=0),
-        ChapterDescription(title="How Kilian trains to prep for races", timestamp=208),
-        ChapterDescription(title="Two a day workouts", timestamp=345)
+        ChapterDescription(title="Intro Kilian Jornet", start_time=0),
+        ChapterDescription(title="How Kilian trains to prep for races", start_time=208),
+        ChapterDescription(title="Two a day workouts", start_time=345)
     ]
 
     assert result == expected

@@ -5,7 +5,7 @@ from pydantic import BaseModel
 
 class ChapterDescription(BaseModel):
     title: str
-    timestamp: float
+    start_time: float
 
 class Chapter(BaseModel):
     title: str

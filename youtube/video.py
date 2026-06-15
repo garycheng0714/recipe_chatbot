@@ -13,20 +13,18 @@ class YouTubeVideo:
         chapters_descriptions = self._extract_chapter_block(description)
 
         return [
-            ChapterDescription(
-                **self._extract_chapter_description(chapter)
-            )
+            self._extract_chapter_description(chapter)
             for chapter in chapters_descriptions
         ]
 
     def _extract_chapter_block(self, description: str) -> list[str]:
         return re.findall(r'^\d{1,2}:\d{2}.+', description, flags=re.MULTILINE)
 
-    def _extract_chapter_description(self, info: str) -> dict:
+    def _extract_chapter_description(self, info: str) -> ChapterDescription:
         timestamp, title = info.split(maxsplit=1)
         minutes, seconds = timestamp.split(':')
         time_point_seconds = float(minutes) * 60 + float(seconds)
-        return {"title": title.strip(), "timestamp": time_point_seconds}
+        return ChapterDescription(title=title.strip(), start_time=time_point_seconds)
 
     def get_video_info(self, id: str) -> VideoDocument:
         snippet = self._fetch_video_info(id)

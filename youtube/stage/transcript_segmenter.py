@@ -11,7 +11,7 @@ class TranscriptSegmenter:
 
         for sub in transcripts:
             for ch in reversed(chapters):
-                if sub.start >= ch.timestamp:
+                if sub.start >= ch.start_time:
                     chapter_dict[ch.title].append(sub.text)
                     break
 
