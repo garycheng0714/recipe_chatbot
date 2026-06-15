@@ -5,6 +5,8 @@ from sqlalchemy import select
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio.session import AsyncSession
 
+from youtube.domain.models import Section
+
 T = TypeVar("T")
 
 class YtRepository:
@@ -25,3 +27,19 @@ class YtRepository:
         )
 
         return result.scalars().all()
+
+    async def insert_bulk(self, session: AsyncSession, sections: list[Section]):
+        value_dict = [
+            {
+                c.key: getattr(section, c.key)
+                for c in Section.__table__.columns
+                if getattr(section, c.key) is not None
+            }
+            for section in sections
+        ]
+
+        print(value_dict)
+
+        await session.execute(
+            insert(Section).values(value_dict)
+        )

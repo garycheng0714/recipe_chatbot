@@ -89,3 +89,56 @@ async def test_insert_chapter_success(session, uuid):
     chapter = result[0]
     assert chapter.title == "第一章"
     assert chapter.start_time == 10.5
+
+
+async def test_insert_bulk_chapter_success(session, uuid):
+    repo = YtRepository()
+
+    video = Source(
+        id=uuid,
+        type="youtube",
+        title="測試影片",
+        url="https://example.com",
+        language="en"
+    )
+
+    chapter1_id = get_section_id(uuid, 0)
+
+    chapter1 = Section(
+        id=chapter1_id,
+        source_id=uuid,
+        title="第一章",
+        order_index=0,
+        raw_content="內容",
+        start_time=0
+    )
+
+    chapter2_id = get_section_id(uuid, 1)
+
+    chapter2 = Section(
+        id=chapter2_id,
+        source_id=uuid,
+        title="第二章",
+        order_index=1,
+        raw_content="內容二",
+        start_time=10
+    )
+
+    # 執行寫入
+    await repo.insert(session, video)
+    await repo.insert_bulk(session, [chapter1, chapter2])
+    await session.flush()
+
+    # 驗證結果
+    result = await repo.fetch(Section, session, [chapter1_id, chapter2_id])
+    assert len(result) == 2
+
+    chapter = result[0]
+    assert chapter.title == "第一章"
+    assert chapter.raw_content == "內容"
+    assert chapter.start_time == 0
+
+    chapter = result[1]
+    assert chapter.title == "第二章"
+    assert chapter.raw_content == "內容二"
+    assert chapter.start_time == 10
