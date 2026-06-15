@@ -24,7 +24,10 @@ class InfrastructureInitializer:
     async def init_postgresql(self):
         # 使用 SQLAlchemy 的 Base.metadata 建立所有資料表
         from app.database import Base
+        import youtube.domain.models
+
         async with self.engine.begin() as conn:
+            # print(Base.metadata.tables.keys())
             await conn.run_sync(Base.metadata.create_all)
         print("  - PostgreSQL: 資料表建立完成")
 
