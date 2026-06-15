@@ -23,6 +23,7 @@ if config.config_file_name is not None:
 
 from app.domain.models.pg_model import PgRecipeModel
 from app.domain.models.outbox_model import OutboxModel
+from youtube.domain import models
 target_metadata = Base.metadata
 
 # other values from the config, defined by the needs of env.py,

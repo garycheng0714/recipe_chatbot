@@ -144,39 +144,10 @@ class Chunk(Base):
         UUID(as_uuid=True), ForeignKey("sections.id", ondelete="CASCADE"), index=True
     )
 
-    # text
-    raw_text:     Mapped[str]        = mapped_column(Text, nullable=False)  # original subtitle
-    cleaned_text: Mapped[str | None] = mapped_column(Text)                  # after LLM cleaning
-    token_count:  Mapped[int | None] = mapped_column(Integer)
+    text: Mapped[str] = mapped_column(Text, nullable=False)  # original subtitle
 
     # position within section
     order_index: Mapped[int] = mapped_column(Integer, nullable=False)
-
-    # time window this chunk covers (inherited / refined from section)
-    start_time: Mapped[float | None] = mapped_column(Float)
-    end_time:   Mapped[float | None] = mapped_column(Float)
-
-    # --- external store references ---
-    # Elasticsearch: chunk.id.hex is used as the doc _id directly,
-    # so no extra column is needed unless you use a different id scheme.
-    es_index: Mapped[str | None] = mapped_column(String(128))  # e.g. "chunks_en"
-
-    # Qdrant: point id = chunk.id (UUID), collection stored here for reference
-    qdrant_collection: Mapped[str | None] = mapped_column(String(128))
-
-    # --- processing pipeline state ---
-    cleaning_status:     Mapped[ProcessingStatus] = mapped_column(
-        Enum(ProcessingStatus), default=ProcessingStatus.pending, index=True
-    )
-    translation_status:  Mapped[ProcessingStatus] = mapped_column(
-        Enum(ProcessingStatus), default=ProcessingStatus.pending, index=True
-    )
-    embedding_status:    Mapped[ProcessingStatus] = mapped_column(
-        Enum(ProcessingStatus), default=ProcessingStatus.pending, index=True
-    )
-    indexing_status:     Mapped[ProcessingStatus] = mapped_column(
-        Enum(ProcessingStatus), default=ProcessingStatus.pending, index=True
-    )
 
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
@@ -193,8 +164,6 @@ class Chunk(Base):
 
     __table_args__ = (
         UniqueConstraint("section_id", "order_index", name="uq_chunk_order"),
-        Index("ix_chunk_cleaning_status",  "cleaning_status"),
-        Index("ix_chunk_embedding_status", "embedding_status"),
     )
 
 
@@ -223,9 +192,6 @@ class ChunkTranslation(Base):
     translated_text:  Mapped[str] = mapped_column(Text, nullable=False)
     translation_model: Mapped[str | None] = mapped_column(Text)  # "claude-sonnet-4-6", "gpt-4o" …
 
-    # Elasticsearch index for translated content (separate from source-language index)
-    es_index: Mapped[str | None] = mapped_column(String(128))  # e.g. "chunks_zh_tw"
-
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )
@@ -240,42 +206,4 @@ class ChunkTranslation(Base):
         # one translation per language per chunk
         UniqueConstraint("chunk_id", "language", name="uq_chunk_translation_language"),
         Index("ix_chunk_translation_language", "language"),
-    )
-
-
-# ---------------------------------------------------------------------------
-# embedding_runs  —  audit log: which model embedded which chunk
-#
-# Actual vectors live in Qdrant. This table lets you:
-#   - track which model version was used
-#   - re-embed only stale chunks when you upgrade the model
-#   - compare retrieval quality across model versions
-# ---------------------------------------------------------------------------
-
-class EmbeddingRun(Base):
-    __tablename__ = "embedding_runs"
-
-    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True)
-    chunk_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("chunks.id", ondelete="CASCADE"), index=True
-    )
-
-    model:      Mapped[str] = mapped_column(String(128), nullable=False)  # e.g. "multilingual-e5-large"
-    dimensions: Mapped[int] = mapped_column(Integer, nullable=False)
-
-    # which text field was embedded:
-    #   "cleaned_text"    → chunks.cleaned_text  (source language)
-    #   "translated:zh-TW" → chunk_translations.translated_text where language="zh-TW"
-    source_field: Mapped[str] = mapped_column(String(64), nullable=False, default="cleaned_text")
-
-    # Qdrant point id == chunk.id, but store the collection for multi-collection setups
-    qdrant_collection: Mapped[str] = mapped_column(String(128), nullable=False)
-
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now()
-    )
-
-    __table_args__ = (
-        # one active embedding per chunk per model per source field
-        UniqueConstraint("chunk_id", "model", "source_field", name="uq_embedding_chunk_model_field"),
     )
