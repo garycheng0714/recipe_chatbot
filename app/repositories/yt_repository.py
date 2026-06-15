@@ -38,8 +38,8 @@ class YtRepository:
             for section in sections
         ]
 
-        print(value_dict)
-
         await session.execute(
-            insert(Section).values(value_dict)
+            insert(Section).values(
+                value_dict
+            ).on_conflict_do_nothing(index_elements=['id'])
         )
