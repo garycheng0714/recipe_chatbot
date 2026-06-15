@@ -3,7 +3,7 @@ from youtube.domain.video_document import Chapter, VideoDocument
 
 class TranscriptSegmenter:
 
-    def run(self, document: VideoDocument) -> VideoDocument:
+    async def run(self, document: VideoDocument) -> VideoDocument:
         chapters = document.description
         transcripts = document.transcripts
 

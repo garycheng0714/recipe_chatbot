@@ -42,11 +42,11 @@ def video_document():
             transcripts=get_transcript_segment(transcript)
         )
 
-
-def test_chapter_content_builder(video_document):
+@pytest.mark.asyncio
+async def test_chapter_content_builder(video_document):
     stage = TranscriptSegmenter()
 
-    result = stage.run(video_document)
+    result = await stage.run(video_document)
 
     chapter1_content = [
         t["text"]
