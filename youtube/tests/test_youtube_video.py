@@ -1,5 +1,5 @@
 from datetime import datetime
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, AsyncMock
 
 import pytest
 
@@ -54,7 +54,7 @@ def video_info():
 
 
 def test_extract_chapter_block(description):
-    yt = YouTubeVideo()
+    yt = YouTubeVideo(MagicMock())
 
     expected = [
         "0:00 Intro Kilian Jornet",
@@ -68,7 +68,7 @@ def test_extract_chapter_block(description):
 
 
 def test_extract_chapter_description():
-    yt = YouTubeVideo()
+    yt = YouTubeVideo(MagicMock())
 
     result = yt._extract_chapter_description("0:00 Intro Kilian Jornet")
 
@@ -78,7 +78,7 @@ def test_extract_chapter_description():
 
 
 def test_get_chapter_info(description):
-    yt = YouTubeVideo()
+    yt = YouTubeVideo(MagicMock())
 
     result = yt._get_chapter_description(description)
 
@@ -91,11 +91,12 @@ def test_get_chapter_info(description):
     assert result == expected
 
 
-def test_get_transcript_segment(transcript):
-    yt = YouTubeVideo()
-    yt._fetch_transcript = MagicMock(return_value=transcript)
+@pytest.mark.asyncio
+async def test_get_transcript_segment(transcript):
+    yt = YouTubeVideo(MagicMock())
+    yt._fetch_transcript = AsyncMock(return_value=transcript)
 
-    result = yt.get_transcript_segments("test")
+    result = await yt.get_transcript_segments("test")
 
     expected = [
         TranscriptSegment(text="your upcoming movie with universal", start=201.12, duration=5.839),
@@ -106,11 +107,12 @@ def test_get_transcript_segment(transcript):
     assert result == expected
 
 
-def test_get_video_info(video_info):
-    yt = YouTubeVideo()
+@pytest.mark.asyncio
+async def test_get_video_info(video_info):
+    yt = YouTubeVideo(MagicMock())
 
-    yt._fetch_video_info = MagicMock(return_value=video_info)
-    result = yt.get_video_info("123")
+    yt._fetch_video_info = AsyncMock(return_value=video_info)
+    result = await yt.get_video_info("123")
 
     expected = VideoDocument(
         id="123",

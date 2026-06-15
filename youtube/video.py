@@ -1,14 +1,21 @@
+import asyncio
+import json
 from typing import Dict
 
-from googleapiclient.discovery import build
 import os, re
 
 from youtube_transcript_api import YouTubeTranscriptApi
 
+from web_crawler.requester import HttpxRequester
 from youtube.domain.video_document import ChapterDescription, VideoDocument, TranscriptSegment
 
 
 class YouTubeVideo:
+    def __init__(self, requester: HttpxRequester):
+        self.requester = requester
+        self.api_key = os.environ.get("GOOGLE_API_KEY")
+        assert self.api_key, "Google API Key 缺失"
+
     def _get_chapter_description(self, description) -> list[ChapterDescription]:
         chapters_descriptions = self._extract_chapter_block(description)
 
@@ -26,8 +33,8 @@ class YouTubeVideo:
         time_point_seconds = float(minutes) * 60 + float(seconds)
         return ChapterDescription(title=title.strip(), start_time=time_point_seconds)
 
-    def get_video_info(self, id: str) -> VideoDocument:
-        snippet = self._fetch_video_info(id)
+    async def get_video_info(self, id: str) -> VideoDocument:
+        snippet = await self._fetch_video_info(id)
 
         return VideoDocument(
             id=id,
@@ -39,22 +46,21 @@ class YouTubeVideo:
             description=self._get_chapter_description(snippet["description"])
         )
 
-    def _fetch_video_info(self, id: str):
-        api_key = os.environ.get("GOOGLE_API_KEY")
-        assert api_key
-        youtube_api = build('youtube', 'v3', developerKey=api_key)
-
-        request = youtube_api.videos().list(
-            part='snippet',
-            id=id,
+    async def _fetch_video_info(self, id: str):
+        response_text = await self.requester.request(
+            "https://www.googleapis.com/youtube/v3/videos",
+            params={
+                "part": "snippet",
+                "id": id,
+                "key": self.api_key
+            }
         )
-
-        response = request.execute()
+        response = json.loads(response_text)
 
         return response["items"][0]["snippet"]
 
-    def get_transcript_segments(self, id: str, language: str = 'en') -> list[TranscriptSegment]:
-        transcripts = self._fetch_transcript(id, language)
+    async def get_transcript_segments(self, id: str, language: str = 'en') -> list[TranscriptSegment]:
+        transcripts = await self._fetch_transcript(id, language)
 
         if len(transcripts) == 0:
             return []
@@ -64,12 +70,26 @@ class YouTubeVideo:
             for snippet in transcripts
         ]
 
-    def _fetch_transcript(self, id: str, language: str) -> list[Dict]:
+    async def _fetch_transcript(
+        self,
+        id: str,
+        language: str,
+    ) -> list[Dict]:
         try:
-            transcript_list = YouTubeTranscriptApi().list(id)
-            transcript = transcript_list.find_transcript([language])
-            return transcript.fetch().to_raw_data()
+            return await asyncio.to_thread(
+                self._fetch_transcript_sync,
+                id,
+                language,
+            )
         except Exception as e:
-            # 處理該影片可能沒有字幕的情況
             print(f"無法獲取影片腳本：{e}")
             return []
+
+    def _fetch_transcript_sync(
+            self,
+            id: str,
+            language: str
+    ) -> list[Dict]:
+        transcript_list = YouTubeTranscriptApi().list(id)
+        transcript = transcript_list.find_transcript([language])
+        return transcript.fetch().to_raw_data()

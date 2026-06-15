@@ -35,9 +35,9 @@ class HttpxRequester(BaseRequester):
         )),
         reraise=True  # 最後一次失敗後拋出異常
     )
-    async def request(self, url: str):
+    async def request(self, url: str, params: dict = None):
         try:
-            response = await self.client.get(url)
+            response = await self.client.get(url, params=params)
             response.raise_for_status()
             return response.text
         except httpx.HTTPStatusError as e:
