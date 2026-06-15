@@ -7,17 +7,18 @@ class TranscriptSegmenter:
         chapters = document.description
         transcripts = document.transcripts
 
-        chapter_dict = {ch.title: [] for ch in chapters}
+        # 遇到同樣標題會少章節，故用 start_time 當 key
+        chapter_dict = {str(ch.start_time): [] for ch in chapters}
 
         for sub in transcripts:
             for ch in reversed(chapters):
                 if sub.start >= ch.start_time:
-                    chapter_dict[ch.title].append(sub.text)
+                    chapter_dict[str(ch.start_time)].append(sub.text)
                     break
 
         document.chapters = [
-            Chapter(title=title, content=" ".join(content))
-            for title, content in chapter_dict.items()
+            Chapter(title=ch.title, content=" ".join(chapter_dict[key]))
+            for ch, key in zip(chapters, chapter_dict.keys())
         ]
 
         return document

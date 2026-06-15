@@ -42,8 +42,32 @@ def video_document():
             transcripts=get_transcript_segment(transcript)
         )
 
+
+@pytest.fixture
+def video_document_with_same_chapter_title():
+    return VideoDocument(
+            id="123",
+            title="Test",
+            url=f"https://www.youtube.com/watch?v=123",
+            author="AAA",
+            language="en",
+            published_at=datetime.now(),
+            description=[
+                ChapterDescription(
+                    title="Intro Kilian Jornet",
+                    start_time=0
+                ),
+                ChapterDescription(
+                    title="Intro Kilian Jornet",
+                    start_time=208
+                )
+            ],
+            transcripts=get_transcript_segment(transcript)
+        )
+
+
 @pytest.mark.asyncio
-async def test_chapter_content_builder(video_document):
+async def test_transcript_segmenter(video_document):
     stage = TranscriptSegmenter()
 
     result = await stage.run(video_document)
@@ -69,4 +93,35 @@ async def test_chapter_content_builder(video_document):
         )
     ]
 
+    assert result.chapters == expected
+
+
+@pytest.mark.asyncio
+async def test_transcript_segmenter_with_same_chapter_title_different_start_time(video_document_with_same_chapter_title):
+    stage = TranscriptSegmenter()
+
+    result = await stage.run(video_document_with_same_chapter_title)
+
+    chapter1_content = [
+        t["text"]
+        for t in transcript[:3]
+    ]
+
+    chapter2_content = [
+        t["text"]
+        for t in transcript[3:]
+    ]
+
+    expected = [
+        Chapter(
+            title="Intro Kilian Jornet",
+            content=" ".join(chapter1_content)
+        ),
+        Chapter(
+            title="Intro Kilian Jornet",
+            content=" ".join(chapter2_content)
+        )
+    ]
+
+    assert len(result.chapters) == 2
     assert result.chapters == expected

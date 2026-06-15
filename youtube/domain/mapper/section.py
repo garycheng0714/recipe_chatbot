@@ -9,7 +9,7 @@ class SectionMapper:
         sections: list[Section] = []
 
         if len(video.chapters) != len(video.description):
-            return sections
+            raise Exception("Chapter numbers don't match")
 
         source_id = get_source_id(video.url)
 

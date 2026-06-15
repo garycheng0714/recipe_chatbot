@@ -1,3 +1,5 @@
+import pytest
+
 from youtube.domain.mapper.section import SectionMapper
 from youtube.domain.video_document import Chapter, ChapterDescription, VideoDocument
 from youtube.ids import get_source_id, get_section_id
@@ -78,7 +80,5 @@ def test_section_mapper_mismatched_lengths():
         description=descriptions
     )
 
-    sections = SectionMapper.from_document(video_doc)
-
-    # 因為 zip(1, 0) 長度會是 0
-    assert len(sections) == 0
+    with pytest.raises(Exception):
+        SectionMapper.from_document(video_doc)
