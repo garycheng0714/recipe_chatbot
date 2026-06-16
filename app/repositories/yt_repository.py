@@ -10,20 +10,20 @@ from youtube.domain.models import Section
 T = TypeVar("T")
 
 class YtRepository:
-    async def insert(self, session: AsyncSession, model_cls: T):
+    async def insert(self, session: AsyncSession, model: T):
         await session.execute(
-            insert(type(model_cls)).values(
+            insert(type(model)).values(
                 {
-                    c.key: getattr(model_cls, c.key)
-                    for c in model_cls.__table__.columns
-                    if getattr(model_cls, c.key) is not None
+                    c.key: getattr(model, c.key)
+                    for c in model.__table__.columns
+                    if getattr(model, c.key) is not None
                 }
             ).on_conflict_do_nothing(index_elements=['id'])
         )
 
-    async def fetch(self, model_cls: T, session: AsyncSession, uuid: list[UUID]):
+    async def fetch(self, model: T, session: AsyncSession, uuid: list[UUID]):
         result = await session.execute(
-            select(model_cls).where(model_cls.id.in_(uuid))
+            select(model).where(model.id.in_(uuid))
         )
 
         return result.scalars().all()
