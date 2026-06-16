@@ -4,7 +4,7 @@ import pytest
 
 from youtube.domain.mapper.section import SectionMapper
 from youtube.domain.mapper.source import SourceMapper
-from youtube.stage.save_raw_data import SaveRawData
+from youtube.stages.save_raw_data import SaveRawData
 
 
 @pytest.fixture

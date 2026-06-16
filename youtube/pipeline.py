@@ -3,10 +3,10 @@ import asyncio
 from app.repositories.yt_repository import YtRepository
 from web_crawler.requester import HttpxRequester
 from youtube.domain.video_document import VideoDocument
-from youtube.stage.base import Stage
-from youtube.stage.fetch_video import FetchVideoTransformer
-from youtube.stage.save_raw_data import SaveRawData
-from youtube.stage.transcript_segmenter import TranscriptSegmenter
+from youtube.stages.base_stage import Stage
+from youtube.stages.fetch_video import FetchVideoTransformer
+from youtube.stages.save_raw_data import SaveRawData
+from youtube.stages.transcript_segmenter import TranscriptSegmenter
 from youtube.video import YouTubeVideo
 
 

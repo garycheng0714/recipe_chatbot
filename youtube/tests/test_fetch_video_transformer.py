@@ -3,7 +3,7 @@ from unittest.mock import MagicMock, AsyncMock
 import pytest
 
 from youtube.domain.video_document import VideoDocument, TranscriptSegment
-from youtube.stage.fetch_video import FetchVideoTransformer
+from youtube.stages.fetch_video import FetchVideoTransformer
 from youtube.video import YouTubeVideo
 
 

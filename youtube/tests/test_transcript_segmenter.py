@@ -1,7 +1,7 @@
 from datetime import datetime
 
 from youtube.domain.video_document import ChapterDescription, Chapter, VideoDocument, TranscriptSegment
-from youtube.stage.transcript_segmenter import TranscriptSegmenter
+from youtube.stages.transcript_segmenter import TranscriptSegmenter
 import pytest
 
 transcript = [
