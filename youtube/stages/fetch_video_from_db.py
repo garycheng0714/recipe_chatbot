@@ -11,7 +11,6 @@ class FetchVideoFromDB:
         self.session_factory = session_factory
 
     async def run(self, document: VideoDocument) -> VideoDocument:
-        assert document.url
         uuid = get_source_id(document.url)
 
         async with self.session_factory() as session:
