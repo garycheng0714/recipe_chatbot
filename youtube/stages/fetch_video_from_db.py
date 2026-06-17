@@ -1,7 +1,6 @@
 from app.database import AsyncSessionLocal
 from app.repositories.yt_repository import YtRepository
-from youtube.domain.models import Source
-from youtube.domain.video_document import VideoDocument
+from youtube.domain.video_document import VideoDocument, Chapter
 from youtube.ids import get_source_id
 
 
@@ -14,10 +13,11 @@ class FetchVideoFromDB:
         uuid = get_source_id(document.url)
 
         async with self.session_factory() as session:
-            result = await self.repository.fetch(Source, session=session, uuid=[uuid])
+            async with session.begin():
+                result = await self.repository.get_video_by_uuid(session, uuid)
 
-        if len(result) == 0:
+        if result is None:
             print("No video found")
             return document
 
-        return VideoDocument.model_validate(result[0])
+        return VideoDocument.model_validate(result)

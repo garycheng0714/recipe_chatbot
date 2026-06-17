@@ -4,8 +4,9 @@ from uuid import UUID
 from sqlalchemy import select
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio.session import AsyncSession
+from sqlalchemy.orm import selectinload
 
-from youtube.domain.models import Section
+from youtube.domain.models import Section, Source
 
 T = TypeVar("T")
 
@@ -27,6 +28,16 @@ class YtRepository:
         )
 
         return result.scalars().all()
+
+    async def get_video_by_uuid(self, session: AsyncSession, id: UUID):
+        # 💡 使用 joinedload 一次性在資料庫層級完成組裝，效能極高
+        stmt = (
+            select(Source)
+            .options(selectinload(Source.sections))
+            .filter(Source.id == id)
+        )
+        result = await session.execute(stmt)
+        return result.scalars().one_or_none()
 
     async def insert_bulk(self, session: AsyncSession, sections: list[Section]):
         value_dict = [

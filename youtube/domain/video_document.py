@@ -2,7 +2,7 @@ from datetime import datetime
 from typing import List
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class ChapterDescription(BaseModel):
@@ -11,7 +11,9 @@ class ChapterDescription(BaseModel):
 
 class Chapter(BaseModel):
     title: str
-    content: str
+    content: str = Field(validation_alias="raw_content")
+
+    model_config = ConfigDict(from_attributes=True)
 
 class TranscriptSegment(BaseModel):
     text: str
@@ -27,7 +29,10 @@ class VideoDocument(BaseModel):
     language: str | None = None
     published_at: datetime | None = None
     description: List[ChapterDescription] | None = None
-    chapters: list[Chapter] | None = None
+    chapters: list[Chapter] | None = Field(
+        default=None,
+        validation_alias="sections"
+    )
     transcripts: list[TranscriptSegment] | None = None
 
     model_config = ConfigDict(from_attributes=True)

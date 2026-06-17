@@ -5,7 +5,7 @@ from sqlalchemy import delete
 from app.repositories.yt_repository import YtRepository
 from youtube.domain.models import Source, Section, Chunk, ChunkTranslation
 from youtube.domain.video_document import VideoDocument
-from youtube.ids import get_source_id
+from youtube.ids import get_source_id, get_section_id
 from youtube.stages.fetch_video_from_db import FetchVideoFromDB
 
 
@@ -33,19 +33,48 @@ async def test_fetch_video_from_db(uuid, session_factory, clean_db):
     async with session_factory() as async_session:
         async with async_session.begin():
             repo = YtRepository()
-            video = Source(id=uuid, type="youtube", video_id="123", title="測試影片", url="https://example-video.com", language="en")
+            video = Source(
+                id=uuid,
+                type="youtube",
+                video_id="123",
+                title="測試影片",
+                url="https://example-video.com",
+                language="en",
+                sections=[
+                    Section(
+                        id=get_section_id(uuid, 0),
+                        source_id=uuid,
+                        title="章節一",
+                        order_index=0,
+                        raw_content="內容一",
+                    ),
+                    Section(
+                        id=get_section_id(uuid, 1),
+                        source_id=uuid,
+                        title="章節二",
+                        order_index=1,
+                        raw_content="內容二",
+                    )
+                ]
+            )
 
             # 執行寫入
-            await repo.insert(async_session, video)
+            async_session.add(video)
 
     # 驗證是否真的寫入資料庫
     stage = FetchVideoFromDB(repo, session_factory)
-    video = VideoDocument(url="https://example-video.com")
+    context = VideoDocument(url="https://example-video.com")
 
-    result = await stage.run(video)
+    video = await stage.run(context)
 
-    assert result.title == "測試影片"
-    assert result.url == "https://example-video.com"
-    assert result.video_id == "123"
+    assert video.title == "測試影片"
+    assert video.url == "https://example-video.com"
+    assert video.video_id == "123"
+
+    assert len(video.chapters) == 2
+
+    chapter = video.chapters[0]
+    assert chapter.title == "章節一"
+    assert chapter.content == "內容一"
 
 
