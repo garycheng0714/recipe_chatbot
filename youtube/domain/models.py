@@ -66,6 +66,7 @@ class Source(Base):
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True)
     type: Mapped[SourceType] = mapped_column(Enum(SourceType), nullable=False, index=True)
 
+    video_id:     Mapped[str]           = mapped_column(Text, nullable=False)
     title:        Mapped[str]           = mapped_column(Text, nullable=False)
     url:          Mapped[str | None]    = mapped_column(Text, unique=True)
     author:       Mapped[str | None]    = mapped_column(Text)
