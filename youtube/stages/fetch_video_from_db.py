@@ -20,4 +20,4 @@ class FetchVideoFromDB:
             print("No video found")
             return document
 
-        return result[0]
+        return VideoDocument.model_validate(result[0])
