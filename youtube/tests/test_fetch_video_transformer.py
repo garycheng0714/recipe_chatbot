@@ -9,7 +9,7 @@ from youtube.video import YouTubeVideo
 
 @pytest.mark.asyncio
 async def test_fetch_video_transformer():
-    document = VideoDocument(id="123")
+    document = VideoDocument(video_id="123")
     transcript = TranscriptSegment(text="test", start=0, duration=10)
 
     yt = YouTubeVideo(MagicMock())

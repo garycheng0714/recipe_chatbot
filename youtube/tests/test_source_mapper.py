@@ -11,7 +11,7 @@ def test_source_mapper_from_document_success():
     mock_published_at = datetime(2026, 6, 15, 12, 0, 0, tzinfo=timezone.utc)
 
     video_doc = VideoDocument(
-        id="video_001",
+        video_id="video_001",
         title="如何寫出好測試",
         url="https://www.youtube.com/watch?v=dQw4w9WgXcQ",
         author="測試大師",
@@ -31,6 +31,7 @@ def test_source_mapper_from_document_success():
     # 3. 驗證結果是否符合預期 (Assert)
     assert result_source.id == get_source_id("https://www.youtube.com/watch?v=dQw4w9WgXcQ")  # 依據你的 get_source_id 邏輯
     assert result_source.type == SourceType.youtube
+    assert result_source.video_id == "video_001"
     assert result_source.title == "如何寫出好測試"
     assert result_source.url == "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
     assert result_source.author == "測試大師"

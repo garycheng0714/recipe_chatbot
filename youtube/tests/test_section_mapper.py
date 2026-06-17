@@ -19,7 +19,7 @@ def test_section_mapper_from_document_success():
     ]
 
     video_doc = VideoDocument(
-        id="vid_999",
+        video_id="vid_999",
         url="https://www.youtube.com/watch?v=abcdefg",
         chapters=chapters,
         description=descriptions

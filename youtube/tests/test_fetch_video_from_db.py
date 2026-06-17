@@ -28,12 +28,12 @@ async def clean_db(session):
 pytestmark = pytest.mark.asyncio(loop_scope="session")
 
 
-async def test_fetch_video_from_db(uuid, session_factory):
+async def test_fetch_video_from_db(uuid, session_factory, clean_db):
 
     async with session_factory() as async_session:
         async with async_session.begin():
             repo = YtRepository()
-            video = Source(id=uuid, type="youtube", title="測試影片", url="https://example-video.com", language="en")
+            video = Source(id=uuid, type="youtube", video_id="123", title="測試影片", url="https://example-video.com", language="en")
 
             # 執行寫入
             await repo.insert(async_session, video)
@@ -46,5 +46,6 @@ async def test_fetch_video_from_db(uuid, session_factory):
 
     assert result.title == "測試影片"
     assert result.url == "https://example-video.com"
+    assert result.video_id == "123"
 
 

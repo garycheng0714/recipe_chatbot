@@ -23,7 +23,7 @@ def get_transcript_segment(transcripts: list):
 @pytest.fixture
 def video_document():
     return VideoDocument(
-            id="123",
+            video_id="123",
             title="Test",
             url=f"https://www.youtube.com/watch?v=123",
             author="AAA",
@@ -46,7 +46,7 @@ def video_document():
 @pytest.fixture
 def video_document_with_same_chapter_title():
     return VideoDocument(
-            id="123",
+            video_id="123",
             title="Test",
             url=f"https://www.youtube.com/watch?v=123",
             author="AAA",

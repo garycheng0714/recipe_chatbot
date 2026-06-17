@@ -13,7 +13,7 @@ pytestmark = pytest.mark.asyncio(loop_scope="session")
 
 async def test_insert_video_success(session, uuid):
     repo = YtRepository()
-    video = Source(id=uuid, type="youtube", title="測試影片", url="https://example.com", language="en")
+    video = Source(id=uuid, type="youtube", video_id="123", title="測試影片", url="https://example.com", language="en")
 
     # 執行寫入
     await repo.insert(session, video)
@@ -39,8 +39,8 @@ async def test_fetch_video_fail(session):
 
 async def test_insert_video_on_conflict_do_nothing(session, uuid):
     repo = YtRepository()
-    video1 = Source(id=uuid, type="youtube", title="原本的標題", url="https://example.com", language="en")
-    video2 = Source(id=uuid, type="youtube", title="衝突的標題", url="https://example.com", language="en")
+    video1 = Source(id=uuid, type="youtube", video_id="123", title="原本的標題", url="https://example.com", language="en")
+    video2 = Source(id=uuid, type="youtube", video_id="123", title="衝突的標題", url="https://example.com", language="en")
 
     # 寫入第一筆
     await repo.insert(session, video1)
@@ -63,6 +63,7 @@ async def test_insert_chapter_success(session, uuid):
     video = Source(
         id=uuid,
         type="youtube",
+        video_id="123",
         title="測試影片",
         url="https://example.com",
         language="en"
@@ -97,6 +98,7 @@ async def test_insert_bulk_chapter_success(session, uuid):
     video = Source(
         id=uuid,
         type="youtube",
+        video_id="123",
         title="測試影片",
         url="https://example.com",
         language="en"
@@ -150,6 +152,7 @@ async def test_insert_duplicated_chapter_then_one_result(session, uuid):
     video = Source(
         id=uuid,
         type="youtube",
+        video_id="123",
         title="測試影片",
         url="https://example.com",
         language="en"

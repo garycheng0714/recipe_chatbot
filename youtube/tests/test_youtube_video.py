@@ -115,7 +115,7 @@ async def test_get_video_info(video_info):
     result = await yt.get_video_info("123")
 
     expected = VideoDocument(
-        id="123",
+        video_id="123",
         title="Test",
         url=f"https://www.youtube.com/watch?v=123",
         author="AAA",
