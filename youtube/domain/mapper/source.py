@@ -9,6 +9,7 @@ class SourceMapper:
         return Source(
             id=get_source_id(video.url),
             type=SourceType.youtube,
+            video_id=video.video_id,
             title=video.title,
             url=video.url,
             author=video.author,

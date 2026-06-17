@@ -1,4 +1,4 @@
-from typing import TypeVar
+from typing import TypeVar, Sequence
 from uuid import UUID
 
 from sqlalchemy import select
@@ -21,7 +21,7 @@ class YtRepository:
             ).on_conflict_do_nothing(index_elements=['id'])
         )
 
-    async def fetch(self, model: T, session: AsyncSession, uuid: list[UUID]):
+    async def fetch(self, model: T, session: AsyncSession, uuid: list[UUID]) -> Sequence[T]:
         result = await session.execute(
             select(model).where(model.id.in_(uuid))
         )

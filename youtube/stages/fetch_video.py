@@ -7,8 +7,8 @@ class FetchVideoTransformer:
         self.yt = yt
 
     async def run(self, document: VideoDocument) -> VideoDocument:
-        video_document = await self.yt.get_video_info(document.id)
-        transcript = await self.yt.get_transcript_segments(document.id)
+        video_document = await self.yt.get_video_info(document.video_id)
+        transcript = await self.yt.get_transcript_segments(document.video_id)
         video_document.transcripts = transcript
 
         return video_document

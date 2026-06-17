@@ -37,7 +37,7 @@ class YouTubeVideo:
         snippet = await self._fetch_video_info(id)
 
         return VideoDocument(
-            id=id,
+            video_id=id,
             title=snippet["title"],
             url=f"https://www.youtube.com/watch?v={id}",
             author=snippet["channelTitle"],

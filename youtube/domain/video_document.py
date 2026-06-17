@@ -1,6 +1,8 @@
 from datetime import datetime
 from typing import List
-from pydantic import BaseModel
+from uuid import UUID
+
+from pydantic import BaseModel, ConfigDict
 
 
 class ChapterDescription(BaseModel):
@@ -17,7 +19,8 @@ class TranscriptSegment(BaseModel):
     duration: float
 
 class VideoDocument(BaseModel):
-    id: str | None = None
+    id: UUID | None = None
+    video_id: str | None = None
     title: str | None = None
     url: str | None = None
     author: str | None = None
@@ -26,3 +29,5 @@ class VideoDocument(BaseModel):
     description: List[ChapterDescription] | None = None
     chapters: list[Chapter] | None = None
     transcripts: list[TranscriptSegment] | None = None
+
+    model_config = ConfigDict(from_attributes=True)
