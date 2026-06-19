@@ -43,4 +43,5 @@ dependencies = [
     "youtube-transcript-api>=1.2.4",
     "google-api-python-client>=2.197.0",
     "google-cloud-translate>=3.26.0",
+    "google-genai>=1.61.0",
 ]

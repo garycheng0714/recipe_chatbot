@@ -2,7 +2,9 @@ from datetime import datetime
 from typing import List
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, AliasChoices
+
+from youtube.domain.normalize_result import NormalizeResult
 
 
 class ChapterDescription(BaseModel):
@@ -11,7 +13,8 @@ class ChapterDescription(BaseModel):
 
 class Chapter(BaseModel):
     title: str
-    content: str = Field(validation_alias="raw_content")
+    content: str = Field(validation_alias=AliasChoices("content", "raw_content"))
+    cleaned_content: NormalizeResult | None = None
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -31,8 +34,9 @@ class VideoDocument(BaseModel):
     description: List[ChapterDescription] | None = None
     chapters: list[Chapter] | None = Field(
         default=None,
-        validation_alias="sections"
+        validation_alias=AliasChoices('chapters', 'sections')
     )
     transcripts: list[TranscriptSegment] | None = None
 
     model_config = ConfigDict(from_attributes=True)
+    # populate_by_name: 如果整個專案有很多欄位都有類似的別名需求
