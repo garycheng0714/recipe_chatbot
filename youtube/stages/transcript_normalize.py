@@ -24,8 +24,7 @@ class NormalizeTranscript:
         for idx, ch in enumerate(document.chapters):
             prompt_content = self.prompt.render(ch.content)
             response_text = await self.llm_client.generate(prompt_content, self.config)
-            data = json.dumps(response_text)
 
-            document.chapters[idx].cleaned_content = NormalizeResult.model_validate_json(data)
+            document.chapters[idx].cleaned_content = NormalizeResult.model_validate(response_text)
 
         return document

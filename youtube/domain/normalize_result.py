@@ -15,4 +15,4 @@ class QA(BaseModel):
     text: str = Field(description="subtitle text")
 
 class NormalizeResult(BaseModel):
-    conversation: list[QA]
+    conversation: list[QA] | None = None
