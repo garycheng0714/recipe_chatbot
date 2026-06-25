@@ -18,6 +18,11 @@ class AppSettings(Settings):
     LOG_FILE: str = "logs/app.log"
 
 
+class PipelineSettings(Settings):
+    LOG_LEVEL: str = "INFO"
+    LOG_FILE: str = "logs/pipeline.log"
+
+
 def setup_logging(settings: Settings):
     log_folder = "logs"
     if not os.path.exists(log_folder):
