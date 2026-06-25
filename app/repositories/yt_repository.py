@@ -1,11 +1,12 @@
 from typing import TypeVar, Sequence
 from uuid import UUID
 
-from sqlalchemy import select
+from sqlalchemy import select, update
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio.session import AsyncSession
 from sqlalchemy.orm import selectinload
 
+from youtube.domain.models.llm_artifact import LlmArtifacts
 from youtube.domain.models.models import Section, Source
 
 T = TypeVar("T")
@@ -25,6 +26,15 @@ class YtRepository:
     async def fetch(self, model: T, session: AsyncSession, uuid: list[UUID]) -> Sequence[T]:
         result = await session.execute(
             select(model).where(model.id.in_(uuid))
+        )
+
+        return result.scalars().all()
+
+    async def fetch_artifacts(self, session: AsyncSession, uuid: list[UUID]) -> Sequence[LlmArtifacts]:
+        result = await session.execute(
+            select(LlmArtifacts)
+            .where(LlmArtifacts.section_id.in_(uuid))
+            .order_by(LlmArtifacts.created_at.desc())
         )
 
         return result.scalars().all()
@@ -54,3 +64,20 @@ class YtRepository:
                 value_dict
             ).on_conflict_do_nothing(index_elements=['id'])
         )
+
+    async def insert_bulk_llm_artifact(self, session: AsyncSession, artifacts: list[LlmArtifacts]):
+        section_ids = [r.section_id for r in artifacts]
+
+        # 先把舊的 current 標記關掉
+        stmt = (
+            update(LlmArtifacts)
+            .where(
+                LlmArtifacts.section_id.in_(section_ids),
+                LlmArtifacts.stage == artifacts[0].stage,
+            )
+            .values(is_current=False)
+        )
+
+        await session.execute(stmt)
+
+        session.add_all(artifacts)

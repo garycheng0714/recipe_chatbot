@@ -1,5 +1,7 @@
 from typing import AsyncGenerator
+from unittest.mock import AsyncMock, MagicMock
 
+import pytest
 import pytest_asyncio
 from testcontainers.postgres import PostgresContainer
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
@@ -49,3 +51,14 @@ async def session(engine) -> AsyncGenerator:
 async def session_factory(engine):
     factory = async_sessionmaker(engine, expire_on_commit=False)
     yield factory
+
+
+@pytest.fixture
+def mock_session_factory():
+    mock_session = AsyncMock()
+    mock_session.__aenter__ = AsyncMock(return_value=mock_session)
+    mock_session.__aexit__ = AsyncMock(return_value=None)
+    mock_session.begin = MagicMock(return_value=mock_session)
+
+    factory = MagicMock(return_value=mock_session)
+    return factory
