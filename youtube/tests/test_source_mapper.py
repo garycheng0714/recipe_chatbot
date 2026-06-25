@@ -1,7 +1,7 @@
 from datetime import datetime, timezone
 
 from youtube.domain.mapper.source import SourceMapper
-from youtube.domain.models import SourceType
+from youtube.domain.models.models import SourceType
 from youtube.domain.video_document import VideoDocument, ChapterDescription
 from youtube.ids import get_source_id
 

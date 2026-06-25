@@ -1,7 +1,7 @@
 import pytest
 
 from app.repositories.yt_repository import YtRepository
-from youtube.domain.models import Source, Section
+from youtube.domain.models.models import Source, Section
 from youtube.ids import get_source_id, get_section_id
 
 

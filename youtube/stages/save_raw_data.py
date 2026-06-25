@@ -2,7 +2,7 @@ from app.database import AsyncSessionLocal
 from app.repositories.yt_repository import YtRepository
 from youtube.domain.mapper.section import SectionMapper
 from youtube.domain.mapper.source import SourceMapper
-from youtube.domain.models import Source, Section
+from youtube.domain.models.models import Source, Section
 from youtube.domain.video_document import VideoDocument
 
 

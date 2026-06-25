@@ -1,4 +1,4 @@
-from youtube.domain.models import Section
+from youtube.domain.models.models import Section
 from youtube.domain.video_document import VideoDocument
 from youtube.ids import get_source_id, get_section_id
 

@@ -3,7 +3,7 @@ import pytest_asyncio
 from sqlalchemy import delete
 
 from app.repositories.yt_repository import YtRepository
-from youtube.domain.models import Source, Section, Chunk, ChunkTranslation
+from youtube.domain.models.models import Source, Section, Chunk, ChunkTranslation
 from youtube.domain.video_document import VideoDocument
 from youtube.ids import get_source_id, get_section_id
 from youtube.stages.fetch_video_from_db import FetchVideoFromDB

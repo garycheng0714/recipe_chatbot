@@ -6,7 +6,7 @@ from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio.session import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from youtube.domain.models import Section, Source
+from youtube.domain.models.models import Section, Source
 
 T = TypeVar("T")
 

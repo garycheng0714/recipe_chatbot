@@ -1,4 +1,4 @@
-from youtube.domain.models import Source, SourceType
+from youtube.domain.models.models import Source, SourceType
 from youtube.domain.video_document import VideoDocument
 from youtube.ids import get_source_id
 
