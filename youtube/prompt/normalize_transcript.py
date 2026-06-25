@@ -8,13 +8,13 @@ class NormalizeTranscriptPrompt(BasePrompt):
 You are an editor.
 
 Input:
-- Automatic speech recognition transcript.
+- youtube transcript.
 
 Tasks:
 - Remove filler words.
 - Add punctuation.
+- Correct the obvious typos.
 - Split into paragraphs.
-- Separate interviewer and interviewee
 
 Rules:
 1. Do NOT summarize.
