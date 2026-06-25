@@ -41,4 +41,4 @@ class NormalizeTranscript:
             except Exception as e:
                 print(f"章節處理失敗: {e}")
                 logger.exception(e)
-                return ""
+                return None

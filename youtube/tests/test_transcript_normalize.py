@@ -58,5 +58,5 @@ async def test_normalize_transcript_raise_exception(document):
     result = await stage.run(document)
 
     assert len(result.chapters) == 2
-    assert result.chapters[0].cleaned_content == ""
-    assert result.chapters[1].cleaned_content == ""
+    assert result.chapters[0].cleaned_content is None
+    assert result.chapters[1].cleaned_content is None
