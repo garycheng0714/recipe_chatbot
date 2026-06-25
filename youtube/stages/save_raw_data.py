@@ -18,6 +18,6 @@ class SaveRawData:
         async with self.session_factory() as session:
             async with session.begin():
                 await self.repository.insert(session, source_model)
-                await self.repository.insert_bulk(session, section_models)
+                await self.repository.insert_bulk_section(session, section_models)
 
         return document

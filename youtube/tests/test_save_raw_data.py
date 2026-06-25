@@ -23,7 +23,7 @@ def mock_session_factory():
 async def test_save_raw_data(mock_session_factory):
     mock_repository = Mock()
     mock_repository.insert = AsyncMock()
-    mock_repository.insert_bulk = AsyncMock()
+    mock_repository.insert_bulk_section = AsyncMock()
 
     with patch.object(SourceMapper, 'from_document', MagicMock(return_value="insert Source")) as mock_source:
         with patch.object(SectionMapper, 'from_document', MagicMock(return_value="insert Sections")) as mock_sections:
@@ -36,4 +36,4 @@ async def test_save_raw_data(mock_session_factory):
             assert mock_source.call_count == 1
             assert mock_sections.call_count == 1
             mock_repository.insert.assert_called_once_with(mock_session, "insert Source")
-            mock_repository.insert_bulk.assert_called_once_with(mock_session, "insert Sections")
+            mock_repository.insert_bulk_section.assert_called_once_with(mock_session, "insert Sections")

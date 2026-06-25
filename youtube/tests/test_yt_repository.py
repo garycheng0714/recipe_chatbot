@@ -128,7 +128,7 @@ async def test_insert_bulk_chapter_success(session, uuid):
 
     # 執行寫入
     await repo.insert(session, video)
-    await repo.insert_bulk(session, [chapter1, chapter2])
+    await repo.insert_bulk_section(session, [chapter1, chapter2])
     await session.flush()
 
     # 驗證結果
@@ -180,7 +180,7 @@ async def test_insert_duplicated_chapter_then_one_result(session, uuid):
 
     # 執行寫入
     await repo.insert(session, video)
-    await repo.insert_bulk(session, [chapter1, chapter2])
+    await repo.insert_bulk_section(session, [chapter1, chapter2])
     await session.flush()
 
     # 驗證結果

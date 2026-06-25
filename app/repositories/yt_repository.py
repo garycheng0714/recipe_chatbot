@@ -39,7 +39,7 @@ class YtRepository:
         result = await session.execute(stmt)
         return result.scalars().one_or_none()
 
-    async def insert_bulk(self, session: AsyncSession, sections: list[Section]):
+    async def insert_bulk_section(self, session: AsyncSession, sections: list[Section]):
         value_dict = [
             {
                 c.key: getattr(section, c.key)
