@@ -21,4 +21,4 @@ class GeminiClient:
         except Exception as e:
             print(e)
             logger.exception(f"Failed to generate LLM content: {e}\n{content}")
-            return ""
+            raise
