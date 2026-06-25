@@ -4,8 +4,6 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, AliasChoices
 
-from youtube.domain.normalize_result import NormalizeResult
-
 
 class ChapterDescription(BaseModel):
     title: str
@@ -14,7 +12,7 @@ class ChapterDescription(BaseModel):
 class Chapter(BaseModel):
     title: str
     content: str = Field(validation_alias=AliasChoices("content", "raw_content"))
-    cleaned_content: NormalizeResult | None = None
+    cleaned_content: str | None = None
 
     model_config = ConfigDict(from_attributes=True)
 

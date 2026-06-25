@@ -2,7 +2,6 @@ import pytest
 from unittest.mock import AsyncMock, MagicMock
 
 from youtube.domain.models.llm_artifact import LlmArtifacts
-from youtube.domain.normalize_result import NormalizeResult
 from youtube.domain.video_document import Chapter, VideoDocument
 from youtube.ids import get_source_id, get_section_id
 from youtube.stages.save_transcript_normalize import SaveTranscriptNormalize
@@ -15,8 +14,8 @@ async def test_save_transcript_normalize_run_success(mock_session_factory):
 
 
     chapters = [
-        Chapter(title="title 1", content="1", cleaned_content=NormalizeResult(cleaned_text="這是第一章的乾淨內容")),
-        Chapter(title="title 2", content="2", cleaned_content=NormalizeResult(cleaned_text="這是第二章的乾淨內容"))
+        Chapter(title="title 1", content="1", cleaned_content="這是第一章的乾淨內容"),
+        Chapter(title="title 2", content="2", cleaned_content="這是第二章的乾淨內容")
     ]
 
     video_doc = VideoDocument(
@@ -49,7 +48,7 @@ async def test_save_transcript_normalize_run_success(mock_session_factory):
     assert isinstance(artifact_1, LlmArtifacts)
     assert artifact_1.section_id == get_section_id(source_id, 0)
     assert artifact_1.stage == "transcript normalize"
-    assert artifact_1.output == {"cleaned_text": "這是第一章的乾淨內容"}
+    assert artifact_1.output == "這是第一章的乾淨內容"
     assert artifact_1.is_current is True
 
     # 驗證第二筆 LlmArtifacts 實例
@@ -57,7 +56,7 @@ async def test_save_transcript_normalize_run_success(mock_session_factory):
     assert isinstance(artifact_2, LlmArtifacts)
     assert artifact_2.section_id == get_section_id(source_id, 1)
     assert artifact_2.stage == "transcript normalize"
-    assert artifact_2.output == {"cleaned_text": "這是第二章的乾淨內容"}
+    assert artifact_2.output == "這是第二章的乾淨內容"
     assert artifact_2.is_current is True
 
 
@@ -68,7 +67,7 @@ async def test_save_transcript_normalize_run_success_with_cleaned_text_is_none(m
 
 
     chapters = [
-        Chapter(title="title 1", content="1", cleaned_content=NormalizeResult(cleaned_text="這是第一章的乾淨內容")),
+        Chapter(title="title 1", content="1", cleaned_content="這是第一章的乾淨內容"),
         Chapter(title="title 2", content="2", cleaned_content=None)
     ]
 
@@ -102,5 +101,5 @@ async def test_save_transcript_normalize_run_success_with_cleaned_text_is_none(m
     assert isinstance(artifact_1, LlmArtifacts)
     assert artifact_1.section_id == get_section_id(source_id, 0)
     assert artifact_1.stage == "transcript normalize"
-    assert artifact_1.output == {"cleaned_text": "這是第一章的乾淨內容"}
+    assert artifact_1.output == "這是第一章的乾淨內容"
     assert artifact_1.is_current is True

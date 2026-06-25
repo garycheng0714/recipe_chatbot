@@ -14,7 +14,7 @@ class SaveTranscriptNormalize(Stage):
     async def run(self, document: VideoDocument) -> VideoDocument:
 
         cleaned_text_dicts = [
-            ch.cleaned_content.model_dump()
+            ch.cleaned_content
             for ch in document.chapters
             if ch.cleaned_content is not None
         ]

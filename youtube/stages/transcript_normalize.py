@@ -1,8 +1,6 @@
 import asyncio
-import json
 
 from llm_client.base import LLMClient
-from youtube.domain.normalize_result import NormalizeResult
 from youtube.domain.video_document import VideoDocument, Chapter
 from youtube.prompt.normalize_transcript import NormalizeTranscriptPrompt
 from loguru import logger
@@ -36,8 +34,7 @@ class NormalizeTranscript:
             try:
                 prompt = self.prompt.render(chapter.content)
                 response = await self.llm_client.generate(prompt, self.config)
-                data = json.loads(response)
-                return NormalizeResult.model_validate(data)
+                return response
             except Exception as e:
                 print(f"章節處理失敗: {e}")
                 logger.exception(e)
