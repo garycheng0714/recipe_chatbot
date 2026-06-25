@@ -2,7 +2,7 @@ import os
 
 from google import genai
 from google.genai import types
-from youtube.domain.normalize_result import NormalizeResult
+from loguru import logger
 
 
 class GeminiClient:
@@ -11,16 +11,14 @@ class GeminiClient:
         self.model = "gemini-2.5-flash-lite"
 
     async def generate(self, content: str, config: types.GenerateContentConfig = None) -> str:
-        if config is None:
+        try:
             response = await self.client.aio.models.generate_content(
                 model=self.model,
                 contents=content,
+                config=config if config else None
             )
-        else:
-            response = await self.client.aio.models.generate_content(
-                model=self.model,
-                contents=content,
-                config=config
-            )
-
-        return response.text
+            return response.text
+        except Exception as e:
+            print(e)
+            logger.exception(f"Failed to generate LLM content: {e}\n{content}")
+            return ""
