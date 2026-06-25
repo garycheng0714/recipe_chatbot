@@ -108,7 +108,7 @@ class Section(Base):
     order_index: Mapped[int]        = mapped_column(Integer, nullable=False)
 
     raw_content: Mapped[str | None] = mapped_column(Text)  # 字幕原文，整章
-    cleaned_content: Mapped[JSONB] = mapped_column(JSONB, default=lambda: {}, nullable=True)  # LLM 清洗後，整章
+    cleaned_content: Mapped[str | None] = mapped_column(Text, nullable=True)  # LLM 清洗後，整章
 
     # time-based sources (YouTube, Podcast)
     start_time: Mapped[float | None] = mapped_column(Float)   # seconds
