@@ -63,7 +63,7 @@ class SpeakerDiarization:
     async def _worker(self, chapter: Chapter):
         async with self.semaphore:
             try:
-                prompt = self.prompt.render(chapter.content)
+                prompt = self.prompt.render(chapter.cleaned_content)
                 response = await self._generate_with_retry(prompt)
                 return response
             except Exception as e:

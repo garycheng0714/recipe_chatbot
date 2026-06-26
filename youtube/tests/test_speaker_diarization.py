@@ -10,8 +10,8 @@ from youtube.stages.speaker_diarization import SpeakerDiarization
 def document():
     return VideoDocument(
         chapters=[
-            Chapter(title="Chapter 1", content="content 1", cleaned_content="1"),
-            Chapter(title="Chapter 2", content="content 2", cleaned_content="2"),
+            Chapter(title="Chapter 1", content="content 1", cleaned_content="cleaned content 1"),
+            Chapter(title="Chapter 2", content="content 2", cleaned_content="cleaned content 2"),
         ]
     )
 
@@ -68,6 +68,11 @@ async def test_speaker_diarization_cleaned_content(document, llm_response):
 
     result = await stage.run(document)
 
+    # prompt.render.assert_called_with(document.chapters[0].cleaned_content)
+
+    assert prompt.render.call_count == 2
+    prompt.render.assert_called_with(document.chapters[1].cleaned_content)
+
     mock_llm.generate.assert_called_with("content", config)
 
     assert len(result.chapters) == 2
@@ -88,6 +93,9 @@ async def test_speaker_diarization_with_one_cleaned_content(document_with_one_cl
     stage = SpeakerDiarization(mock_llm, prompt, config)
 
     result = await stage.run(document_with_one_cleaned_content)
+
+    assert prompt.render.call_count == 1
+    prompt.render.assert_called_with(document_with_one_cleaned_content.chapters[1].cleaned_content)
 
     mock_llm.generate.assert_called_with("content", config)
 
@@ -111,6 +119,7 @@ async def test_speaker_diarization_with_no_cleaned_content(document_with_no_clea
     result = await stage.run(document_with_no_cleaned_content)
 
     assert mock_llm.generate.call_count == 0
+    assert prompt.render.call_count == 0
 
     assert result.chapters[0].speaker_diarization is None
     assert result.chapters[1].speaker_diarization is None
