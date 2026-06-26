@@ -6,7 +6,7 @@ from youtube.stages.base_stage import Stage
 
 
 class SaveSpeakerDiarization(Stage):
-    def __init__(self, repository: YtRepository, session_factory = AsyncSessionLocal):
+    def __init__(self, repository: YtRepository = YtRepository(), session_factory = AsyncSessionLocal):
         self.repository = repository
         self.session_factory = session_factory
 
