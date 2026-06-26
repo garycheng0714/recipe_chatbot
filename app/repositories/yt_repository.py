@@ -47,7 +47,24 @@ class YtRepository:
             .filter(Source.id == id)
         )
         result = await session.execute(stmt)
-        return result.scalars().one_or_none()
+        source = result.scalars().one_or_none()
+
+        section_ids = [s.id for s in source.sections]
+        artifact_stmt = select(LlmArtifacts).filter(
+            LlmArtifacts.section_id.in_(section_ids),
+            LlmArtifacts.is_current == True,
+        )
+
+        artifact_result = await session.execute(artifact_stmt)
+        artifacts_by_section = {}
+        for a in artifact_result.scalars().all():
+            artifacts_by_section[a.section_id] = a.output
+
+        # 手動掛到對應的 section 物件上（用一個新屬性名，避免跟 relationship 屬性衝突）
+        for s in source.sections:
+            s.cleaned_content = artifacts_by_section.get(s.id)
+
+        return source
 
     async def insert_bulk_section(self, session: AsyncSession, sections: list[Section]):
         value_dict = [
@@ -81,3 +98,18 @@ class YtRepository:
         await session.execute(stmt)
 
         session.add_all(artifacts)
+
+
+if __name__ == '__main__':
+    from app.database import AsyncSessionLocal
+    import asyncio
+
+    async def main():
+        yt = YtRepository()
+
+        async with AsyncSessionLocal() as session:
+            result = await yt.fetch_artifacts(session=session, uuid=[UUID('0d72446b-cebb-5eef-a81d-19b9604b4eaf')])
+
+        print(result[0].output)
+
+    asyncio.run(main())
