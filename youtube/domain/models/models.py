@@ -88,7 +88,7 @@ class Source(Base):
 
     # relationships
     sections: Mapped[list["Section"]] = relationship(
-        back_populates="source", cascade="all, delete-orphan"
+        back_populates="source", cascade="all, delete-orphan", order_by="Section.order_index.asc()"
     )
 
 
