@@ -127,6 +127,11 @@ class Section(Base):
     chunks: Mapped[list["Chunk"]]  = relationship(
         back_populates="section", cascade="all, delete-orphan"
     )
+    llm_artifacts = relationship(
+        "LlmArtifacts",
+        back_populates="section",
+        cascade="all, delete-orphan",
+    )
 
     __table_args__ = (
         UniqueConstraint("source_id", "order_index", name="uq_section_order"),
