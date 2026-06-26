@@ -10,6 +10,7 @@ from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import relationship
 
 from app.database import Base
+from youtube.domain.models.models import Section
 
 
 class LlmArtifacts(Base):
