@@ -4,6 +4,8 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, AliasChoices
 
+from youtube.domain.speaker_diarization import SpeakerDiarizationResult
+
 
 class ChapterDescription(BaseModel):
     title: str
@@ -14,6 +16,7 @@ class Chapter(BaseModel):
     title: str
     content: str = Field(validation_alias=AliasChoices("content", "raw_content"))
     cleaned_content: str | None = None
+    speaker_diarization: SpeakerDiarizationResult | None = None
 
     model_config = ConfigDict(from_attributes=True)
 
