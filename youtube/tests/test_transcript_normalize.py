@@ -15,6 +15,15 @@ def document():
     )
 
 @pytest.fixture
+def document_with_cleaned_content():
+    return VideoDocument(
+        chapters=[
+            Chapter(title="Chapter 1", content="content 1", cleaned_content="cleaned content 1"),
+            Chapter(title="Chapter 2", content="content 2"),
+        ]
+    )
+
+@pytest.fixture
 def llm_response():
     return """
 test
@@ -59,3 +68,26 @@ async def test_normalize_transcript_raise_exception(document):
     assert len(result.chapters) == 2
     assert result.chapters[0].cleaned_content is None
     assert result.chapters[1].cleaned_content is None
+
+
+@pytest.mark.asyncio
+async def test_normalize_transcript_with_some_already_done(document_with_cleaned_content, llm_response):
+    mock_llm = MagicMock()
+    mock_llm.generate = AsyncMock(return_value=llm_response)
+
+    prompt = MagicMock()
+    prompt.render = MagicMock(return_value="content")
+
+    config = MagicMock()
+
+    stage = NormalizeTranscript(mock_llm, prompt, config)
+
+    result = await stage.run(document_with_cleaned_content)
+
+    mock_llm.generate.assert_called_with("content", config)
+
+    assert mock_llm.generate.call_count == 1
+
+    assert len(result.chapters) == 2
+    assert result.chapters[0].cleaned_content == "cleaned content 1"
+    assert result.chapters[1].cleaned_content == "\ntest\n123."
