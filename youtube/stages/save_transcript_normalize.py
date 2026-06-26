@@ -13,18 +13,22 @@ class SaveTranscriptNormalize(Stage):
 
     async def run(self, document: VideoDocument) -> VideoDocument:
 
-        cleaned_text_dicts = [
-            ch.cleaned_content
+        chapters = [
+            ch
             for ch in document.chapters
             if ch.cleaned_content is not None
         ]
 
+        if len(chapters) == 0:
+            return document
+
         artifact_models = [
             LLMArtifactMapper.from_output(
-                get_section_id(document.id, idx),
-                text_dict
+                section_id=ch.id,
+                stage="transcript normalize",
+                output=ch.cleaned_content
             )
-            for idx, text_dict in enumerate(cleaned_text_dicts)
+            for ch in chapters
         ]
 
         async with self.session_factory() as session:

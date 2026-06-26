@@ -74,6 +74,7 @@ async def test_fetch_video_from_db(uuid, session_factory, clean_db):
     assert len(video.chapters) == 2
 
     chapter = video.chapters[0]
+    assert chapter.id == get_section_id(uuid, 0)
     assert chapter.title == "章節一"
     assert chapter.content == "內容一"
 

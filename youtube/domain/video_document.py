@@ -10,6 +10,7 @@ class ChapterDescription(BaseModel):
     start_time: float
 
 class Chapter(BaseModel):
+    id: UUID | None = None
     title: str
     content: str = Field(validation_alias=AliasChoices("content", "raw_content"))
     cleaned_content: str | None = None
