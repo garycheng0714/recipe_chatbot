@@ -16,13 +16,13 @@ def artifacts():
         LlmArtifacts(
             section_id=get_section_id(get_source_id("https://www.google.com"), 0),
             stage="transcript normalize",
-            output={"cleaned_text": "123"},
+            output="123",
             is_current=True
         ),
         LlmArtifacts(
             section_id=get_section_id(get_source_id("https://www.google.com"), 1),
             stage="transcript normalize",
-            output={"cleaned_text": "456"},
+            output="456",
             is_current=True
         )
     ]
@@ -32,7 +32,7 @@ def single_artifact():
     return LlmArtifacts(
             section_id=get_section_id(get_source_id("https://www.google.com"), 0),
             stage="transcript normalize",
-            output={"cleaned_text": "789"},
+            output="789",
             is_current=True
         )
 
@@ -86,8 +86,11 @@ async def test_insert_llm_artifact(artifacts, session, uuid):
 
     assert len(result) == 2
 
-    assert result[0].output == {"cleaned_text": "123"}
-    assert result[1].output == {"cleaned_text": "456"}
+    assert result[0].output == "123"
+    assert result[0].id is not None
+
+    assert result[1].output == "456"
+    assert result[1].id is not None
 
 
 async def test_insert_llm_artifact_then_update_the_is_current_status(single_artifact, artifacts, session, uuid):
@@ -127,9 +130,9 @@ async def test_insert_llm_artifact_then_update_the_is_current_status(single_arti
 
     assert len(result) == 2
     assert result[0].is_current == False
-    assert result[0].output == {"cleaned_text": "123"}
+    assert result[0].output == "123"
     assert result[1].is_current == True
-    assert result[1].output == {"cleaned_text": "789"}
+    assert result[1].output == "789"
 
 
 async def test_fetch_current_artifacts(session, uuid):
@@ -234,6 +237,9 @@ async def test_fetch_current_artifacts(session, uuid):
     # 4. 驗證結果
     # 預期只會查出前 2 筆符合所有條件的資料
     assert len(result) == 2
+
+    assert result[0].id is not None
+    assert result[1].id is not None
 
     # 驗證撈出來的資料內容是否正確
     outputs = [item.output for item in result]

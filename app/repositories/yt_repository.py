@@ -8,6 +8,7 @@ from sqlalchemy.orm import selectinload
 
 from youtube.domain.models.llm_artifact import LlmArtifacts
 from youtube.domain.models.models import Section, Source
+from youtube.domain.speaker_diarization_result import SpeakerDiarizationResult
 
 T = TypeVar("T")
 
@@ -64,17 +65,22 @@ class YtRepository:
             section_ids = [s.id for s in source.sections]
 
             normalize_result = {}
-            for a in await self._fetch_current_artifacts(session, "transcript normalize", section_ids):
-                normalize_result[a.section_id] = a.output
+            for raw in await self._fetch_current_artifacts(session, "transcript normalize", section_ids):
+                normalize_result[raw.section_id] = raw.output
 
             diarization_result = {}
-            for a in await self._fetch_current_artifacts(session, "speaker diarization", section_ids):
-                diarization_result[a.section_id] = a.output
+            for raw in await self._fetch_current_artifacts(session, "speaker diarization", section_ids):
+                diarization_result[raw.section_id] = raw
 
             # 手動掛到對應的 section 物件上（用一個新屬性名，避免跟 relationship 屬性衝突）
             for s in source.sections:
-                s.cleaned_content = normalize_result.get(s.id)
-                s.speaker_diarization = diarization_result.get(s.id)
+                s.cleaned_content = normalize_result.get(s.id, "")
+
+                diarization: SpeakerDiarizationResult = diarization_result.get(s.id)
+                if diarization is not None:
+                    s.speaker_diarization = SpeakerDiarizationResult.model_validate(diarization.output)
+                    s.speaker_diarization.id = diarization.id
+
         except Exception as e:
             print(f"Fetching video {id} failed: {e}")
             return None

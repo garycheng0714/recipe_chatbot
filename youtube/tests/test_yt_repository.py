@@ -3,6 +3,7 @@ import pytest
 from app.repositories.yt_repository import YtRepository
 from youtube.domain.models.llm_artifact import LlmArtifacts
 from youtube.domain.models.models import Source, Section
+from youtube.domain.speaker_diarization_result import SpeakerDiarizationResult, QA
 from youtube.ids import get_source_id, get_section_id
 
 
@@ -243,7 +244,7 @@ async def test_get_video_by_uuid_success(session, uuid):
             section_id=section_id_0,
             stage="speaker diarization",
             is_current=True,
-            output={"speakers": "講者A", "text": "講話A"}
+            output={"conversation": [{"speaker": "interviewer", "text": "講話A"}]}
         ),
         # Section 1 的產物
         LlmArtifacts(
@@ -256,7 +257,7 @@ async def test_get_video_by_uuid_success(session, uuid):
             section_id=section_id_1,
             stage="speaker diarization",
             is_current=True,
-            output={"speakers": "講者B", "text": "講話B"}
+            output={"conversation": [{"speaker": "interviewer", "text": "講話B"}]}
         ),
         # 雜訊資料：非 current 的產物 (預期不應該被掛載上去)
         LlmArtifacts(
@@ -290,13 +291,13 @@ async def test_get_video_by_uuid_success(session, uuid):
     s0 = sections_dict[section_id_0]
     assert s0.title == "第一章"
     assert s0.cleaned_content == "第一章正規化文字"
-    assert s0.speaker_diarization == {"speakers": "講者A", "text": "講話A"}
+    assert s0.speaker_diarization.conversation == [QA(speaker="interviewer", text="講話A")]
 
     # 驗證第二章 (section_id_1) 的動態屬性掛載
     s1 = sections_dict[section_id_1]
     assert s1.title == "第二章"
     assert s1.cleaned_content == "第二章正規化文字"
-    assert s1.speaker_diarization == {"speakers": "講者B", "text": "講話B"}
+    assert s1.speaker_diarization.conversation == [QA(speaker="interviewer", text="講話B")]
 
 
 async def test_get_video_by_uuid_not_found(session, uuid):

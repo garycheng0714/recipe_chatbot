@@ -1,5 +1,5 @@
 from youtube.domain.mapper.llm_artifact import LLMArtifactMapper
-from youtube.domain.speaker_diarization import SpeakerDiarizationResult, QA
+from youtube.domain.speaker_diarization_result import SpeakerDiarizationResult, QA
 from youtube.ids import get_source_id, get_section_id
 
 

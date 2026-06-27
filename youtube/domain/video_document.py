@@ -4,7 +4,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, AliasChoices
 
-from youtube.domain.speaker_diarization import SpeakerDiarizationResult
+from youtube.domain.speaker_diarization_result import SpeakerDiarizationResult
 
 
 class ChapterDescription(BaseModel):

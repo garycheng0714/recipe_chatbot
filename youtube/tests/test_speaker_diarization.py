@@ -2,7 +2,7 @@ from unittest.mock import MagicMock, AsyncMock
 
 import pytest
 
-from youtube.domain.speaker_diarization import QA, SpeakerDiarizationResult
+from youtube.domain.speaker_diarization_result import QA, SpeakerDiarizationResult
 from youtube.domain.video_document import VideoDocument, Chapter
 from youtube.stages.speaker_diarization import SpeakerDiarization
 

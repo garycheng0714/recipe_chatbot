@@ -16,6 +16,7 @@ class SaveSpeakerDiarization(Stage):
             ch
             for ch in document.chapters
             if ch.speaker_diarization is not None
+               and ch.speaker_diarization.id is None
         ]
 
         if not chapters:

@@ -1,6 +1,6 @@
 from google.genai import types
 
-from youtube.domain.speaker_diarization import SpeakerDiarizationResult
+from youtube.domain.speaker_diarization_result import SpeakerDiarizationResult
 
 transcript_normalize_config = types.GenerateContentConfig(
     temperature=0
