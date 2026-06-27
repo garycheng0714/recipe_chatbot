@@ -35,7 +35,12 @@ class SpeakerDiarization:
 
     async def run(self, document: VideoDocument) -> VideoDocument:
 
-        chapters = [ch for ch in document.chapters if ch.cleaned_content is not None]
+        chapters = [
+            ch
+            for ch in document.chapters
+            if ch.speaker_diarization is None
+               and ch.cleaned_content is not None
+        ]
 
         if not chapters:
             return document
