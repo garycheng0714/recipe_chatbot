@@ -1,6 +1,7 @@
 import pytest
 
 from app.repositories.yt_repository import YtRepository
+from youtube.domain.models.llm_artifact import LlmArtifacts
 from youtube.domain.models.models import Source, Section
 from youtube.ids import get_source_id, get_section_id
 
@@ -191,3 +192,118 @@ async def test_insert_duplicated_chapter_then_one_result(session, uuid):
     assert chapter.title == "第一章"
     assert chapter.raw_content == "內容"
     assert chapter.start_time == 0
+
+
+async def test_get_video_by_uuid_success(session, uuid):
+    repo = YtRepository()
+
+    # 1. 建立並寫入 Source (影片) 基礎資料
+    video = Source(
+        id=uuid,
+        type="youtube",
+        video_id="123",
+        title="測試影片",
+        url="https://example.com",
+        language="en"
+    )
+    await repo.insert(session, video)
+
+    # 2. 建立並寫入複數個 Section (章節)
+    section_id_0 = get_section_id(uuid, 0)
+    section_id_1 = get_section_id(uuid, 1)
+
+    chapter1 = Section(
+        id=section_id_0,
+        source_id=uuid,
+        title="第一章",
+        order_index=0,
+        raw_content="內容1",
+        start_time=0
+    )
+    chapter2 = Section(
+        id=section_id_1,
+        source_id=uuid,
+        title="第二章",
+        order_index=1,
+        raw_content="內容二",
+        start_time=10
+    )
+    await repo.insert_bulk_section(session, [chapter1, chapter2])
+
+    # 3. 建立並寫入 LlmArtifacts (包含不同 stage 與不同 section 的對應資料)
+    artifacts = [
+        # Section 0 的產物
+        LlmArtifacts(
+            section_id=section_id_0,
+            stage="transcript normalize",
+            is_current=True,
+            output="第一章正規化文字"
+        ),
+        LlmArtifacts(
+            section_id=section_id_0,
+            stage="speaker diarization",
+            is_current=True,
+            output={"speakers": "講者A", "text": "講話A"}
+        ),
+        # Section 1 的產物
+        LlmArtifacts(
+            section_id=section_id_1,
+            stage="transcript normalize",
+            is_current=True,
+            output="第二章正規化文字"
+        ),
+        LlmArtifacts(
+            section_id=section_id_1,
+            stage="speaker diarization",
+            is_current=True,
+            output={"speakers": "講者B", "text": "講話B"}
+        ),
+        # 雜訊資料：非 current 的產物 (預期不應該被掛載上去)
+        LlmArtifacts(
+            section_id=section_id_0,
+            stage="transcript normalize",
+            is_current=False,
+            output="舊的錯誤文字"
+        )
+    ]
+    await repo.insert_bulk_llm_artifact(session, artifacts)
+
+    # 確保所有測試資料都寫入資料庫並清除 session 快取，以驗證真正的 SQL 查詢行為
+    await session.flush()
+    session.expire_all()
+
+    # 4. 執行待測函式
+    result_source = await repo.get_video_by_uuid(session, uuid)
+
+    # 5. 驗證結果
+    assert result_source is not None
+    assert result_source.id == uuid
+    assert result_source.title == "測試影片"
+
+    # 驗證 sections 是否有透過 selectinload 正確加載且數量正確
+    assert len(result_source.sections) == 2
+
+    # 將 sections 轉換成 dict 以方便透過 ID 進行精準斷言
+    sections_dict = {s.id: s for s in result_source.sections}
+
+    # 驗證第一章 (section_id_0) 的動態屬性掛載
+    s0 = sections_dict[section_id_0]
+    assert s0.title == "第一章"
+    assert s0.cleaned_content == "第一章正規化文字"
+    assert s0.speaker_diarization == {"speakers": "講者A", "text": "講話A"}
+
+    # 驗證第二章 (section_id_1) 的動態屬性掛載
+    s1 = sections_dict[section_id_1]
+    assert s1.title == "第二章"
+    assert s1.cleaned_content == "第二章正規化文字"
+    assert s1.speaker_diarization == {"speakers": "講者B", "text": "講話B"}
+
+
+async def test_get_video_by_uuid_not_found(session, uuid):
+    repo = YtRepository()
+
+    # 測試傳入不存在的 UUID 時，函式是否能正確回傳 None
+    non_existent_id = uuid
+
+    result = await repo.get_video_by_uuid(session, non_existent_id)
+    assert result is None

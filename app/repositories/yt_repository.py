@@ -39,6 +39,16 @@ class YtRepository:
 
         return result.scalars().all()
 
+    async def _fetch_current_artifacts(self, session: AsyncSession, stage: str, uuids: list[UUID]) -> Sequence[LlmArtifacts]:
+        artifact_stmt = select(LlmArtifacts).filter(
+            LlmArtifacts.section_id.in_(uuids),
+            LlmArtifacts.is_current == True,
+            LlmArtifacts.stage == stage
+        )
+
+        result = await session.execute(artifact_stmt)
+        return result.scalars().all()
+
     async def get_video_by_uuid(self, session: AsyncSession, id: UUID):
         # 💡 使用 joinedload 一次性在資料庫層級完成組裝，效能極高
         stmt = (
@@ -47,22 +57,27 @@ class YtRepository:
             .filter(Source.id == id)
         )
         result = await session.execute(stmt)
-        source = result.scalars().one_or_none()
 
-        section_ids = [s.id for s in source.sections]
-        artifact_stmt = select(LlmArtifacts).filter(
-            LlmArtifacts.section_id.in_(section_ids),
-            LlmArtifacts.is_current == True,
-        )
+        try:
+            source = result.scalars().one()
 
-        artifact_result = await session.execute(artifact_stmt)
-        artifacts_by_section = {}
-        for a in artifact_result.scalars().all():
-            artifacts_by_section[a.section_id] = a.output
+            section_ids = [s.id for s in source.sections]
 
-        # 手動掛到對應的 section 物件上（用一個新屬性名，避免跟 relationship 屬性衝突）
-        for s in source.sections:
-            s.cleaned_content = artifacts_by_section.get(s.id)
+            normalize_result = {}
+            for a in await self._fetch_current_artifacts(session, "transcript normalize", section_ids):
+                normalize_result[a.section_id] = a.output
+
+            diarization_result = {}
+            for a in await self._fetch_current_artifacts(session, "speaker diarization", section_ids):
+                diarization_result[a.section_id] = a.output
+
+            # 手動掛到對應的 section 物件上（用一個新屬性名，避免跟 relationship 屬性衝突）
+            for s in source.sections:
+                s.cleaned_content = normalize_result.get(s.id)
+                s.speaker_diarization = diarization_result.get(s.id)
+        except Exception as e:
+            print(f"Fetching video {id} failed: {e}")
+            return None
 
         return source
 
