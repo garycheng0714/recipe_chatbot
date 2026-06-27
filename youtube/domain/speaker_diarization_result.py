@@ -11,14 +11,14 @@ class QA(BaseModel):
     )
 
     # # 2. 讓模型根據 text 判斷意圖
-    # intent: Literal['question', 'answer', 'statement'] = Field(
-    #     description="""
-    #         The communicative intent of this specific text:
-    #         - 'question': Direct or indirect questions, or explicitly prompting the other person to speak.
-    #         - 'answer': Providing explanations, sharing experiences, or directly responding to a question.
-    #         - 'statement': Opening remarks, introducing guests, transitions, or general commentary that is neither a clear question nor a direct answer.
-    #         """
-    # )
+    intent: Literal['question', 'answer', 'statement'] = Field(
+        description="""
+            The communicative intent of this specific text:
+            - 'question': Direct or indirect questions, or explicitly prompting the other person to speak.
+            - 'answer': Providing explanations, sharing experiences, or directly responding to a question.
+            - 'statement': Opening remarks, introducing guests, transitions, or general commentary that is neither a clear question nor a direct answer.
+            """
+    )
 
     # 3. 最後綜合前面兩者，判定角色
     speaker: Literal['interviewer', 'interviewee'] = Field(

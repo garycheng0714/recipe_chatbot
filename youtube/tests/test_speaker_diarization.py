@@ -10,7 +10,7 @@ from youtube.stages.speaker_diarization import SpeakerDiarization
 def document():
     return VideoDocument(
         chapters=[
-            Chapter(title="Chapter 1", content="content 1", cleaned_content="cleaned content 1", speaker_diarization=SpeakerDiarizationResult(conversation=[QA(speaker="interviewer", text="A")])),
+            Chapter(title="Chapter 1", content="content 1", cleaned_content="cleaned content 1", speaker_diarization=SpeakerDiarizationResult(conversation=[QA(speaker="interviewer", intent="question", text="A")])),
             Chapter(title="Chapter 2", content="content 2", cleaned_content="cleaned content 2"),
         ]
     )
@@ -40,14 +40,17 @@ def llm_response():
       \"conversation\": [
         {
           \"speaker\": \"interviewer\",
-          \"text\": \"Welcome to a special mini episode of the Extra Miles Show with the greatest marathoner of all time, Eliud Kipchoge.\"
+          \"intent\": \"statement\",
+          \"text\": \"Welcome to a special mini episode.\"
         },
         {
           \"speaker\": \"interviewer\",
+          \"intent\": \"statement\",
           \"text\": \"He's been a huge inspiration to me for many years.\"
         },
         {
           \"speaker\": \"interviewer\",
+          \"intent\": \"statement\",
           \"text\": \"Eliud is the current marathon world record holder, two-time gold Olympic medalist, and the only person to ever break the two-hour barrier in the marathon.\"
         }
       ]
@@ -73,7 +76,7 @@ async def test_speaker_diarization_cleaned_content(document, llm_response):
 
     mock_llm.generate.assert_called_with("content", config)
 
-    assert result.chapters[1].speaker_diarization.conversation[1] == QA(speaker="interviewer", text="He's been a huge inspiration to me for many years.")
+    assert result.chapters[1].speaker_diarization.conversation[1] == QA(speaker="interviewer", intent="statement", text="He's been a huge inspiration to me for many years.")
 
 
 @pytest.mark.asyncio
@@ -97,7 +100,8 @@ async def test_speaker_diarization_with_one_cleaned_content(document_with_one_cl
 
     assert len(result.chapters) == 2
     assert result.chapters[0].speaker_diarization is None
-    assert result.chapters[1].speaker_diarization.conversation[0] == QA(speaker="interviewer", text="Welcome to a special mini episode of the Extra Miles Show with the greatest marathoner of all time, Eliud Kipchoge.")
+    assert (result.chapters[1].speaker_diarization.conversation[0]
+            == QA(speaker="interviewer", intent="statement", text="Welcome to a special mini episode."))
 
 
 @pytest.mark.asyncio

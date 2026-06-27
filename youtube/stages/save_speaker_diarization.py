@@ -26,7 +26,7 @@ class SaveSpeakerDiarization(Stage):
             LLMArtifactMapper.from_output(
                 section_id=ch.id,
                 stage="speaker diarization",
-                output=ch.speaker_diarization.model_dump(),
+                output=ch.speaker_diarization.model_dump(exclude_none=True),
             )
             for ch in chapters
         ]

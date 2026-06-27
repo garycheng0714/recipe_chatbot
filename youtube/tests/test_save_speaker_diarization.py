@@ -23,7 +23,7 @@ async def test_save_speaker_diarization_run_success(mock_session_factory):
             content="1",
             speaker_diarization=SpeakerDiarizationResult(
                 conversation=[
-                    QA(speaker="interviewer", text="How are you?"),
+                    QA(speaker="interviewer", text="How are you?", intent="question"),
                 ]
             )
         ),
@@ -33,7 +33,7 @@ async def test_save_speaker_diarization_run_success(mock_session_factory):
             content="2",
             speaker_diarization=SpeakerDiarizationResult(
                 conversation=[
-                    QA(speaker="interviewee", text="I'm fine"),
+                    QA(speaker="interviewee", text="I'm fine", intent="answer"),
                 ]
             )
         )
@@ -69,7 +69,7 @@ async def test_save_speaker_diarization_run_success(mock_session_factory):
     assert isinstance(artifact_1, LlmArtifacts)
     assert artifact_1.section_id == UUID("33df1d33-62a3-541f-b94f-49e73ddbfd9d")
     assert artifact_1.stage == "speaker diarization"
-    assert artifact_1.output == {"id": None, "conversation": [{"speaker": "interviewer", "text": "How are you?"}]}
+    assert artifact_1.output == {"conversation": [{"speaker": "interviewer", "text": "How are you?", "intent": "question"}]}
     assert artifact_1.is_current is True
 
     # 驗證第二筆 LlmArtifacts 實例
@@ -77,7 +77,7 @@ async def test_save_speaker_diarization_run_success(mock_session_factory):
     assert isinstance(artifact_2, LlmArtifacts)
     assert artifact_2.section_id == UUID("92f4ca7c-4fed-54e9-8597-de722f36ed8b")
     assert artifact_2.stage == "speaker diarization"
-    assert artifact_2.output == {"id": None, "conversation": [{"speaker": "interviewee", "text": "I'm fine"}]}
+    assert artifact_2.output == {"conversation": [{"speaker": "interviewee", "text": "I'm fine", "intent": "answer"}]}
     assert artifact_2.is_current is True
 
 
@@ -94,7 +94,7 @@ async def test_save_speaker_diarization_run_success_with_one_is_none(mock_sessio
             content="1",
             speaker_diarization=SpeakerDiarizationResult(
                 conversation=[
-                    QA(speaker="interviewer", text="How are you?"),
+                    QA(speaker="interviewer", text="How are you?", intent="question"),
                 ]
             )
         ),
@@ -131,7 +131,7 @@ async def test_save_speaker_diarization_run_success_with_one_is_none(mock_sessio
     assert isinstance(artifact_1, LlmArtifacts)
     assert artifact_1.section_id == UUID("33df1d33-62a3-541f-b94f-49e73ddbfd9d")
     assert artifact_1.stage == "speaker diarization"
-    assert artifact_1.output == {"id": None, "conversation": [{"speaker": "interviewer", "text": "How are you?"}]}
+    assert artifact_1.output == {"conversation": [{"speaker": "interviewer", "text": "How are you?", "intent": "question"}]}
     assert artifact_1.is_current is True
 
 
@@ -148,7 +148,7 @@ async def test_save_speaker_diarization_run_success_with_one_is_already_saved(mo
             content="1",
             speaker_diarization=SpeakerDiarizationResult(
                 conversation=[
-                    QA(speaker="interviewer", text="How are you?"),
+                    QA(speaker="interviewer", text="How are you?", intent="question"),
                 ]
             )
         ),
@@ -159,7 +159,7 @@ async def test_save_speaker_diarization_run_success_with_one_is_already_saved(mo
             speaker_diarization=SpeakerDiarizationResult(
                 id=UUID("33df1d33-62a3-541f-b94f-49e73ddbfd22"),
                 conversation=[
-                    QA(speaker="interviewer", text="How are you?"),
+                    QA(speaker="interviewer", text="How are you?", intent="question"),
                 ]
             )
         )
@@ -195,7 +195,7 @@ async def test_save_speaker_diarization_run_success_with_one_is_already_saved(mo
     assert isinstance(artifact_1, LlmArtifacts)
     assert artifact_1.section_id == UUID("33df1d33-62a3-541f-b94f-49e73ddbfd9d")
     assert artifact_1.stage == "speaker diarization"
-    assert artifact_1.output == {"id": None, "conversation": [{"speaker": "interviewer", "text": "How are you?"}]}
+    assert artifact_1.output == {"conversation": [{"speaker": "interviewer", "text": "How are you?", "intent": "question"}]}
     assert artifact_1.is_current is True
 
 

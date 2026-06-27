@@ -23,7 +23,11 @@ def test_llm_artifact_mapper_with_speaker_diarization_output():
     source_id = get_source_id("https://google.com")
     section_id = get_section_id(source_id, 0)
 
-    output = SpeakerDiarizationResult(conversation=[QA(speaker="interviewer", text="Hello World")])
+    output = SpeakerDiarizationResult(
+        conversation=[
+            QA(speaker="interviewer", text="Hello World", intent="question"),
+        ]
+    )
 
     result = LLMArtifactMapper.from_output(
         section_id=section_id,
