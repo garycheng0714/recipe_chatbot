@@ -1,6 +1,6 @@
 from google.genai import types
 
-from youtube.domain.models.qa_pair_result import QAPairResult
+from youtube.domain.qa_pair_result import QAPairResult
 from youtube.domain.speaker_diarization_result import SpeakerDiarizationResult
 
 transcript_normalize_config = types.GenerateContentConfig(
