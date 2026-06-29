@@ -95,7 +95,7 @@ async def test_semantic_qa_pair_run_success(uuid, mock_session_factory):
     # 註：這裡假設你的 LlmArtifacts 欄位結構與前一個測試案例相似
     assert artifact.section_id == chapter_1_id
     assert artifact.stage == "qa pair"
-    assert artifact.output == {"results": [{"question": "How can consistency...", "answer": "...", "topic": "mental-prep"}]}
+    assert artifact.output == [{"question": "How can consistency...", "answer": "...", "topic": "mental-prep"}]
 
 
 @pytest.mark.asyncio
@@ -183,7 +183,7 @@ async def test_semantic_qa_pair_run_partial_failure_skips_none(uuid, mock_sessio
     success_artifact = artifact_models[0]
     assert success_artifact.section_id == chapter_success_id
     assert success_artifact.stage == "qa pair"
-    assert success_artifact.output == {"results": [{"question": "How can consistency...", "answer": "...", "topic": "mental-prep"}]}
+    assert success_artifact.output == [{"question": "How can consistency...", "answer": "...", "topic": "mental-prep"}]
 
 
 @pytest.mark.asyncio

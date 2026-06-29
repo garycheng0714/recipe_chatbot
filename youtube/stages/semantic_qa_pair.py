@@ -10,6 +10,7 @@ from app.repositories.yt_repository import YtRepository
 from llm_client.base import LLMClient
 from llm_config.config import qa_pair_config
 from youtube.domain.mapper.llm_artifact import LLMArtifactMapper
+from youtube.domain.qa_pair_result import QAPairResult
 from youtube.domain.video_document import VideoDocument, Chapter
 from loguru import logger
 
@@ -61,7 +62,7 @@ class SemanticQaPair:
             LLMArtifactMapper.from_output(
                 section_id=ch.id,
                 stage="qa pair",
-                output=json.loads(r)
+                output=[r.model_dump() for r in QAPairResult(**json.loads(r)).results]
             )
             for ch, r in zip (chapters, results)
             if r is not None
