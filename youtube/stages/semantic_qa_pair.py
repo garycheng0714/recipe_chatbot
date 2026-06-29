@@ -4,25 +4,33 @@ import json
 from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type
 
 from google.genai import errors, types
+
+from app.database import AsyncSessionLocal
+from app.repositories.yt_repository import YtRepository
 from llm_client.base import LLMClient
-from llm_config.config import speaker_diarization_config
-from youtube.domain.speaker_diarization_result import SpeakerDiarizationResult
+from llm_config.config import qa_pair_config
+from youtube.domain.mapper.llm_artifact import LLMArtifactMapper
 from youtube.domain.video_document import VideoDocument, Chapter
 from loguru import logger
 
+from youtube.prompt.question_answer_prompt import QuestionAnswerPrompt
 from youtube.prompt.speaker_diarization import SpeakerDiarizationPrompt
 
 
-class SpeakerDiarization:
+class SemanticQaPair:
     def __init__(
         self,
         llm_client: LLMClient,
-        prompt: SpeakerDiarizationPrompt = SpeakerDiarizationPrompt(),
-        config: types.GenerateContentConfig = speaker_diarization_config
+        prompt: SpeakerDiarizationPrompt = QuestionAnswerPrompt(),
+        config: types.GenerateContentConfig = qa_pair_config,
+        repository: YtRepository = YtRepository(),
+        session_factory=AsyncSessionLocal
     ):
         self.llm_client = llm_client
         self.prompt = prompt
         self.config = config
+        self.repository = repository
+        self.session_factory = session_factory
         # 修正：初始化時保持 None，避開沒有 event loop 的時間點
         self._semaphore = None
 
@@ -38,8 +46,7 @@ class SpeakerDiarization:
         chapters = [
             ch
             for ch in document.chapters
-            if ch.speaker_diarization is None
-               and ch.cleaned_content is not None
+            if ch.cleaned_content is not None
         ]
 
         if not chapters:
@@ -50,8 +57,23 @@ class SpeakerDiarization:
         # 執行併發（設定 return_exceptions=True 確保個別失敗不影響大局）
         results = await asyncio.gather(*tasks, return_exceptions=True)
 
-        for ch, r in zip(chapters, results):
-            ch.speaker_diarization = SpeakerDiarizationResult.model_validate(json.loads(r))
+        artifact_models = [
+            LLMArtifactMapper.from_output(
+                section_id=ch.id,
+                stage="qa pair",
+                output=json.loads(r)
+            )
+            for ch, r in zip (chapters, results)
+            if r is not None
+        ]
+
+        # 修正：如果全部都失敗，導致 artifact_models 是空的，就直接回傳，不做事
+        if not artifact_models:
+            return document
+
+        async with self.session_factory() as session:
+            async with session.begin():
+                await self.repository.insert_bulk_llm_artifact(session, artifact_models)
 
         return document
 
