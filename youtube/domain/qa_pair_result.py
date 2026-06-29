@@ -11,7 +11,7 @@ class QAPair(BaseModel):
 class QAPairResult(BaseModel):
     section_id: UUID | None = None
     results: list[QAPair] = Field(
-        validation_alias=AliasChoices('output')
+        validation_alias=AliasChoices('results', 'output')
     )
 
     model_config = ConfigDict(from_attributes=True)
