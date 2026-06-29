@@ -1,7 +1,7 @@
 import pytest
 
 from app.repositories.yt_repository import YtRepository
-from youtube.domain.models.llm_artifact import LlmArtifacts
+from youtube.domain.models.models import LlmArtifacts
 from youtube.domain.models.models import Source, Section
 from youtube.domain.speaker_diarization_result import SpeakerDiarizationResult, QA
 from youtube.ids import get_source_id, get_section_id

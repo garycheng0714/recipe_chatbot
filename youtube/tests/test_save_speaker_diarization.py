@@ -3,7 +3,7 @@ from uuid import UUID
 import pytest
 from unittest.mock import AsyncMock, MagicMock
 
-from youtube.domain.models.llm_artifact import LlmArtifacts
+from youtube.domain.models.models import LlmArtifacts
 from youtube.domain.speaker_diarization_result import SpeakerDiarizationResult, QA
 from youtube.domain.video_document import Chapter, VideoDocument
 from youtube.ids import get_source_id

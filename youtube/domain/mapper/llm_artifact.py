@@ -1,6 +1,6 @@
 from uuid import UUID
 
-from youtube.domain.models.llm_artifact import LlmArtifacts
+from youtube.domain.models.models import LlmArtifacts
 
 
 class LLMArtifactMapper:

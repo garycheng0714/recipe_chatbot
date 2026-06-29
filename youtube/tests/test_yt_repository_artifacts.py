@@ -1,7 +1,7 @@
 import pytest
 
 from app.repositories.yt_repository import YtRepository
-from youtube.domain.models.llm_artifact import LlmArtifacts
+from youtube.domain.models.models import LlmArtifacts
 from youtube.domain.models.models import Source, Section
 from youtube.ids import get_section_id, get_source_id
 
@@ -228,7 +228,7 @@ async def test_fetch_current_artifacts(session, uuid):
     # 3. 呼叫待測的受保護 function (_fetch_current_artifacts)
     # 註：在 Python 中測試受保護方法（單底線開頭）可以直接透過實例呼叫
     target_uuids = [section_id_1, section_id_2]
-    result = await repo._fetch_current_artifacts(
+    result = await repo.fetch_current_artifacts(
         session=session,
         stage=stage_target,
         uuids=target_uuids

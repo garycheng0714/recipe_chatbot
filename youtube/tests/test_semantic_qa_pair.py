@@ -2,7 +2,6 @@ import pytest
 from unittest.mock import MagicMock, AsyncMock
 from uuid import UUID
 
-from youtube.domain.models.qa_pair_result import QAPairResult, QAPair
 from youtube.domain.video_document import Chapter, VideoDocument
 from youtube.ids import get_source_id
 from youtube.stages.semantic_qa_pair import SemanticQaPair
