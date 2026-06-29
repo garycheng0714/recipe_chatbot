@@ -145,15 +145,17 @@ class Section(Base):
 class Chunk(Base):
     __tablename__ = "chunks"
 
-    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True)
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     section_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), ForeignKey("sections.id", ondelete="CASCADE"), index=True
     )
 
-    text: Mapped[str] = mapped_column(Text, nullable=False)  # original subtitle
-
-    # position within section
-    order_index: Mapped[int] = mapped_column(Integer, nullable=False)
+    question: Mapped[str] = mapped_column(Text, nullable=False)
+    answer: Mapped[str] = mapped_column(Text, nullable=False)
+    embedding_text: Mapped[str] = mapped_column(Text, nullable=False)  # question + answer 組合後，實際拿去 embedding 的文字
+    topic: Mapped[str] = mapped_column(String, nullable=True)
+    primary_speaker: Mapped[str] = mapped_column(String, nullable=True)
+    llm_artifact_id: Mapped[UUID] = mapped_column(UUID, ForeignKey("llm_artifacts.id"), nullable=True)  # 追溯到產生這個chunk的LLM呼叫
 
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
@@ -166,10 +168,6 @@ class Chunk(Base):
     section:      Mapped["Section"]               = relationship(back_populates="chunks")
     translations: Mapped[list["ChunkTranslation"]] = relationship(
         back_populates="chunk", cascade="all, delete-orphan"
-    )
-
-    __table_args__ = (
-        UniqueConstraint("section_id", "order_index", name="uq_chunk_order"),
     )
 
 
