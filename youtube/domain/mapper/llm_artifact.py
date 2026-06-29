@@ -5,7 +5,7 @@ from youtube.domain.models.models import LlmArtifacts
 
 class LLMArtifactMapper:
     @staticmethod
-    def from_output(section_id: UUID, stage: str, output: dict | str) -> LlmArtifacts:
+    def from_output(section_id: UUID, stage: str, output: dict | str | list) -> LlmArtifacts:
         return LlmArtifacts(
             section_id=section_id,
             stage=stage,
