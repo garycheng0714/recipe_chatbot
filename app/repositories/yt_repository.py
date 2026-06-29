@@ -6,8 +6,8 @@ from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio.session import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from youtube.domain.models.llm_artifact import LlmArtifacts
-from youtube.domain.models.models import Section, Source
+from youtube.domain.models.models import LlmArtifacts
+from youtube.domain.models.models import Section, Source, Chunk
 from youtube.domain.speaker_diarization_result import SpeakerDiarizationResult
 
 T = TypeVar("T")
@@ -40,7 +40,7 @@ class YtRepository:
 
         return result.scalars().all()
 
-    async def _fetch_current_artifacts(self, session: AsyncSession, stage: str, uuids: list[UUID]) -> Sequence[LlmArtifacts]:
+    async def fetch_current_artifacts(self, session: AsyncSession, stage: str, uuids: list[UUID]) -> Sequence[LlmArtifacts]:
         artifact_stmt = select(LlmArtifacts).filter(
             LlmArtifacts.section_id.in_(uuids),
             LlmArtifacts.is_current == True,
@@ -65,11 +65,11 @@ class YtRepository:
             section_ids = [s.id for s in source.sections]
 
             normalize_result = {}
-            for raw in await self._fetch_current_artifacts(session, "transcript normalize", section_ids):
+            for raw in await self.fetch_current_artifacts(session, "transcript normalize", section_ids):
                 normalize_result[raw.section_id] = raw.output
 
             diarization_result = {}
-            for raw in await self._fetch_current_artifacts(session, "speaker diarization", section_ids):
+            for raw in await self.fetch_current_artifacts(session, "speaker diarization", section_ids):
                 diarization_result[raw.section_id] = raw
 
             # 手動掛到對應的 section 物件上（用一個新屬性名，避免跟 relationship 屬性衝突）
@@ -101,6 +101,22 @@ class YtRepository:
             insert(Section).values(
                 value_dict
             ).on_conflict_do_nothing(index_elements=['id'])
+        )
+
+    async def insert_bulk_chunk(self, session: AsyncSession, chunks: list[Chunk]):
+        value_dict = [
+            {
+                c.key: getattr(chunk, c.key)
+                for c in Chunk.__table__.columns
+                if getattr(chunk, c.key) is not None
+            }
+            for chunk in chunks
+        ]
+
+        await session.execute(
+            insert(Chunk).values(
+                value_dict
+            )
         )
 
     async def insert_bulk_llm_artifact(self, session: AsyncSession, artifacts: list[LlmArtifacts]):
