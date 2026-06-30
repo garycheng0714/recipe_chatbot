@@ -4,6 +4,7 @@ from unittest.mock import MagicMock, AsyncMock
 import pytest
 
 from youtube.domain.video_document import ChapterDescription, VideoDocument, TranscriptSegment
+from youtube.ids import get_source_id
 from youtube.video import YouTubeVideo
 
 
@@ -109,15 +110,18 @@ async def test_get_transcript_segment(transcript):
 
 @pytest.mark.asyncio
 async def test_get_video_info(video_info):
+    url = "https://www.youtube.com/watch?v=123"
+
     yt = YouTubeVideo(MagicMock())
 
     yt._fetch_video_info = AsyncMock(return_value=video_info)
     result = await yt.get_video_info("123")
 
     expected = VideoDocument(
+        id=get_source_id(url),
         video_id="123",
         title="Test",
-        url=f"https://www.youtube.com/watch?v=123",
+        url=url,
         author="AAA",
         language="en",
         published_at=datetime.fromisoformat(time_str.replace('Z', '+00:00')),

@@ -8,6 +8,7 @@ from youtube_transcript_api import YouTubeTranscriptApi
 
 from web_crawler.requester import HttpxRequester
 from youtube.domain.video_document import ChapterDescription, VideoDocument, TranscriptSegment
+from youtube.ids import get_source_id
 
 
 class YouTubeVideo:
@@ -37,6 +38,7 @@ class YouTubeVideo:
         snippet = await self._fetch_video_info(id)
 
         return VideoDocument(
+            id=get_source_id(f"https://www.youtube.com/watch?v={id}"),
             video_id=id,
             title=snippet["title"],
             url=f"https://www.youtube.com/watch?v={id}",
