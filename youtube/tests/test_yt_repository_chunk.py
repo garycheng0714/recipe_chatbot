@@ -126,3 +126,65 @@ async def test_insert_bulk_chunk(chunks, session, uuid, artifacts):
     assert result[1].answer == "這是測試回答 2"
     assert result[1].topic == "整合測試"
     assert result[1].id is not None
+
+
+async def test_insert_bulk_chunk_twice(chunks, session, uuid, artifacts):
+    repo = YtRepository()
+
+    # 建立上游依賴：Source (影片)
+    video = Source(
+        id=uuid,
+        type="youtube",
+        video_id="123",
+        title="測試影片",
+        url="https://example.com",
+        language="en"
+    )
+
+    # 建立上游依賴：Section (章節)
+    chapter = Section(
+        id=get_section_id(uuid, 0),
+        source_id=uuid,
+        title="第一章",
+        order_index=0,
+        raw_content="內容",
+        start_time=10.5
+    )
+
+    chapter2 = Section(
+        id=get_section_id(uuid, 1),
+        source_id=uuid,
+        title="第二章",
+        order_index=1,
+        raw_content="內容2",
+        start_time=20.5
+    )
+
+    # 先寫入必要的前置資料
+    await repo.insert(session, video)
+    await repo.insert_bulk_section(session, [chapter, chapter2])
+    await repo.insert_bulk_llm_artifact(session, artifacts)
+    await session.flush()  # 確保資料庫此時已知悉 Section 的存在
+
+    # 🚀 執行你要測試的 insert_bulk_chunk 方法
+    # 假設這個方法封裝在你的 repo 物件中，若否，請改為：await insert_bulk_chunk(session, chunks)
+    await repo.insert_bulk_chunk(session, chunks)
+    await session.flush()
+
+    await repo.insert_bulk_chunk(session, chunks)
+    await session.flush()
+
+    # 4. 驗證資料是否正確寫入
+    section_ids = [get_section_id(uuid, 0), get_section_id(uuid, 1)]
+
+    # 從資料庫重新查出剛剛寫入的 Chunks 進行斷言 (Assert)
+    stmt = (
+        select(Chunk)
+            .where(Chunk.section_id.in_(section_ids))
+            .order_by(Chunk.question)
+    )
+
+    result = (await session.execute(stmt)).scalars().all()
+
+    # 驗證數量
+    assert len(result) == 2

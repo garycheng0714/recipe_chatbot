@@ -1,14 +1,13 @@
 from typing import TypeVar, Sequence
 from uuid import UUID
 
-from sqlalchemy import select, update
+from sqlalchemy import select, update, delete
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio.session import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from youtube.domain.models.models import LlmArtifacts
 from youtube.domain.models.models import Section, Source, Chunk
-from youtube.domain.speaker_diarization_result import SpeakerDiarizationResult
 
 T = TypeVar("T")
 
@@ -59,33 +58,7 @@ class YtRepository:
         )
         result = await session.execute(stmt)
 
-        try:
-            source = result.scalars().one()
-
-            section_ids = [s.id for s in source.sections]
-
-            normalize_result = {}
-            for raw in await self.fetch_current_artifacts(session, "transcript normalize", section_ids):
-                normalize_result[raw.section_id] = raw.output
-
-            diarization_result = {}
-            for raw in await self.fetch_current_artifacts(session, "speaker diarization", section_ids):
-                diarization_result[raw.section_id] = raw
-
-            # 手動掛到對應的 section 物件上（用一個新屬性名，避免跟 relationship 屬性衝突）
-            for s in source.sections:
-                s.cleaned_content = normalize_result.get(s.id, "")
-
-                diarization: SpeakerDiarizationResult = diarization_result.get(s.id)
-                if diarization is not None:
-                    s.speaker_diarization = SpeakerDiarizationResult.model_validate(diarization.output)
-                    s.speaker_diarization.id = diarization.id
-
-        except Exception as e:
-            print(f"Fetching video {id} failed: {e}")
-            return None
-
-        return source
+        return result.scalars().one_or_none()
 
     async def insert_bulk_section(self, session: AsyncSession, sections: list[Section]):
         value_dict = [
@@ -104,6 +77,13 @@ class YtRepository:
         )
 
     async def insert_bulk_chunk(self, session: AsyncSession, chunks: list[Chunk]):
+        section_ids = [c.section_id for c in chunks]
+
+        await session.execute(
+            delete(Chunk)
+                .where(Chunk.section_id.in_(section_ids))
+        )
+
         value_dict = [
             {
                 c.key: getattr(chunk, c.key)
