@@ -49,7 +49,7 @@ Question:
 
 Answer:
 檢索增強生成技術。
-"""
+""".lstrip()
     assert chunk1.embedding_text == expected_embedding_text_1
 
     # 驗證第二個 Chunk 的內容

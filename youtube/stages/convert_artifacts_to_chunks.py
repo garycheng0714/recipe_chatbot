@@ -29,6 +29,7 @@ class ConvertArtifactsToChunksStage(Stage):
             return document
 
         async with self.session_factory() as session:
-            await self.repository.insert_bulk_chunk(session, chunks)
+            async with session.begin():
+                await self.repository.insert_bulk_chunk(session, chunks)
 
         return document

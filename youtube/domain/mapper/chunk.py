@@ -20,7 +20,7 @@ Question:
 
 Answer:
 {r.answer}
-"""
+""".lstrip()
                 )
             )
 

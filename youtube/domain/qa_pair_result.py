@@ -15,3 +15,8 @@ class QAPairResult(BaseModel):
     )
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class ContentData(BaseModel):
+    speaker: str
+    content: str

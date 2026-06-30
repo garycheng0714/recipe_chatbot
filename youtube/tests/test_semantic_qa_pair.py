@@ -39,7 +39,8 @@ async def test_semantic_qa_pair_run_success(uuid, mock_session_factory):
 
     video_doc = VideoDocument(
         id=uuid,
-        chapters=chapters
+        chapters=chapters,
+        speaker="AA"
     )
 
     # 模擬 LLM 成功回傳的結構化資料
@@ -123,7 +124,8 @@ async def test_semantic_qa_pair_run_partial_failure_skips_none(uuid, mock_sessio
 
     video_doc = VideoDocument(
         id=uuid,
-        chapters=chapters
+        chapters=chapters,
+        speaker="AA"
     )
 
     # 模擬第一筆成功會拿到的 LLM 回傳資料
@@ -257,7 +259,7 @@ async def test_semantic_qa_pair_all_tasks_failed(uuid, mock_session_factory):
             cleaned_content="Valid content 2"
         )
     ]
-    video_doc = VideoDocument(id=uuid, chapters=chapters)
+    video_doc = VideoDocument(id=uuid, chapters=chapters, speaker="AA")
 
     # ---------------------------------------------------------
     # 2. 建立 Mock 物件
