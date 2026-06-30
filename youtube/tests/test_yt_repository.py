@@ -15,7 +15,16 @@ pytestmark = pytest.mark.asyncio(loop_scope="session")
 
 async def test_insert_video_success(session, uuid):
     repo = YtRepository()
-    video = Source(id=uuid, type="youtube", video_id="123", title="測試影片", url="https://example.com", language="en")
+    video = Source(
+        id=uuid,
+        type="youtube",
+        video_id="123",
+        author="AA",
+        speaker="BB",
+        title="測試影片",
+        url="https://example.com",
+        language="en"
+    )
 
     # 執行寫入
     await repo.insert(session, video)
@@ -28,6 +37,8 @@ async def test_insert_video_success(session, uuid):
     video = result[0]
     assert video.title == "測試影片"
     assert video.url == "https://example.com"
+    assert video.author == "AA"
+    assert video.speaker == "BB"
 
 
 async def test_fetch_video_fail(session):
