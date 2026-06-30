@@ -1,4 +1,5 @@
 from youtube.domain.video_document import Chapter, VideoDocument
+from youtube.ids import get_section_id
 
 
 class TranscriptSegmenter:
@@ -17,8 +18,8 @@ class TranscriptSegmenter:
                     break
 
         document.chapters = [
-            Chapter(title=ch.title, content=" ".join(chapter_dict[key]))
-            for ch, key in zip(chapters, chapter_dict.keys())
+            Chapter(id=get_section_id(document.id, idx) , title=ch.title, content=" ".join(chapter_dict[key]))
+            for idx, (ch, key) in enumerate(zip(chapters, chapter_dict.keys()))
         ]
 
         return document

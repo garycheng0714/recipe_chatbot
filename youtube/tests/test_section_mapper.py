@@ -6,11 +6,15 @@ from youtube.ids import get_source_id, get_section_id
 
 
 def test_section_mapper_from_document_success():
+    source_id = get_source_id("https://www.youtube.com/watch?v=abcdefg")
+    section_id_1 = get_section_id(source_id, 0)
+    section_id_2 = get_section_id(source_id, 1)
+
     # 1. 準備測試資料 (Arrange)
     # 建立兩個章節內容與兩個對應的時間敘述
     chapters = [
-        Chapter(title="第一章：導論", content="這是導論的內容..."),
-        Chapter(title="第二章：核心概念", content="這是核心概念的內容...")
+        Chapter(id=section_id_1, title="第一章：導論", content="這是導論的內容..."),
+        Chapter(id=section_id_2 , title="第二章：核心概念", content="這是核心概念的內容...")
     ]
 
     descriptions = [
@@ -26,9 +30,6 @@ def test_section_mapper_from_document_success():
         # 其他欄位帶 None 或預設值即可，此測試用不到
     )
 
-    # 預期從輔助函式得到的 ID
-    expected_source_id = get_source_id(video_doc.url)
-
     # 2. 執行受測動作 (Act)
     sections = SectionMapper.from_document(video_doc)
 
@@ -38,8 +39,8 @@ def test_section_mapper_from_document_success():
 
     # 驗證第一個 Section (idx = 0)
     sec1 = sections[0]
-    assert sec1.id == get_section_id(expected_source_id, 0)
-    assert sec1.source_id == expected_source_id
+    assert sec1.id == section_id_1
+    assert sec1.source_id == source_id
     assert sec1.title == "第一章：導論"  # 來自 chapters
     assert sec1.order_index == 0
     assert sec1.raw_content == "這是導論的內容..."  # 來自 chapters
@@ -47,8 +48,8 @@ def test_section_mapper_from_document_success():
 
     # 驗證第二個 Section (idx = 1)
     sec2 = sections[1]
-    assert sec2.id == get_section_id(expected_source_id, 1)
-    assert sec2.source_id == expected_source_id
+    assert sec2.id == section_id_2
+    assert sec2.source_id == source_id
     assert sec2.title == "第二章：核心概念"
     assert sec2.order_index == 1
     assert sec2.raw_content == "這是核心概念的內容..."

@@ -1,6 +1,6 @@
 from youtube.domain.models.models import Section
 from youtube.domain.video_document import VideoDocument
-from youtube.ids import get_source_id, get_section_id
+from youtube.ids import get_source_id
 
 
 class SectionMapper:
@@ -16,7 +16,7 @@ class SectionMapper:
         for idx, (ch, description) in enumerate(zip(video.chapters, video.description)):
             sections.append(
                 Section(
-                    id=get_section_id(source_id, idx),
+                    id=ch.id,
                     source_id=source_id,
                     title=ch.title,
                     order_index=idx,

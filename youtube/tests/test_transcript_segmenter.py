@@ -1,6 +1,8 @@
 from datetime import datetime
+from uuid import UUID
 
 from youtube.domain.video_document import ChapterDescription, Chapter, VideoDocument, TranscriptSegment
+from youtube.ids import get_section_id
 from youtube.stages.transcript_segmenter import TranscriptSegmenter
 import pytest
 
@@ -21,8 +23,13 @@ def get_transcript_segment(transcripts: list):
     ]
 
 @pytest.fixture
+def uuid():
+    return UUID('0d72446b-cebb-5eef-a81d-19b9604b4eaf')
+
+@pytest.fixture
 def video_document():
     return VideoDocument(
+            id=UUID('0d72446b-cebb-5eef-a81d-19b9604b4eaf'),
             video_id="123",
             title="Test",
             url=f"https://www.youtube.com/watch?v=123",
@@ -46,6 +53,7 @@ def video_document():
 @pytest.fixture
 def video_document_with_same_chapter_title():
     return VideoDocument(
+            id=UUID('0d72446b-cebb-5eef-a81d-19b9604b4eaf'),
             video_id="123",
             title="Test",
             url=f"https://www.youtube.com/watch?v=123",
@@ -67,7 +75,7 @@ def video_document_with_same_chapter_title():
 
 
 @pytest.mark.asyncio
-async def test_transcript_segmenter(video_document):
+async def test_transcript_segmenter(video_document, uuid):
     stage = TranscriptSegmenter()
 
     result = await stage.run(video_document)
@@ -84,10 +92,12 @@ async def test_transcript_segmenter(video_document):
 
     expected = [
         Chapter(
+            id=get_section_id(uuid, 0),
             title="Intro Kilian Jornet",
             content=" ".join(chapter1_content)
         ),
         Chapter(
+            id=get_section_id(uuid, 1),
             title="How Kilian trains to prep for races",
             content=" ".join(chapter2_content)
         )
@@ -97,7 +107,7 @@ async def test_transcript_segmenter(video_document):
 
 
 @pytest.mark.asyncio
-async def test_transcript_segmenter_with_same_chapter_title_different_start_time(video_document_with_same_chapter_title):
+async def test_transcript_segmenter_with_same_chapter_title_different_start_time(uuid, video_document_with_same_chapter_title):
     stage = TranscriptSegmenter()
 
     result = await stage.run(video_document_with_same_chapter_title)
@@ -114,10 +124,12 @@ async def test_transcript_segmenter_with_same_chapter_title_different_start_time
 
     expected = [
         Chapter(
+            id=get_section_id(uuid, 0),
             title="Intro Kilian Jornet",
             content=" ".join(chapter1_content)
         ),
         Chapter(
+            id=get_section_id(uuid, 1),
             title="Intro Kilian Jornet",
             content=" ".join(chapter2_content)
         )
