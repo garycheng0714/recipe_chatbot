@@ -13,6 +13,7 @@ class SourceMapper:
             title=video.title,
             url=video.url,
             author=video.author,
+            speaker=video.speaker,
             language=video.language,
             published_at=video.published_at
         )

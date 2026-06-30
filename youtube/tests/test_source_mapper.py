@@ -15,6 +15,7 @@ def test_source_mapper_from_document_success():
         title="如何寫出好測試",
         url="https://www.youtube.com/watch?v=dQw4w9WgXcQ",
         author="測試大師",
+        speaker="測試小弟",
         language="zh-TW",
         published_at=mock_published_at,
         description=[
@@ -35,5 +36,6 @@ def test_source_mapper_from_document_success():
     assert result_source.title == "如何寫出好測試"
     assert result_source.url == "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
     assert result_source.author == "測試大師"
+    assert result_source.speaker == "測試小弟"
     assert result_source.language == "zh-TW"
     assert result_source.published_at == mock_published_at
