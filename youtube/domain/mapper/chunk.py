@@ -4,7 +4,7 @@ from youtube.domain.qa_pair_result import QAPairResult
 
 class ChunkMapper:
     @staticmethod
-    def from_qa_pairs(pair: QAPairResult) -> list[Chunk]:
+    def from_qa_pairs(pair: QAPairResult, speaker: str) -> list[Chunk]:
         chunks: list[Chunk] = []
 
         for r in pair.results:
@@ -14,6 +14,7 @@ class ChunkMapper:
                     question=r.question,
                     answer=r.answer,
                     topic=r.topic,
+                    primary_speaker=speaker,
                     embedding_text=f"""
 Question:
 {r.question}

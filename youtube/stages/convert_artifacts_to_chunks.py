@@ -23,7 +23,7 @@ class ConvertArtifactsToChunksStage(Stage):
         chunks: list[Chunk] = []
 
         for pair in pairs:
-            chunks.extend(ChunkMapper.from_qa_pairs(pair))
+            chunks.extend(ChunkMapper.from_qa_pairs(pair, speaker=document.speaker))
 
         if not chunks:
             return document

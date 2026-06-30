@@ -29,7 +29,7 @@ async def test_convert_artifacts_to_chunks_stage_run_success(mock_session_factor
         Chapter(id=section_id_1, title="title 1", content="1"),
         Chapter(id=section_id_2, title="title 2", content="2")
     ]
-    video_doc = VideoDocument(id=get_source_id(url), chapters=chapters)
+    video_doc = VideoDocument(id=get_source_id(url), chapters=chapters, speaker="AA")
 
     # 模擬從資料庫撈出的 LlmArtifacts 物件 (符合 Stage 內部預期的 qa pair 結構)
     mock_artifacts = [
@@ -93,6 +93,7 @@ async def test_convert_artifacts_to_chunks_stage_run_success(mock_session_factor
     assert chunk_1.question == "什麼是測試 1？"
     assert chunk_1.answer == "這是測試回答 1"
     assert chunk_1.topic == "單元測試"
+    assert chunk_1.primary_speaker == "AA"
 
     # 驗證第二筆轉換出來的 Chunk 屬性
     chunk_2 = chunk_models[1]
@@ -101,3 +102,4 @@ async def test_convert_artifacts_to_chunks_stage_run_success(mock_session_factor
     assert chunk_2.question == "什麼是測試 2？"
     assert chunk_2.answer == "這是測試回答 2"
     assert chunk_2.topic == "整合測試"
+    assert chunk_1.primary_speaker == "AA"

@@ -29,7 +29,7 @@ def test_from_qa_pairs_success(session):
     qa_pair_result = QAPairResult(**raw_data)
 
     # 2. 執行被測試的方法 (Act)
-    chunks = ChunkMapper.from_qa_pairs(qa_pair_result)
+    chunks = ChunkMapper.from_qa_pairs(qa_pair_result, speaker="AA")
 
     # 3. 驗證結果是否符合預期 (Assert)
     assert len(chunks) == 2
@@ -41,6 +41,7 @@ def test_from_qa_pairs_success(session):
     assert chunk1.question == "什麼是 RAG？"
     assert chunk1.answer == "檢索增強生成技術。"
     assert chunk1.topic == "AI 技術"
+    assert chunk1.primary_speaker == "AA"
 
     # 驗證 embedding_text 的格式是否與 Mapper 中定義的多行字串一致
     expected_embedding_text_1 = f"""
@@ -59,12 +60,13 @@ Answer:
     assert chunk2.question == "什麼是 LLM？"
     assert chunk2.answer == "大型語言模型。"
     assert chunk2.topic == "AI 技術"
+    assert chunk2.primary_speaker == "AA"
 
 
 def test_from_qa_pairs_empty_results():
     # 測試當結果清單為空時，是否能正確回傳空陣列
     qa_pair_result = QAPairResult(section_id=uuid.uuid4(), results=[])
 
-    chunks = ChunkMapper.from_qa_pairs(qa_pair_result)
+    chunks = ChunkMapper.from_qa_pairs(qa_pair_result, speaker="AA")
 
     assert chunks == []
