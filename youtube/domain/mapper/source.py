@@ -7,7 +7,7 @@ class SourceMapper:
     @staticmethod
     def from_document(video: VideoDocument) -> Source:
         return Source(
-            id=get_source_id(video.url),
+            id=video.id,
             type=SourceType.youtube,
             video_id=video.video_id,
             title=video.title,
