@@ -1,7 +1,6 @@
 import asyncio
 import json
 
-from pydantic import BaseModel
 from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type
 
 from google.genai import errors, types
@@ -43,19 +42,18 @@ class SemanticQaPair:
         return self._semaphore
 
     async def run(self, document: VideoDocument) -> VideoDocument:
+        section_ids = [ch.id for ch in document.chapters]
 
-        chapters = [
-            ch
-            for ch in document.chapters
-            if ch.cleaned_content is not None
-        ]
+        async with self.session_factory() as session:
+            artifacts = await self.repository.fetch_current_artifacts(session, "transcript normalize", section_ids)
 
-        if not chapters:
+        if not artifacts:
             return document
 
         tasks = [
-            self._worker(ContentData(speaker=document.speaker, content=ch.cleaned_content))
-            for ch in chapters
+            #TODO: deal str(a.output)
+            self._worker(ContentData(speaker=document.speaker, content=str(a.output)))
+            for a in artifacts
         ]
 
         # 執行併發（設定 return_exceptions=True 確保個別失敗不影響大局）
@@ -63,11 +61,11 @@ class SemanticQaPair:
 
         artifact_models = [
             LLMArtifactMapper.from_output(
-                section_id=ch.id,
+                section_id=id,
                 stage="qa pair",
                 output=[r.model_dump() for r in QAPairResult(**json.loads(r)).results]
             )
-            for ch, r in zip (chapters, results)
+            for id, r in zip (section_ids, results)
             if r is not None
         ]
 

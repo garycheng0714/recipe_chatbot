@@ -1,5 +1,5 @@
+from youtube.domain.qa_pair_result import ContentData
 from youtube.prompt.base import BasePrompt
-from youtube.stages.semantic_qa_pair import ContentData
 
 
 class QuestionAnswerPromptClaude(BasePrompt):

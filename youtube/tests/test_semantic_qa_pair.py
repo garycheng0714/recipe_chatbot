@@ -2,6 +2,8 @@ import pytest
 from unittest.mock import MagicMock, AsyncMock
 from uuid import UUID
 
+from youtube.domain.models.models import LlmArtifacts
+from youtube.domain.qa_pair_result import ContentData
 from youtube.domain.video_document import Chapter, VideoDocument
 from youtube.ids import get_source_id
 from youtube.stages.semantic_qa_pair import SemanticQaPair
@@ -25,15 +27,7 @@ async def test_semantic_qa_pair_run_success(uuid, mock_session_factory):
         Chapter(
             id=chapter_1_id,
             title="Introduction to AI",
-            content="Content 1",
-            cleaned_content="This is the cleaned content for chapter 1."
-        ),
-        # 雖然有第二個 chapter，但因程式內有限制 chapters[:1]，此筆預期不會被處理
-        Chapter(
-            id=chapter_2_id,
-            title="Deep Learning Basics",
-            content="Content 2",
-            cleaned_content="This is the cleaned content for chapter 2."
+            content="Content 1"
         )
     ]
 
@@ -55,13 +49,25 @@ async def test_semantic_qa_pair_run_success(uuid, mock_session_factory):
 
     # Mock Repository
     mock_repository = MagicMock()
+    mock_repository.fetch_current_artifacts = AsyncMock(
+        return_value=[
+            LlmArtifacts(
+                section_id=chapter_1_id,
+                output="cleaned 1"
+            )
+        ]
+    )
     mock_repository.insert_bulk_llm_artifact = AsyncMock()
+
+    prompt = MagicMock()
+    prompt.render = MagicMock()
 
     # ---------------------------------------------------------
     # 3. 初始化受測類別 (System Under Test)
     # ---------------------------------------------------------
     stage = SemanticQaPair(
         llm_client=mock_llm_client,
+        prompt=prompt,
         repository=mock_repository,
         session_factory=mock_session_factory
     )
@@ -77,19 +83,28 @@ async def test_semantic_qa_pair_run_success(uuid, mock_session_factory):
     # 驗證回傳的 document 物件沒有被破壞
     assert result_doc == video_doc
 
+    mock_repository.fetch_current_artifacts.assert_called_once_with(
+        mock_session_factory(),
+        "transcript normalize",
+        [chapter_1_id]
+    )
+
+    prompt_called_args, _ = prompt.render.call_args
+    content: ContentData = prompt_called_args[0]
+    assert content.model_dump() == {"speaker": "AA", "content": "cleaned 1"}
+
     # 驗證 llm_client.generate 只被呼叫了 2 次
-    assert mock_llm_client.generate.call_count == 2
+    assert mock_llm_client.generate.call_count == 1
 
     # 驗證 Repository 是否有正確呼叫寫入資料庫
     mock_repository.insert_bulk_llm_artifact.assert_called_once()
 
     # 取得實際寫入資料庫的參數
     called_args, _ = mock_repository.insert_bulk_llm_artifact.call_args
-    session_arg = called_args[0]
     artifact_models = called_args[1]  # 這是從 LLMArtifactMapper 轉出來的 list
 
     # 有 2 筆產出被寫入
-    assert len(artifact_models) == 2
+    assert len(artifact_models) == 1
 
     # 驗證產出的 Artifact 屬性是否正確
     artifact = artifact_models[0]
@@ -111,14 +126,12 @@ async def test_semantic_qa_pair_run_partial_failure_skips_none(uuid, mock_sessio
         Chapter(
             id=chapter_success_id,
             title="Success Chapter",
-            content="Content 1",
-            cleaned_content="This one will succeed."
+            content="Content 1"
         ),
         Chapter(
             id=chapter_failed_id,
             title="Failed Chapter",
-            content="Content 2",
-            cleaned_content="This one will raise an exception and return None."
+            content="Content 2"
         )
     ]
 
@@ -147,6 +160,18 @@ async def test_semantic_qa_pair_run_partial_failure_skips_none(uuid, mock_sessio
 
     mock_repository = MagicMock()
     mock_repository.insert_bulk_llm_artifact = AsyncMock()
+    mock_repository.fetch_current_artifacts = AsyncMock(
+        return_value=[
+            LlmArtifacts(
+                section_id=chapter_success_id,
+                output="cleaned 1"
+            ),
+            LlmArtifacts(
+                section_id=chapter_failed_id,
+                output="cleaned 2"
+            ),
+        ]
+    )
 
     # ---------------------------------------------------------
     # 3. 初始化受測類別 (SUT)
@@ -197,14 +222,12 @@ async def test_semantic_qa_pair_no_chapters_to_process(uuid, mock_session_factor
         Chapter(
             id=UUID("33df1d33-62a3-541f-b94f-49e73ddbfd9d"),
             title="Chapter 1",
-            content="Raw content",
-            cleaned_content=None  # 會被過濾掉
+            content="Raw content"
         ),
         Chapter(
             id=UUID("92f4ca7c-4fed-54e9-8597-de722f36ed8b"),
             title="Chapter 2",
-            content="Raw content",
-            cleaned_content=None  # 會被過濾掉
+            content="Raw content"
         )
     ]
     video_doc = VideoDocument(id=uuid, chapters=chapters)
@@ -217,6 +240,9 @@ async def test_semantic_qa_pair_no_chapters_to_process(uuid, mock_session_factor
 
     mock_repository = MagicMock()
     mock_repository.insert_bulk_llm_artifact = AsyncMock()
+    mock_repository.fetch_current_artifacts = AsyncMock(
+        return_value=[]
+    )
 
     # 3. 初始化 SUT
     stage = SemanticQaPair(
@@ -245,18 +271,19 @@ async def test_semantic_qa_pair_all_tasks_failed(uuid, mock_session_factory):
     # ---------------------------------------------------------
     # 1. 準備測試資料：有 2 個正常的章節
     # ---------------------------------------------------------
+    chapter_failed_id_1 = UUID("33df1d33-62a3-541f-b94f-49e73ddbfd9d")
+    chapter_failed_id_2 = UUID("92f4ca7c-4fed-54e9-8597-de722f36ed8b")
+
     chapters = [
         Chapter(
             id=UUID("33df1d33-62a3-541f-b94f-49e73ddbfd9d"),
             title="Chapter 1",
-            content="Raw content",
-            cleaned_content="Valid content 1"
+            content="Raw content"
         ),
         Chapter(
             id=UUID("92f4ca7c-4fed-54e9-8597-de722f36ed8b"),
             title="Chapter 2",
-            content="Raw content",
-            cleaned_content="Valid content 2"
+            content="Raw content"
         )
     ]
     video_doc = VideoDocument(id=uuid, chapters=chapters, speaker="AA")
@@ -275,6 +302,18 @@ async def test_semantic_qa_pair_all_tasks_failed(uuid, mock_session_factory):
 
     mock_repository = MagicMock()
     mock_repository.insert_bulk_llm_artifact = AsyncMock()
+    mock_repository.fetch_current_artifacts = AsyncMock(
+        return_value=[
+            LlmArtifacts(
+                section_id=chapter_failed_id_1,
+                output="cleaned 1"
+            ),
+            LlmArtifacts(
+                section_id=chapter_failed_id_2,
+                output="cleaned 2"
+            ),
+        ]
+    )
 
     # 3. 初始化 SUT
     stage = SemanticQaPair(
