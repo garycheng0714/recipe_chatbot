@@ -31,6 +31,7 @@ class VideoDocument(BaseModel):
     title: str | None = None
     url: str | None = None
     author: str | None = None
+    speaker: str | None = None
     language: str | None = None
     published_at: datetime | None = None
     description: List[ChapterDescription] | None = None

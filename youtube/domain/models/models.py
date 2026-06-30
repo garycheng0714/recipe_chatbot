@@ -70,6 +70,7 @@ class Source(Base):
     title:        Mapped[str]           = mapped_column(Text, nullable=False)
     url:          Mapped[str | None]    = mapped_column(Text, unique=True)
     author:       Mapped[str | None]    = mapped_column(Text)
+    speaker:      Mapped[str | None]    = mapped_column(Text)
     language:     Mapped[str]           = mapped_column(String(10), default="en")
     published_at: Mapped[datetime|None] = mapped_column(DateTime(timezone=True))
 
