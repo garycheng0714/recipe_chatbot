@@ -43,7 +43,7 @@ class QdrantRepository:
             ]
         )
 
-    async def upsert_batch_recipe(self, chunks: List[BaseChunk]):
+    async def upsert_batch_chunk(self, collection_name: str, chunks: List[BaseChunk]):
         texts = [chunk.to_embedding_text() for chunk in chunks]
 
         vectors = await self._compute_embeddings(texts)
@@ -62,7 +62,7 @@ class QdrantRepository:
             )
 
         await self.client.upsert(
-            collection_name=qdrant_settings.recipe_collection_name,
+            collection_name=collection_name,
             points=points
         )
 

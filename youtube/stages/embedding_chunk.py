@@ -2,11 +2,13 @@ import itertools
 
 from app.client import get_qdrant
 from app.database import AsyncSessionLocal
+from app.infrastructure.qdrant.config import qdrant_settings
 from app.repositories import QdrantRepository
 from app.repositories.yt_repository import YtRepository
 from youtube.domain.knowledge_chunk import KnowledgeChunk
 from youtube.domain.video_document import VideoDocument
 
+COLLECTION_NAME = qdrant_settings.interview_collection_name
 
 class EmbeddingChunksStage:
     def __init__(
@@ -26,6 +28,6 @@ class EmbeddingChunksStage:
         # 每 10 筆切成一個批次
         for chunks in itertools.batched(result, 10):
             models = [KnowledgeChunk.model_validate(chunk) for chunk in chunks]
-            await self.qdrant.upsert_batch_recipe(models)
+            await self.qdrant.upsert_batch_chunk(COLLECTION_NAME, models)
 
         return document

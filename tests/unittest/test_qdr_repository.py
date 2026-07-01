@@ -183,7 +183,7 @@ async def test_qdr_repository_upsert_batch_chunk(recipe):
 
     with patch.object(repository, "_compute_embeddings", new_callable=AsyncMock) as mock_computer_embeddings:
         mock_computer_embeddings.return_value = [[1], [2], [3]]
-        await repository.upsert_batch_recipe(chunks)
+        await repository.upsert_batch_chunk(MagicMock(), chunks)
 
         mock_computer_embeddings.assert_called_once()
         client.upsert.assert_called_once()
@@ -207,12 +207,15 @@ async def test_qdr_repository_upsert_batch_chunk(recipe_without_ingredients):
 
     with patch.object(repository, "_compute_embeddings", new_callable=AsyncMock) as mock_computer_embeddings:
         mock_computer_embeddings.return_value = [[1], [2], [3]]
-        await repository.upsert_batch_recipe(chunks)
+        await repository.upsert_batch_chunk("collection_name", chunks)
 
         mock_computer_embeddings.assert_called_once()
         client.upsert.assert_called_once()
         points = client.upsert.call_args.kwargs["points"]
         assert len(points) == 3
+
+        collection_name = client.upsert.call_args.kwargs["collection_name"]
+        assert collection_name == "collection_name"
 
         expected_payload = {
             "id": "123",

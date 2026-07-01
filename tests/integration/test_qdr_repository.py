@@ -195,7 +195,7 @@ async def test_qdr_repository_bulk_upsert_then_search(qdrant_client, recipe):
             InstructionChunk.from_recipe(recipe),
         ]
 
-        await qdr_repo.upsert_batch_recipe(chunks)
+        await qdr_repo.upsert_batch_chunk(qdrant_settings.recipe_collection_name, chunks)
 
         result = await qdr_repo.search_recipe("banana")
 

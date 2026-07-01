@@ -50,7 +50,7 @@ async def test_mark_event_completed(mock_session_factory):
     es.index_batch_document = AsyncMock()
 
     qdr = MagicMock()
-    qdr.upsert_batch_recipe = AsyncMock()
+    qdr.upsert_batch_chunk = AsyncMock()
 
     outbox = MagicMock()
     outbox.claim_events = AsyncMock()
@@ -68,7 +68,7 @@ async def test_mark_event_completed(mock_session_factory):
     outbox.mark_event_completed.assert_called_once()
 
     assert es.index_batch_document.call_count == 1
-    assert qdr.upsert_batch_recipe.call_count == 1
+    assert qdr.upsert_batch_chunk.call_count == 1
 
 
 # @pytest.mark.asyncio
