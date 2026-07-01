@@ -4,6 +4,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 class QdrantSettings(BaseSettings):
     recipe_collection_name: str = "recipes"
     intent_collection_name: str = "user_question_intent"
+    interview_collection_name: str = "yt_interview"
     vectors_size: int = 1024
     vectors_name: str = "dense"
 
