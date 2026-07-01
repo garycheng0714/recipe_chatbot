@@ -14,7 +14,7 @@ class ChunkMapper:
                     question=r.question,
                     answer=r.answer,
                     topic=r.topic,
-                    primary_speaker=speaker,
+                    speaker=speaker,
                     embedding_text=f"""
 Question:
 {r.question}

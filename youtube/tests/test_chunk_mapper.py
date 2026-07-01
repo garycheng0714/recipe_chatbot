@@ -41,7 +41,7 @@ def test_from_qa_pairs_success(session):
     assert chunk1.question == "什麼是 RAG？"
     assert chunk1.answer == "檢索增強生成技術。"
     assert chunk1.topic == "AI 技術"
-    assert chunk1.primary_speaker == "AA"
+    assert chunk1.speaker == "AA"
 
     # 驗證 embedding_text 的格式是否與 Mapper 中定義的多行字串一致
     expected_embedding_text_1 = f"""
@@ -60,7 +60,7 @@ Answer:
     assert chunk2.question == "什麼是 LLM？"
     assert chunk2.answer == "大型語言模型。"
     assert chunk2.topic == "AI 技術"
-    assert chunk2.primary_speaker == "AA"
+    assert chunk2.speaker == "AA"
 
 
 def test_from_qa_pairs_empty_results():

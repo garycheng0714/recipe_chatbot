@@ -93,7 +93,7 @@ async def test_convert_artifacts_to_chunks_stage_run_success(mock_session_factor
     assert chunk_1.question == "什麼是測試 1？"
     assert chunk_1.answer == "這是測試回答 1"
     assert chunk_1.topic == "單元測試"
-    assert chunk_1.primary_speaker == "AA"
+    assert chunk_1.speaker == "AA"
 
     # 驗證第二筆轉換出來的 Chunk 屬性
     chunk_2 = chunk_models[1]
@@ -102,4 +102,4 @@ async def test_convert_artifacts_to_chunks_stage_run_success(mock_session_factor
     assert chunk_2.question == "什麼是測試 2？"
     assert chunk_2.answer == "這是測試回答 2"
     assert chunk_2.topic == "整合測試"
-    assert chunk_1.primary_speaker == "AA"
+    assert chunk_1.speaker == "AA"

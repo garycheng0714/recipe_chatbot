@@ -49,6 +49,13 @@ class YtRepository:
         result = await session.execute(artifact_stmt)
         return result.scalars().all()
 
+    async def fetch_chunks(self, session: AsyncSession) -> Sequence[Chunk]:
+        result = await session.execute(
+            select(Chunk)
+        )
+
+        return result.scalars().all()
+
     async def get_video_by_uuid(self, session: AsyncSession, id: UUID):
         # 💡 使用 joinedload 一次性在資料庫層級完成組裝，效能極高
         stmt = (
