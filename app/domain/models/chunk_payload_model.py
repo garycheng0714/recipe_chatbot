@@ -17,7 +17,7 @@ class MainChunkPayload(ChunkPayload):
     chunk_type: str
 
 
-class ChunkPayload(ChunkPayload):
+class SubChunkPayload(ChunkPayload):
     id: str
     source: str
     chunk_type: Literal["overview", "instruction"]

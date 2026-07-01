@@ -1,7 +1,6 @@
 import pytest
 
 from app.domain.chunks import MainChunk, OverviewChunk, InstructionChunk
-from app.domain.models.chunk_payload_model import MainChunkPayload, ChunkPayload
 from web_crawler.schema.tasty_note_detail_schema import TastyNoteRecipe, Ingredient, Step
 
 normal_recipe = TastyNoteRecipe(
@@ -84,20 +83,18 @@ def test_main_chunk_get_payload(recipe):
     chunk = MainChunk.from_recipe(recipe)
     payload = chunk.get_payload()
 
-    assert isinstance(payload, MainChunkPayload)
-
-    assert payload.id == "123"
-    assert payload.name == "Test"
-    assert payload.source == "tasty-note"
-    assert payload.quantity == "1"
-    assert payload.category == "tw"
-    assert payload.tags == ["jp"]
-    assert payload.chunk_type == "title"
+    assert payload["id"] == "123"
+    assert payload["name"] == "Test"
+    assert payload["source"] == "tasty-note"
+    assert payload["quantity"] == "1"
+    assert payload["category"] == "tw"
+    assert payload["tags"] == ["jp"]
+    assert payload["chunk_type"] == "title"
 
 
 def test_main_chunk_get_payload_without_ingredient(recipe_without_ingredient):
     chunk = MainChunk.from_recipe(recipe_without_ingredient)
-    assert isinstance(chunk.get_payload(), MainChunkPayload)
+
     assert chunk.ingredients is None
     assert chunk.quantity is None
 
@@ -118,7 +115,7 @@ def test_overview_chunk_embed_content(recipe):
 
 def test_overview_chunk_get_payload(recipe):
     chunk = OverviewChunk.from_recipe(recipe)
-    assert isinstance(chunk.get_payload(), ChunkPayload)
+    assert isinstance(chunk.get_payload(), dict)
 
 
 def test_instruction_chunk_from_recipe(recipe):
@@ -138,4 +135,4 @@ def test_instruction_chunk_embed_content(recipe):
 
 def test_instruction_chunk_get_payload(recipe):
     chunk = InstructionChunk.from_recipe(recipe)
-    assert isinstance(chunk.get_payload(), ChunkPayload)
+    assert isinstance(chunk.get_payload(), dict)

@@ -4,7 +4,7 @@ from typing import Protocol, Literal
 from pydantic import BaseModel
 
 from app.domain.identity import create_canonical_id
-from app.domain.models.chunk_payload_model import MainChunkPayload, ChunkPayload
+from app.domain.models.chunk_payload_model import MainChunkPayload, ChunkPayload, SubChunkPayload
 from web_crawler.schema.tasty_note_detail_schema import TastyNoteRecipe
 
 
@@ -12,7 +12,7 @@ class BaseChunk(Protocol):
     def to_embedding_text(self) -> str:
         ...
 
-    def get_payload(self) -> ChunkPayload:
+    def get_payload(self) -> dict:
         ...
 
     def get_point_id(self) -> str:
@@ -59,10 +59,10 @@ class MainChunk(BaseModel):
         return create_canonical_id("recipe", self.source, self.id, self.chunk_type)
         return str(uuid.uuid5(uuid.NAMESPACE_DNS, f"recipe:{self.source}:{self.id}:{self.chunk_type}"))
 
-    def get_payload(self) -> ChunkPayload:
+    def get_payload(self) -> dict:
         return MainChunkPayload(
             **self.model_dump()
-        )
+        ).model_dump(exclude_none=True)
 
 
 class ChildChunk(BaseModel):
@@ -77,10 +77,10 @@ class ChildChunk(BaseModel):
     def get_point_id(self) -> str:
         return create_canonical_id("recipe", self.source, self.id, self.chunk_type)
 
-    def get_payload(self) -> ChunkPayload:
-        return ChunkPayload(
+    def get_payload(self) -> dict:
+        return SubChunkPayload(
             **self.model_dump()
-        )
+        ).model_dump(exclude_none=True)
 
 
 class OverviewChunk(ChildChunk):

@@ -38,7 +38,7 @@ class QdrantRepository:
                     vector={
                         qdrant_settings.vectors_name: vectors[0],
                     },
-                    payload=chunk.get_payload().model_dump(exclude_none=True),
+                    payload=chunk.get_payload(),
                 )
             ]
         )
@@ -57,7 +57,7 @@ class QdrantRepository:
                     vector={
                         qdrant_settings.vectors_name: vector,
                     },
-                    payload=chunk.get_payload().model_dump(exclude_none=True),
+                    payload=chunk.get_payload(),
                 )
             )
 
