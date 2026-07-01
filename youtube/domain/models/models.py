@@ -153,7 +153,7 @@ class Chunk(Base):
     answer: Mapped[str] = mapped_column(Text, nullable=False)
     embedding_text: Mapped[str] = mapped_column(Text, nullable=False)  # question + answer 組合後，實際拿去 embedding 的文字
     topic: Mapped[str] = mapped_column(String, nullable=True)
-    primary_speaker: Mapped[str] = mapped_column(String, nullable=True)
+    speaker: Mapped[str] = mapped_column(String, nullable=True)
     llm_artifact_id: Mapped[UUID] = mapped_column(UUID, ForeignKey("llm_artifacts.id"), nullable=True)  # 追溯到產生這個chunk的LLM呼叫
 
     created_at: Mapped[datetime] = mapped_column(
