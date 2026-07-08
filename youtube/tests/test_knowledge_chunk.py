@@ -6,9 +6,11 @@ from youtube.domain.models.models import Chunk
 
 def test_knowledge_chunk():
     id = uuid.uuid4()
+    section_id = uuid.uuid4()
 
     chunk = Chunk(
             id=id,
+            section_id=section_id,
             question="question",
             answer="answers",
             embedding_text="text",
@@ -21,6 +23,7 @@ def test_knowledge_chunk():
         "answer": "answers",
         "topic": "topic",
         "speaker": "speaker",
+        "section_id": section_id
     }
 
     chunk_model = KnowledgeChunk.model_validate(chunk)

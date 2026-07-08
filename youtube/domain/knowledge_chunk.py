@@ -5,6 +5,7 @@ from pydantic import ConfigDict, BaseModel
 
 class KnowledgeChunk(BaseModel):
     id: UUID
+    section_id: UUID
     question: str
     answer: str
     embedding_text: str
@@ -22,6 +23,7 @@ class KnowledgeChunk(BaseModel):
             "answer": self.answer,
             "topic": self.topic,
             "speaker": self.speaker,
+            "section_id": self.section_id,
         }
 
     def get_point_id(self) -> str:

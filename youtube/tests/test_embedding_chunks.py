@@ -12,6 +12,7 @@ def chunks():
     return [
         Chunk(
             id=uuid.uuid4(),
+            section_id=uuid.uuid4(),
             question="question",
             answer="answers",
             embedding_text="text",
@@ -20,6 +21,7 @@ def chunks():
         ),
         Chunk(
             id=uuid.uuid4(),
+            section_id=uuid.uuid4(),
             question="question",
             answer="answers",
             embedding_text="text",
@@ -32,6 +34,7 @@ def chunks():
 def more_chunks():
     chunk = Chunk(
         id=uuid.uuid4(),
+        section_id=uuid.uuid4(),
         question="question",
         answer="answers",
         embedding_text="text",
