@@ -11,6 +11,7 @@ class ChunkMapper:
             chunks.append(
                 Chunk(
                     section_id=pair.section_id,
+                    llm_artifact_id=pair.id,
                     question=r.question,
                     answer=r.answer,
                     topic=r.topic,

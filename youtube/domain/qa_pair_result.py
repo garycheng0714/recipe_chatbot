@@ -9,6 +9,7 @@ class QAPair(BaseModel):
     topic: str
 
 class QAPairResult(BaseModel):
+    id: UUID | None = None
     section_id: UUID | None = None
     results: list[QAPair] = Field(
         validation_alias=AliasChoices('results', 'output')

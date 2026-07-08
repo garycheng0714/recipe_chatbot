@@ -8,8 +8,10 @@ from youtube.domain.qa_pair_result import QAPairResult
 def test_from_qa_pairs_success(session):
     # 1. 準備測試資料 (Arrange)
     fake_section_id = uuid.uuid4()
+    llm_artifact_id = uuid.uuid4()
 
     raw_data = {
+        "id": llm_artifact_id,
         "section_id": fake_section_id,
         "output": [  # 測試 validation_alias 是否能正確解析 'output'
             {
@@ -38,6 +40,7 @@ def test_from_qa_pairs_success(session):
     chunk1 = chunks[0]
     assert isinstance(chunk1, Chunk)
     assert chunk1.section_id == fake_section_id
+    assert chunk1.llm_artifact_id == llm_artifact_id
     assert chunk1.question == "什麼是 RAG？"
     assert chunk1.answer == "檢索增強生成技術。"
     assert chunk1.topic == "AI 技術"
@@ -57,6 +60,7 @@ Answer:
     chunk2 = chunks[1]
     assert isinstance(chunk2, Chunk)
     assert chunk2.section_id == fake_section_id
+    assert chunk1.llm_artifact_id == llm_artifact_id
     assert chunk2.question == "什麼是 LLM？"
     assert chunk2.answer == "大型語言模型。"
     assert chunk2.topic == "AI 技術"

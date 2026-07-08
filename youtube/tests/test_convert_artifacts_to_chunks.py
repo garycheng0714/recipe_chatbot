@@ -1,5 +1,5 @@
+import uuid
 from unittest.mock import MagicMock, AsyncMock
-from uuid import UUID
 
 import pytest
 
@@ -21,8 +21,11 @@ from youtube.stages.convert_artifacts_to_chunks import ConvertArtifactsToChunksS
 async def test_convert_artifacts_to_chunks_stage_run_success(mock_session_factory):
     # 1. 準備測試資料 (Arrange)
     url = "https://www.example.com"
-    section_id_1 = UUID("33df1d33-62a3-541f-b94f-49e73ddbfd9d")
-    section_id_2 = UUID("33df1d33-62a3-541f-b94f-49e73ddbfd92")
+    section_id_1 = uuid.uuid4()
+    section_id_2 = uuid.uuid4()
+
+    llm_artifact_1 = uuid.uuid4()
+    llm_artifact_2 = uuid.uuid4()
 
     # 模擬外部傳入的 VideoDocument
     chapters = [
@@ -34,6 +37,7 @@ async def test_convert_artifacts_to_chunks_stage_run_success(mock_session_factor
     # 模擬從資料庫撈出的 LlmArtifacts 物件 (符合 Stage 內部預期的 qa pair 結構)
     mock_artifacts = [
         LlmArtifacts(
+            id=llm_artifact_1,
             section_id=section_id_1,
             stage="qa pair",
             output=[
@@ -42,6 +46,7 @@ async def test_convert_artifacts_to_chunks_stage_run_success(mock_session_factor
             is_current=True
         ),
         LlmArtifacts(
+            id=llm_artifact_2,
             section_id=section_id_2,
             stage="qa pair",
             output=[
