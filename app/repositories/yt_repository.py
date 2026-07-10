@@ -56,6 +56,14 @@ class YtRepository:
 
         return result.scalars().all()
 
+    async def fetch_chunks_by_section_id(self, session: AsyncSession, id: str) -> Sequence[Chunk]:
+        result = await session.execute(
+            select(Chunk)
+            .where(Chunk.section_id == id)
+        )
+
+        return result.scalars().all()
+
     async def get_video_by_uuid(self, session: AsyncSession, id: UUID):
         # 💡 使用 joinedload 一次性在資料庫層級完成組裝，效能極高
         stmt = (

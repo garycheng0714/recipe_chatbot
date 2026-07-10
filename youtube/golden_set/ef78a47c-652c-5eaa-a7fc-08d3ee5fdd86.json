@@ -1,0 +1,59 @@
+[
+  {
+    "section_id": "ce6ea461-4783-5be9-8fed-2329f7da057c",
+    "annotated_at": "2026-07-07",
+    "source_text": "There are a lot of different ways to train with running intensity and with paces. What are your thoughts on heart rate training? Do you train with heart rate, or do you use other methods to decide on your training intensity?\n\nI train with a heart rate monitor. I have a watch that I put on my hand.\n\nOh, wow. Absolutely, yes.\n\nNice, nice. I ran with your new Coros watch this morning for the very first time.\n\nGreat. And it's a very nice watch. So, I use it. And I have people who can help me to really read the data on the computer and on my phone, and explain more on how the training was. But the whole look for the old man is to see how the body is actually reacting towards the highest standards of training.\n\nYeah, that's really, really good to know. In 2017...\"",
+    "important_concepts": [
+      {
+        "concept_text": "Uses heart rate monitoring to determine training intensity",
+        "evidence_span": "train with a heart rate monitor"
+      },
+      {
+        "concept_text": "Has support from others to help interpret heart rate/training data",
+        "evidence_span": "read the data on the computer and on my phone, and explain more on how the training was"
+      },
+      {
+        "concept_text": "Understand and observe the body's response to high-intensity training through heart rate data.",
+        "evidence_span": "see how the body is actually reacting towards the highest standards of training"
+      }
+    ]
+  },
+  {
+    "section_id": "13612b15-6daa-523e-88b0-d07f3235ef8a",
+    "annotated_at": "2026-07-07",
+    "source_text": "What do you think is the most important part of training? If you look at the running component, is it the long run for you? Is it the training volume? Is it intensity? What do you think it is that really helps get you in the best shape possible?\n\nAll the training was actually important before the 159 challenge. Long runs were actually critical and crucial because it conduced my body to run at high speed for a very long time. Intensive training, like going for intervals or track, actually helped me to train my muscles to run very fast and be able to run at the same speed for a very long time.\n\nAnd on the other hand, the recovery runs helped my muscles to recover very fast. So all the runs, from speed work to fartlek to long run to semi-long run, were critical and crucial because it's a combination of everything.\n\nYeah, very well said. Very last short.",
+    "important_concepts": [
+      {
+        "concept_text": "進行全面性的訓練至關重要",
+        "evidence_span": "So all the runs, from speed work to fartlek to long run to semi-long run, were critical and crucial because it's a combination of everything"
+      },
+      {
+        "concept_text": "長跑可以訓練身體適應長時間高速奔跑",
+        "evidence_span": "Long runs were actually critical and crucial because it conduced my body to run at high speed for a very long time"
+      },
+      {
+        "concept_text": "高強度訓練可以鍛鍊出高速奔跑的肌肉",
+        "evidence_span": "Intensive training, like going for intervals or track, actually helped me to train my muscles to run very fast and be able to run at the same speed for a very long time."
+      },
+      {
+        "concept_text": "恢復跑可以加速肌肉恢復",
+        "evidence_span": "the recovery runs helped my muscles to recover very fast"
+      }
+    ]
+  },
+  {
+    "section_id": "33df1d33-62a3-541f-b94f-49e73ddbfd9d",
+    "annotated_at": "2026-07-10",
+    "source_text": "You tried to run your very first sub-two-hour marathon and you tried to break that. At that point, it didn't really go according to plan. You were so close, yet 25 seconds was the difference.\\n\\nThen, fast forward now, two years later, two and a half years later, all of a sudden, you decided to go at this again. What was the difference between the first race and the second race? What was the difference in approach between the first attempt to break a two-hour marathon and the second attempt to break a two-hour marathon?\\n\\nIt's really two different attempts. The first attempt, actually, is that me and the whole team would not know what would happen. We were daring, actually, to run under two hours. I was daring to run under two hours. I was thinking, I dared to think and I had to try to run under two hours. That's why I was saying, I was like a boxer going to the ring in 2017 without knowing whether I will win by points or by knockout, or if I'll be knocked out. I missed it by 25 seconds, but I consider that it was the most successful event ever because I was the first human being to dare to try to run.\\n\\nBut all in all, we transferred the huge experience from Monza to Vienna. We used that experience to really understand what had been missing. And that's why we achieved that run under two hours.\\n\\nRunning in 2017 was critically important to try and even miss it. But after that, we learned more on why we missed it. We learned more on knowing that you can still push, because many people are saying that maybe anything might happen after running even two hours flat. But after performing and running and feeling comfortable, then personally, I transferred my thinking to 2019. The whole team transferred a huge experience that they knew as far as organization is concerned. The year 2019, and that's why we achieved it as a team in Vienna.",
+    "important_concepts": [
+      {
+        "concept_text": "第一次嘗試馬拉松跑進兩小時",
+        "evidence_span": "You tried to run your very first sub-two-hour marathon and you tried to break that. At that point, it didn't really go according to plan. You were so close, yet 25 seconds was the difference"
+      },
+      {
+        "concept_text": "勇於嘗試挑戰",
+        "evidence_span": "I was thinking, I dared to think and I had to try to run under two hours. That's why I was saying, I was like a boxer going to the ring in 2017 without knowing whether I will win by points or by knockout, or if I'll be knocked out. I missed it by 25 seconds, but I consider that it was the most successful event ever because I was the first human being to dare to try to run."
+      }
+    ]
+  }
+]
