@@ -19,6 +19,7 @@ def test_knowledge_chunk():
         )
 
     expected_payload = {
+        "id": id,
         "question": "question",
         "answer": "answers",
         "topic": "topic",

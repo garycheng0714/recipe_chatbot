@@ -19,11 +19,12 @@ class KnowledgeChunk(BaseModel):
 
     def get_payload(self) -> dict:
         return {
+            "id": self.id,
+            "section_id": self.section_id,
             "question": self.question,
             "answer": self.answer,
             "topic": self.topic,
             "speaker": self.speaker,
-            "section_id": self.section_id,
         }
 
     def get_point_id(self) -> str:
