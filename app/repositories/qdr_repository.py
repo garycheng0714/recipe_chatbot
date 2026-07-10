@@ -3,7 +3,7 @@ from typing import List
 
 from httpx import AsyncClient
 from qdrant_client import AsyncQdrantClient
-from qdrant_client.conversions.common_types import GroupsResult
+from qdrant_client.conversions.common_types import GroupsResult, Record
 from qdrant_client.http.models import PointStruct, Filter, FieldCondition, MatchValue
 
 from app.domain.chunks import BaseChunk
@@ -26,6 +26,14 @@ class QdrantRepository:
         )
         resp.raise_for_status()
         return [item["embedding"] for item in resp.json()["data"]]
+
+    async def rerank(self):
+        resp = await self.embed_client.post(
+            "/rerank",
+            json={
+                "model": "BAAI/bge-reranker-v2-m3",
+            }
+        )
 
     async def upsert_recipe(self, chunk: BaseChunk):
         text = chunk.to_embedding_text()
@@ -93,6 +101,15 @@ class QdrantRepository:
             # query=models.FusionQuery(fusion=models.Fusion.RRF),  # 使用 RRF 融合
         )
 
+    async def query_points(self, vector: list[float], collection_name: str, limit: int = 2):
+        return await self.client.query_points(
+            collection_name=collection_name,
+            query=vector,
+            using=qdrant_settings.vectors_name,
+            limit=limit,
+            with_payload=True,
+        )
+
     async def search_recipe_groups(self, query_text: str, k: int):
         return await self.query_points_groups(query_text, k, qdrant_settings.recipe_collection_name)
 
@@ -144,6 +161,29 @@ class QdrantRepository:
                     )]
                 )
             )
+
+    async def find_all_points(self, collection_name: str, batch_size: int = 500,) -> list[Record]:
+        """用 Qdrant 向量搜尋找出近似重複 chunk"""
+
+        all_points = []
+        offset = None
+
+        # 1) 把所有 points 分頁拉完
+        while True:
+            points, next_offset = await self.client.scroll(
+                collection_name=collection_name,
+                limit=batch_size,
+                offset=offset,
+                with_payload=True,
+                with_vectors=True,
+            )
+            all_points.extend(points)
+
+            if next_offset is None:
+                break
+            offset = next_offset
+
+        return all_points
 
     # def create_index(self):
     #     # 1. 針對食材建立關鍵字索引 (支援：我有板豆腐，我想看能做什麼)
