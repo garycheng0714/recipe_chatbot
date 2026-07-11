@@ -226,6 +226,7 @@ async def test_qdr_repository_upsert_batch_chunk(recipe_without_ingredients):
         assert expected_payload in [p.payload for p in points]
 
 
+@pytest.mark.asyncio
 async def test_find_all_points_single_page():
     client = AsyncMock()
     embed_client = MagicMock()
@@ -256,6 +257,8 @@ async def test_find_all_points_single_page():
         with_vectors=True,
     )
 
+
+@pytest.mark.asyncio
 async def test_find_all_points_multiple_pages():
     client = AsyncMock()
     embed_client = MagicMock()
@@ -293,6 +296,8 @@ async def test_find_all_points_multiple_pages():
         with_vectors=True,
     )
 
+
+@pytest.mark.asyncio
 async def test_find_all_points_empty():
     client = AsyncMock()
     embed_client = MagicMock()

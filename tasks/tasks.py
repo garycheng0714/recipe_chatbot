@@ -6,6 +6,7 @@ from app.client import get_es, get_outbox_db, create_embed_client, create_qdr_cl
 from app.dependencies.qdrant import get_qdrant
 from app.database import AsyncSessionLocal
 from app.dto.distributed_payload import DistributedPayload
+from app.infrastructure.elasticsearch.config.recipe import RecipeConfig
 from app.infrastructure.qdrant.config import qdrant_settings
 from app.repositories import ElasticSearchRepository, QdrantRepository
 from app.repositories.outbox_repository import OutboxRepository
@@ -67,7 +68,7 @@ async def sync_to_distributed_db(
             for p in payloads
         ]
 
-        await es.index_batch_document(documents)
+        await es.index_batch_document(RecipeConfig.index_name(), documents)
         await qdr.upsert_batch_chunk(qdrant_settings.recipe_collection_name, chunks)
 
         async with session_factory() as session:

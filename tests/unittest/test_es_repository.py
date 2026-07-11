@@ -1,9 +1,10 @@
-import uuid
 from unittest.mock import AsyncMock, patch
 
 import pytest
 
 from app.domain.document import RecipeDocument
+from app.infrastructure.elasticsearch.config.recipe import RecipeConfig
+from app.infrastructure.elasticsearch.config.recipe_for_test import RecipeTestConfig
 from app.repositories import ElasticSearchRepository
 from web_crawler.schema.tasty_note_detail_schema import TastyNoteRecipe, Ingredient, Step
 
@@ -42,7 +43,7 @@ async def test_es_repo_index_recipe_document(recipe):
     repo = ElasticSearchRepository(client)
 
     document = RecipeDocument.from_recipe(recipe)
-    await repo.index_document(document)
+    await repo.index_document(RecipeTestConfig.index_name(), document)
 
     expected_payload = {
         'id': '123',
@@ -68,7 +69,7 @@ async def test_es_repo_index_recipe_document_without_ingredients(recipe_without_
     repo = ElasticSearchRepository(client)
 
     document = RecipeDocument.from_recipe(recipe_without_ingredients)
-    await repo.index_document(document)
+    await repo.index_document(RecipeTestConfig.index_name(), document)
 
     expected_payload = {
         'id': '123',
@@ -115,7 +116,7 @@ async def test_es_repo_index_batch_recipe_document(recipe, recipe_without_ingred
     }
 
     with patch("app.repositories.es_repository.async_bulk", new=AsyncMock()) as mock_async_bulk:
-        await repo.index_batch_document([document, document2])
+        await repo.index_batch_document(RecipeTestConfig.index_name(), [document, document2])
 
         mock_async_bulk.assert_called_once_with(
             client=client,

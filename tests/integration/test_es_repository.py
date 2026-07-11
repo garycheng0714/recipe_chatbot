@@ -90,7 +90,7 @@ pytestmark = pytest.mark.asyncio(loop_scope="session")
 async def setup(es_repo, es_client, recipe, index_name):
     document = RecipeDocument.from_recipe(recipe)
 
-    await es_repo.index_document(document)
+    await es_repo.index_document(index_name, document)
 
     # refresh 讓文件立刻可被搜尋
     await es_client.indices.refresh(index=index_name)
@@ -100,7 +100,7 @@ async def setup(es_repo, es_client, recipe, index_name):
 async def bulk_setup(es_client, es_repo, index_name, recipe):
     document = RecipeDocument.from_recipe(recipe)
 
-    await es_repo.index_batch_document([document])
+    await es_repo.index_batch_document(index_name, [document])
     await es_client.indices.refresh(index=index_name)
 
 
@@ -110,7 +110,7 @@ async def test_indexes_parent_and_children(setup, recipe, es_repo, es_client, in
 
 
 async def test_search_name_in_parent_chunk(setup, recipe, es_repo, es_client, index_name):
-    result = await es_repo.search("banana")
+    result = await es_repo.search(index_name, "banana")
     hits = EsPointsModel(**result).hits.hits
 
     assert len(hits) == 1
@@ -120,22 +120,22 @@ async def test_search_name_in_parent_chunk(setup, recipe, es_repo, es_client, in
 async def test_index_twice_then_search_one_result(setup, recipe, es_repo, es_client, index_name):
     document = RecipeDocument.from_recipe(recipe)
 
-    await es_repo.index_document(document)
+    await es_repo.index_document(index_name, document)
     await es_client.indices.refresh(index=index_name)
 
-    result = await es_repo.search("banana")
+    result = await es_repo.search(index_name, "banana")
     hits = EsPointsModel(**result).hits.hits
     assert len(hits) == 1
 
 
 async def test_search_keyword_in_parent_and_child_chunk(setup, recipe, es_repo, es_client, index_name):
-    result = await es_repo.search("jp")
+    result = await es_repo.search(index_name, "jp")
     hits = EsPointsModel(**result).hits.hits
     assert len(hits) == 1
 
 
 async def test_search_description(setup, recipe, es_repo, es_client, index_name):
-    result = await es_repo.search("Good fruit")
+    result = await es_repo.search(index_name, "Good fruit")
     hits = EsPointsModel(**result).hits.hits
 
     assert len(hits) == 1
@@ -146,7 +146,7 @@ async def test_search_description(setup, recipe, es_repo, es_client, index_name)
 
 
 async def test_search_instruction(setup, recipe, es_repo, es_client, index_name):
-    result = await es_repo.search("搗碎")
+    result = await es_repo.search(index_name, "搗碎")
     hits = EsPointsModel(**result).hits.hits
 
     assert len(hits) == 1
@@ -169,7 +169,7 @@ async def test_search_instruction(setup, recipe, es_repo, es_client, index_name)
 
 
 async def test_search_no_results(setup, recipe, es_repo, es_client, index_name):
-    result = await es_repo.search("apple")
+    result = await es_repo.search(index_name, "apple")
     hits = EsPointsModel(**result).hits.hits
 
     assert len(hits) == 0
@@ -183,7 +183,7 @@ async def test_index_bulk_chunk(bulk_setup, recipe, es_client, index_name):
 async def test_the_idempotence_of_index_bulk_chunk(bulk_setup, recipe, es_client, es_repo, index_name):
     document = RecipeDocument.from_recipe(recipe)
 
-    await es_repo.index_batch_document([document])
+    await es_repo.index_batch_document(index_name, [document])
     await es_client.indices.refresh(index=index_name)
 
     result = await es_client.count(index=index_name)

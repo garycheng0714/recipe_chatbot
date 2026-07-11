@@ -4,29 +4,26 @@ from elasticsearch import AsyncElasticsearch
 from elasticsearch.helpers import async_bulk
 
 from app.domain.document import BaseDocument
-from app.infrastructure.elasticsearch.config.recipe import RecipeConfig
 
 
 class ElasticSearchRepository:
     def __init__(self, es_client: AsyncElasticsearch):
         self.client = es_client
-        self.index_name = RecipeConfig.index_name()
 
-
-    async def index_document(self, document: BaseDocument):
+    async def index_document(self, index_name: str, document: BaseDocument):
         await self.client.index(
-            index=self.index_name,
+            index=index_name,
             id=document.get_id(),
             document=document.get_payload().model_dump(exclude_none=True),
         )
 
-    async def index_batch_document(self, documents: List[BaseDocument]):
+    async def index_batch_document(self, index_name: str, documents: List[BaseDocument]):
         if not documents:
             return
 
         actions = [
             {
-                "_index": self.index_name,
+                "_index": index_name,
                 "_id": document.get_id(),
                 "_source": document.get_payload().model_dump(exclude_none=True),
             }
@@ -38,9 +35,9 @@ class ElasticSearchRepository:
             actions=actions
         )
 
-    async def search(self, query_text: str, size: int = 5):
+    async def search(self, index_name: str, query_text: str, size: int = 5):
         return await self.client.search(
-            index=self.index_name,
+            index=index_name,
             query={
                 # "match": {
                 #     "tags": query
