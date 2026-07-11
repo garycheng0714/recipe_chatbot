@@ -1,4 +1,4 @@
-from app.infrastructure.elasticsearch.config import get_index_name, get_body_config, AnalyzerMode
+from app.infrastructure.elasticsearch.config.recipe import RecipeConfig
 from app.infrastructure.qdrant.config import qdrant_settings
 
 class InfrastructureInitializer:
@@ -33,8 +33,8 @@ class InfrastructureInitializer:
 
     async def init_elasticsearch(self):
         # 建立 Index 並設定 Mapping (例如將 ingredients 設為 nested)
-        index_name = get_index_name()
-        index_body = get_body_config(AnalyzerMode.IK)
+        index_name = RecipeConfig.index_name()
+        index_body = RecipeConfig.get_index_config()
 
         exists = await self.es_client.indices.exists(index=index_name)
         if not exists:

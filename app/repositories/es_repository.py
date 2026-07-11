@@ -1,17 +1,16 @@
-import uuid
 from typing import List
 
 from elasticsearch import AsyncElasticsearch
 from elasticsearch.helpers import async_bulk
 
 from app.domain.document import BaseDocument
-from app.infrastructure.elasticsearch.config import get_index_name
+from app.infrastructure.elasticsearch.config.recipe import RecipeConfig
 
 
 class ElasticSearchRepository:
     def __init__(self, es_client: AsyncElasticsearch):
         self.client = es_client
-        self.index_name = get_index_name()
+        self.index_name = RecipeConfig.index_name()
 
 
     async def index_document(self, document: BaseDocument):

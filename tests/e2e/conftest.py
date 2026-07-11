@@ -10,7 +10,7 @@ from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
 from qdrant_client.models import VectorParams, Distance
 
 from app.database import Base
-from app.infrastructure.elasticsearch.config import get_index_name, get_body_config, AnalyzerMode
+from app.infrastructure.elasticsearch.config.recipe import RecipeConfig
 from app.infrastructure.qdrant.config import qdrant_settings
 from app.repositories import ElasticSearchRepository
 
@@ -47,12 +47,12 @@ async def es_client(es_container):
 async def es_repo(es_client):
     """建立 index，回傳 repo，session 結束後刪掉 index"""
     # 建立 index（含 mapping）
-    index_name = get_index_name()
+    index_name = RecipeConfig.index_name()
 
     if not await es_client.indices.exists(index=index_name):
         await es_client.indices.create(
             index=index_name,
-            body=get_body_config(AnalyzerMode.STANDARD)
+            body=RecipeConfig.get_index_config()
         )
     repo = ElasticSearchRepository(es_client)
     yield repo

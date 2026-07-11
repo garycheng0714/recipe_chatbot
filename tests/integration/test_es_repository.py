@@ -4,9 +4,9 @@ from elasticsearch import AsyncElasticsearch
 from testcontainers.elasticsearch import ElasticSearchContainer
 
 from app.domain.document import RecipeDocument
+from app.infrastructure.elasticsearch.config.recipe_for_test import RecipeTestConfig
 from app.repositories import ElasticSearchRepository
 
-from app.infrastructure.elasticsearch.config import get_index_name, get_body_config, AnalyzerMode
 from app.domain.models import EsPointsModel
 from web_crawler.schema.tasty_note_detail_schema import TastyNoteRecipe, Ingredient, Step
 
@@ -39,12 +39,12 @@ async def es_client(es_container):
 async def es_repo(es_client):
     """建立 index，回傳 repo，session 結束後刪掉 index"""
     # 建立 index（含 mapping）
-    index_name = get_index_name()
+    index_name = RecipeTestConfig.index_name()
 
     if not await es_client.indices.exists(index=index_name):
         await es_client.indices.create(
             index=index_name,
-            body=get_body_config(AnalyzerMode.STANDARD)
+            body=RecipeTestConfig.get_index_config()
         )
     repo = ElasticSearchRepository(es_client)
     yield repo
@@ -56,7 +56,7 @@ async def cleanup_docs(es_client):
     """每個 test 結束後清空文件，避免測試間互相污染"""
     yield
     await es_client.delete_by_query(
-        index=get_index_name(),
+        index=RecipeTestConfig.index_name(),
         body={"query": {"match_all": {}}},
         conflicts="proceed",
         refresh=True,
@@ -80,7 +80,7 @@ def recipe():
 
 @pytest.fixture
 def index_name():
-    return get_index_name()
+    return RecipeTestConfig.index_name()
 
 
 pytestmark = pytest.mark.asyncio(loop_scope="session")
