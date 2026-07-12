@@ -4,6 +4,7 @@ from elasticsearch import AsyncElasticsearch
 from elasticsearch.helpers import async_bulk
 
 from app.domain.document import BaseDocument
+from youtube.domain.knowledge_chunk import KnowledgeChunk
 
 
 class ElasticSearchRepository:
@@ -17,7 +18,7 @@ class ElasticSearchRepository:
             document=document.get_payload().model_dump(exclude_none=True),
         )
 
-    async def index_batch_document(self, index_name: str, documents: List[BaseDocument]):
+    async def index_batch_document(self, index_name: str, documents: list[BaseDocument]):
         if not documents:
             return
 
@@ -26,6 +27,24 @@ class ElasticSearchRepository:
                 "_index": index_name,
                 "_id": document.get_id(),
                 "_source": document.get_payload().model_dump(exclude_none=True),
+            }
+            for document in documents
+        ]
+
+        await async_bulk(
+            client=self.client,
+            actions=actions
+        )
+
+    async def index_batch_yt_document(self, index_name: str, documents: list[KnowledgeChunk]):
+        if not documents:
+            return
+
+        actions = [
+            {
+                "_index": index_name,
+                "_id": document.get_point_id(),
+                "_source": document.get_payload(),
             }
             for document in documents
         ]
