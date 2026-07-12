@@ -4,7 +4,6 @@ from unittest.mock import AsyncMock, patch
 import pytest
 
 from app.domain.document import RecipeDocument
-from app.infrastructure.elasticsearch.config.recipe import RecipeConfig
 from app.infrastructure.elasticsearch.config.recipe_for_test import RecipeTestConfig
 from app.infrastructure.elasticsearch.config.yt_interview import YtInterviewConfig
 from app.repositories import ElasticSearchRepository
@@ -173,12 +172,12 @@ async def test_es_repo_index_batch_recipe_document(recipe, recipe_without_ingred
             client=client,
             actions=[
                 {
-                    "_index": "yt-interview",
+                    "_index": "yt_interview",
                     "_id": knowledge_1.get_point_id(),
                     "_source": expected_payload
                 },
                 {
-                    "_index": "yt-interview",
+                    "_index": "yt_interview",
                     "_id": knowledge_2.get_point_id(),
                     "_source": expected_payload2
                 }

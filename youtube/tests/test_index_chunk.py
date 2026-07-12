@@ -66,7 +66,7 @@ async def test_insert_chunk(mock_session_factory, chunks):
     args, _ = es_repo.index_batch_yt_document.call_args
 
     collection_name = args[0]
-    assert collection_name == "yt-interview"
+    assert collection_name == "yt_interview"
 
     models = args[1]
     assert models == [KnowledgeChunk.model_validate(c) for c in chunks]

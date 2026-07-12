@@ -8,7 +8,7 @@ class YtInterviewConfig(ElasticSearchConfig):
 
     @classmethod
     def index_name(cls) -> str:
-        return "yt-interview"
+        return "yt_interview"
 
     @classmethod
     def get_analysis_settings(cls) -> Dict[str, Any]:
