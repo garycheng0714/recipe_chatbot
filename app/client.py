@@ -3,14 +3,17 @@ from elasticsearch import AsyncElasticsearch
 from qdrant_client import AsyncQdrantClient
 from typing import AsyncGenerator
 from app.database import ES_URL, QDRANT_URL, EMBED_URL
+from app.hydrator.recipe.recipe_hydrator import RecipeHydrator
 from app.infrastructure.elasticsearch.config.recipe import RecipeConfig
-from app.infrastructure.qdrant.config import RecipeQdrantSetting
+from app.infrastructure.elasticsearch.config.yt_interview import YtInterviewConfig
+from app.infrastructure.qdrant.config import RecipeQdrantSetting, YtQdrantSetting
 from app.repositories import (
     PgRepository,
     ElasticSearchRepository
 )
 from app.repositories.outbox_repository import OutboxRepository
 from app.repositories.qdr_repository import QdrantRepository
+from app.repositories.yt_repository import YtRepository
 from app.retriever.es_retriever import ElasticSearchRetriever
 from app.retriever.hybrid_retriever import HybridRetriever
 from app.retriever.qdr_retriever import QdrantRetriever
@@ -23,6 +26,10 @@ async def get_db() -> AsyncGenerator:
 
 async def get_outbox_db() -> AsyncGenerator:
     db_instance = OutboxRepository()
+    yield db_instance
+
+async def get_yt_db() -> AsyncGenerator:
+    db_instance = YtRepository()
     yield db_instance
 
 
@@ -41,6 +48,11 @@ def get_es():
 def get_es_retriever():
     return ElasticSearchRetriever(
         get_es()
+    )
+
+def get_yt_es_retriever():
+    return ElasticSearchRetriever(
+        ElasticSearchRepository(es_client, YtInterviewConfig())
     )
 
 
@@ -66,14 +78,31 @@ def get_qdrant():
     qdr_repo = QdrantRepository(RecipeQdrantSetting(), qdr_client, embed_client)
     yield qdr_repo
 
+def get_yt_qdrant():
+    qdr_repo = QdrantRepository(YtQdrantSetting(), qdr_client, embed_client)
+    yield qdr_repo
+
 def get_qdr_retriever():
     qdr_repo = QdrantRepository(RecipeQdrantSetting(), qdr_client, embed_client)
+    return QdrantRetriever(qdr_repo)
+
+def get_yt_qdr_retriever():
+    qdr_repo = QdrantRepository(YtQdrantSetting(), qdr_client, embed_client)
     return QdrantRetriever(qdr_repo)
 
 def get_hybrid_retriever():
     hybrid_retriever = HybridRetriever(
         es_retriever=get_es_retriever(),
         qdr_retriever=get_qdr_retriever()
+    )
+
+    return hybrid_retriever
+
+
+def get_yt_hybrid_retriever():
+    hybrid_retriever = HybridRetriever(
+        es_retriever=get_yt_es_retriever(),
+        qdr_retriever=get_yt_qdr_retriever()
     )
 
     return hybrid_retriever

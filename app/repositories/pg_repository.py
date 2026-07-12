@@ -150,17 +150,6 @@ class PgRepository:
         result = await session.execute(stmt)
         return result.scalars().all()
 
-        for r in recipe:
-            stmt = (
-                select(PgRecipeModel)
-                .where(PgRecipeModel.id == r.id)
-            )
-
-            result = await session.execute(stmt)
-            obj_list.append(result.scalar_one_or_none())
-
-        return obj_list
-
     async def reset_stale_events(self, session: AsyncSession, cut_off: datetime):
         # 1. 先找出過期的 ID，並鎖定它們（自動跳過已被其他實例鎖定的資料）
         select_stmt = (
