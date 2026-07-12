@@ -5,13 +5,14 @@ from qdrant_client.conversions.common_types import Record
 
 from app.client import qdr_client, embed_client
 from app.inference.nli.classifier import NLIClassifier
+from app.infrastructure.qdrant.config import YtQdrantSetting
 from app.repositories import QdrantRepository
 
 
 class DuplicateDetection:
     def __init__(
         self,
-        qdrant: QdrantRepository = QdrantRepository(qdr_client, embed_client),
+        qdrant: QdrantRepository = QdrantRepository(YtQdrantSetting(), qdr_client, embed_client),
         classifier: NLIClassifier = NLIClassifier(),
         collection_name: str = "yt_interview",
         max_concurrency: int = 20,
@@ -37,7 +38,7 @@ class DuplicateDetection:
 
 
     async def _find_duplicate_candidates(self):
-        all_points = await self.qdrant.find_all_points(self.collection_name)
+        all_points = await self.qdrant.find_all_points()
 
         tasks = [self.find_near_duplicates(p) for p in all_points]
 
