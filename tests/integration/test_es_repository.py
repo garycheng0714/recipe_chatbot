@@ -39,16 +39,16 @@ async def es_client(es_container):
 async def es_repo(es_client):
     """建立 index，回傳 repo，session 結束後刪掉 index"""
     # 建立 index（含 mapping）
-    index_name = RecipeTestConfig.index_name()
+    config = RecipeTestConfig()
 
-    if not await es_client.indices.exists(index=index_name):
+    if not await es_client.indices.exists(index=config.index_name):
         await es_client.indices.create(
-            index=index_name,
-            body=RecipeTestConfig.get_index_config()
+            index=config.index_name,
+            body=config.index_config
         )
-    repo = ElasticSearchRepository(es_client)
+    repo = ElasticSearchRepository(es_client, config)
     yield repo
-    await es_client.indices.delete(index=index_name, ignore_unavailable=True)
+    await es_client.indices.delete(index=config.index_name, ignore_unavailable=True)
 
 
 @pytest_asyncio.fixture(autouse=True)
@@ -56,7 +56,7 @@ async def cleanup_docs(es_client):
     """每個 test 結束後清空文件，避免測試間互相污染"""
     yield
     await es_client.delete_by_query(
-        index=RecipeTestConfig.index_name(),
+        index=RecipeTestConfig().index_name,
         body={"query": {"match_all": {}}},
         conflicts="proceed",
         refresh=True,
@@ -80,62 +80,62 @@ def recipe():
 
 @pytest.fixture
 def index_name():
-    return RecipeTestConfig.index_name()
+    return RecipeTestConfig().index_name
 
 
 pytestmark = pytest.mark.asyncio(loop_scope="session")
 
 
 @pytest_asyncio.fixture
-async def setup(es_repo, es_client, recipe, index_name):
+async def setup(es_repo, es_client, recipe):
     document = RecipeDocument.from_recipe(recipe)
 
-    await es_repo.index_document(index_name, document)
+    await es_repo.index_document(document)
 
     # refresh 讓文件立刻可被搜尋
-    await es_client.indices.refresh(index=index_name)
+    await es_client.indices.refresh(index=es_repo.config.index_name)
 
 
 @pytest_asyncio.fixture
 async def bulk_setup(es_client, es_repo, index_name, recipe):
     document = RecipeDocument.from_recipe(recipe)
 
-    await es_repo.index_batch_document(index_name, [document])
-    await es_client.indices.refresh(index=index_name)
+    await es_repo.index_batch_document([document])
+    await es_client.indices.refresh(index=es_repo.config.index_name)
 
 
-async def test_indexes_parent_and_children(setup, recipe, es_repo, es_client, index_name):
-    result = await es_client.count(index=index_name)
+async def test_indexes_parent_and_children(setup, recipe, es_repo, es_client):
+    result = await es_client.count(index=es_repo.config.index_name)
     assert result["count"] == 1  # 至少 parent chunk 存進去了
 
 
-async def test_search_name_in_parent_chunk(setup, recipe, es_repo, es_client, index_name):
-    result = await es_repo.search(index_name, "banana")
+async def test_search_name_in_parent_chunk(setup, recipe, es_repo, es_client):
+    result = await es_repo.search("banana")
     hits = EsPointsModel(**result).hits.hits
 
     assert len(hits) == 1
     assert hits[0].field_source.name == "banana"
 
 
-async def test_index_twice_then_search_one_result(setup, recipe, es_repo, es_client, index_name):
+async def test_index_twice_then_search_one_result(setup, recipe, es_repo, es_client):
     document = RecipeDocument.from_recipe(recipe)
 
-    await es_repo.index_document(index_name, document)
-    await es_client.indices.refresh(index=index_name)
+    await es_repo.index_document(document)
+    await es_client.indices.refresh(index=es_repo.config.index_name)
 
-    result = await es_repo.search(index_name, "banana")
+    result = await es_repo.search("banana")
     hits = EsPointsModel(**result).hits.hits
     assert len(hits) == 1
 
 
-async def test_search_keyword_in_parent_and_child_chunk(setup, recipe, es_repo, es_client, index_name):
-    result = await es_repo.search(index_name, "jp")
+async def test_search_keyword_in_parent_and_child_chunk(setup, recipe, es_repo, es_client):
+    result = await es_repo.search("jp")
     hits = EsPointsModel(**result).hits.hits
     assert len(hits) == 1
 
 
-async def test_search_description(setup, recipe, es_repo, es_client, index_name):
-    result = await es_repo.search(index_name, "Good fruit")
+async def test_search_description(setup, recipe, es_repo, es_client):
+    result = await es_repo.search("Good fruit")
     hits = EsPointsModel(**result).hits.hits
 
     assert len(hits) == 1
@@ -145,8 +145,8 @@ async def test_search_description(setup, recipe, es_repo, es_client, index_name)
     assert data.id == f"{recipe.id}"
 
 
-async def test_search_instruction(setup, recipe, es_repo, es_client, index_name):
-    result = await es_repo.search(index_name, "搗碎")
+async def test_search_instruction(setup, recipe, es_repo, es_client):
+    result = await es_repo.search("搗碎")
     hits = EsPointsModel(**result).hits.hits
 
     assert len(hits) == 1
@@ -168,23 +168,23 @@ async def test_search_instruction(setup, recipe, es_repo, es_client, index_name)
 #     assert hits[0].field_source.id == "r1"
 
 
-async def test_search_no_results(setup, recipe, es_repo, es_client, index_name):
-    result = await es_repo.search(index_name, "apple")
+async def test_search_no_results(setup, recipe, es_repo, es_client):
+    result = await es_repo.search("apple")
     hits = EsPointsModel(**result).hits.hits
 
     assert len(hits) == 0
 
 
-async def test_index_bulk_chunk(bulk_setup, recipe, es_client, index_name):
-    result = await es_client.count(index=index_name)
+async def test_index_bulk_chunk(bulk_setup, recipe, es_client, es_repo):
+    result = await es_client.count(index=es_repo.config.index_name)
     assert result["count"] == 1
 
 
-async def test_the_idempotence_of_index_bulk_chunk(bulk_setup, recipe, es_client, es_repo, index_name):
+async def test_the_idempotence_of_index_bulk_chunk(bulk_setup, recipe, es_client, es_repo):
     document = RecipeDocument.from_recipe(recipe)
 
-    await es_repo.index_batch_document(index_name, [document])
-    await es_client.indices.refresh(index=index_name)
+    await es_repo.index_batch_document([document])
+    await es_client.indices.refresh(index=es_repo.config.index_name)
 
-    result = await es_client.count(index=index_name)
+    result = await es_client.count(index=es_repo.config.index_name)
     assert result["count"] == 1

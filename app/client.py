@@ -3,6 +3,8 @@ from elasticsearch import AsyncElasticsearch
 from qdrant_client import AsyncQdrantClient
 from typing import AsyncGenerator
 from app.database import ES_URL, QDRANT_URL, EMBED_URL
+from app.infrastructure.elasticsearch.config.recipe import RecipeConfig
+from app.infrastructure.qdrant.config import RecipeQdrantSetting
 from app.repositories import (
     PgRepository,
     ElasticSearchRepository
@@ -34,11 +36,11 @@ es_client = AsyncElasticsearch(
 )
 
 def get_es():
-    return ElasticSearchRepository(es_client)
+    return ElasticSearchRepository(es_client, RecipeConfig())
 
 def get_es_retriever():
     return ElasticSearchRetriever(
-        ElasticSearchRepository(es_client)
+        get_es()
     )
 
 
@@ -61,11 +63,11 @@ def create_embed_client() -> httpx.AsyncClient:
     )
 
 def get_qdrant():
-    qdr_repo = QdrantRepository(qdr_client, embed_client)
+    qdr_repo = QdrantRepository(RecipeQdrantSetting(), qdr_client, embed_client)
     yield qdr_repo
 
 def get_qdr_retriever():
-    qdr_repo = QdrantRepository(qdr_client, embed_client)
+    qdr_repo = QdrantRepository(RecipeQdrantSetting(), qdr_client, embed_client)
     return QdrantRetriever(qdr_repo)
 
 def get_hybrid_retriever():

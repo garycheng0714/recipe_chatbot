@@ -10,8 +10,8 @@ from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
 from qdrant_client.models import VectorParams, Distance
 
 from app.database import Base
-from app.infrastructure.elasticsearch.config.recipe import RecipeConfig
-from app.infrastructure.qdrant.config import qdrant_settings
+from app.infrastructure.elasticsearch.config.recipe_for_test import RecipeTestConfig
+from app.infrastructure.qdrant.config import RecipeQdrantSetting
 from app.repositories import ElasticSearchRepository
 
 
@@ -47,29 +47,29 @@ async def es_client(es_container):
 async def es_repo(es_client):
     """建立 index，回傳 repo，session 結束後刪掉 index"""
     # 建立 index（含 mapping）
-    index_name = RecipeConfig.index_name()
+    setting = RecipeTestConfig()
 
-    if not await es_client.indices.exists(index=index_name):
+    if not await es_client.indices.exists(index=setting.index_name):
         await es_client.indices.create(
-            index=index_name,
-            body=RecipeConfig.get_index_config()
+            index=setting.index_name,
+            body=setting.index_config
         )
-    repo = ElasticSearchRepository(es_client)
+    repo = ElasticSearchRepository(es_client, setting)
     yield repo
-    await es_client.indices.delete(index=index_name, ignore_unavailable=True)
+    await es_client.indices.delete(index=setting.index_name, ignore_unavailable=True)
 
 @pytest.fixture(scope="session")
 async def qdrant_client():
-    collection_name = qdrant_settings.recipe_collection_name
+    setting = RecipeQdrantSetting()
 
     client = AsyncQdrantClient(":memory:")
 
-    if not await client.collection_exists(collection_name):
+    if not await client.collection_exists(setting.collection_name):
         await client.create_collection(
-            collection_name=collection_name,
+            collection_name=setting.collection_name,
             vectors_config={
-                qdrant_settings.vectors_name: VectorParams(
-                    size=qdrant_settings.vectors_size,  # BGE-M3 的維度
+                setting.vectors_name: VectorParams(
+                    size=setting.vectors_size,  # BGE-M3 的維度
                     distance=Distance.COSINE
                 )
             }

@@ -7,12 +7,18 @@ from qdrant_client.conversions.common_types import GroupsResult, Record
 from qdrant_client.http.models import PointStruct, Filter, FieldCondition, MatchValue
 
 from app.domain.chunks import BaseChunk
-from app.infrastructure.qdrant.config import qdrant_settings
+from app.infrastructure.qdrant.config import QdrantSettings
 
 _embed_executor = ThreadPoolExecutor(max_workers=1)  # 限制只用 1 條線跑 embedding
 
 class QdrantRepository:
-    def __init__(self, client: AsyncQdrantClient, embed_client: AsyncClient):
+    def __init__(
+        self,
+        setting: QdrantSettings,
+        client: AsyncQdrantClient,
+        embed_client: AsyncClient
+    ):
+        self.setting = setting
         self.client = client
         self.embed_client = embed_client
 
@@ -39,19 +45,19 @@ class QdrantRepository:
         text = chunk.to_embedding_text()
         vectors = await self._compute_embeddings([text])
         await self.client.upsert(
-            collection_name=qdrant_settings.recipe_collection_name,
+            collection_name=self.setting.collection_name,
             points=[
                 PointStruct(
                     id=chunk.get_point_id(),
                     vector={
-                        qdrant_settings.vectors_name: vectors[0],
+                        self.setting.vectors_name: vectors[0],
                     },
                     payload=chunk.get_payload(),
                 )
             ]
         )
 
-    async def upsert_batch_chunk(self, collection_name: str, chunks: List[BaseChunk]):
+    async def upsert_batch_chunk(self, chunks: List[BaseChunk]):
         texts = [chunk.to_embedding_text() for chunk in chunks]
 
         vectors = await self._compute_embeddings(texts)
@@ -63,65 +69,62 @@ class QdrantRepository:
                 PointStruct(
                     id=chunk.get_point_id(),
                     vector={
-                        qdrant_settings.vectors_name: vector,
+                        self.setting.vectors_name: vector,
                     },
                     payload=chunk.get_payload(),
                 )
             )
 
         await self.client.upsert(
-            collection_name=collection_name,
+            collection_name=self.setting.collection_name,
             points=points
         )
 
-    async def upsert_points(self, points: list[PointStruct], collection_name: str):
+    async def upsert_points(self, points: list[PointStruct]):
         await self.client.upsert(
-            collection_name=collection_name,
+            collection_name=self.setting.collection_name,
             points=points
         )
 
     async def search_recipe(self, query_text: str, k: int = 5):
-        return await self.query_points(query_text, k, qdrant_settings.recipe_collection_name)
+        return await self.query_points_by_text(query_text, k)
 
     async def search_intent(self, query_text: str, k: int = 5):
-        return await self.query_points(query_text, k, qdrant_settings.intent_collection_name)
+        return await self.query_points_by_text(query_text, k)
 
-    async def query_points(self, query_text, k: int, collection_name: str):
+    async def query_points_by_text(self, query_text: str, k: int):
         # 1. 處理 Dense 向量 (轉成普通 list)
-        embedding_list = await self._compute_embeddings(query_text)
+        embedding_list = await self._compute_embeddings([query_text])
 
         query_dense = embedding_list[0]
 
         # 同樣取得 query 的 dense 與 sparse 向量
         return await self.client.query_points(
-            collection_name=collection_name,
+            collection_name=self.setting.collection_name,
             query=query_dense,
-            using=qdrant_settings.vectors_name,
+            using=self.setting.vectors_name,
             limit=k,
             # query=models.FusionQuery(fusion=models.Fusion.RRF),  # 使用 RRF 融合
         )
 
-    async def query_points(self, vector: list[float], collection_name: str, limit: int = 2):
+    async def query_points_by_vector(self, vector: list[float], limit: int = 2):
         return await self.client.query_points(
-            collection_name=collection_name,
+            collection_name=self.setting.collection_name,
             query=vector,
-            using=qdrant_settings.vectors_name,
+            using=self.setting.vectors_name,
             limit=limit,
             with_payload=True,
         )
 
-    async def search_recipe_groups(self, query_text: str, k: int):
-        return await self.query_points_groups(query_text, k, qdrant_settings.recipe_collection_name)
-
-    async def query_points_groups(self, query_text, k: int, collection_name: str) -> GroupsResult:
+    async def query_points_groups(self, query_text, k: int) -> GroupsResult:
         embedding_list = await self._compute_embeddings(query_text)
 
         query_dense = embedding_list[0]
 
         return await self.client.query_points_groups(
-            collection_name=collection_name,
+            collection_name=self.setting.collection_name,
             query=query_dense,
-            using=qdrant_settings.vectors_name,
+            using=self.setting.vectors_name,
             group_by="id",
             limit=k,        # 最多 k 個 recipe
             group_size=1    # 每個 recipe 最多 1 個 chunk
@@ -129,7 +132,7 @@ class QdrantRepository:
 
     async def scroll(self, key: str, value: str):
         return await self.client.scroll(
-            collection_name=qdrant_settings.recipe_collection_name,
+            collection_name=self.setting.collection_name,
             scroll_filter=Filter(
                 must=[
                     FieldCondition(
@@ -146,14 +149,14 @@ class QdrantRepository:
 
     async def delete_by_point_id(self, ids: list[str]):
         await self.client.delete(
-            collection_name=qdrant_settings.recipe_collection_name,
+            collection_name=self.setting.collection_name,
             points_selector=ids,
         )
 
     async def delete(self):
         for value in ["overview", "instruction"]:
             await self.client.delete(
-                collection_name=qdrant_settings.recipe_collection_name,
+                collection_name=self.setting.collection_name,
                 points_selector=Filter(
                     must=[FieldCondition(
                         key="chunk_type",
@@ -162,7 +165,7 @@ class QdrantRepository:
                 )
             )
 
-    async def find_all_points(self, collection_name: str, batch_size: int = 500,) -> list[Record]:
+    async def find_all_points(self, batch_size: int = 500,) -> list[Record]:
         """用 Qdrant 向量搜尋找出近似重複 chunk"""
 
         all_points = []
@@ -171,7 +174,7 @@ class QdrantRepository:
         # 1) 把所有 points 分頁拉完
         while True:
             points, next_offset = await self.client.scroll(
-                collection_name=collection_name,
+                collection_name=self.setting.collection_name,
                 limit=batch_size,
                 offset=offset,
                 with_payload=True,

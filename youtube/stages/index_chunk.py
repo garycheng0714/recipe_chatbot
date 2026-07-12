@@ -15,7 +15,7 @@ class IndexChunksStage:
     def __init__(
         self,
         repository: YtRepository = YtRepository(),
-        es: ElasticSearchRepository = ElasticSearchRepository(es_client),
+        es: ElasticSearchRepository = ElasticSearchRepository(es_client, YtInterviewConfig()),
         session_factory=AsyncSessionLocal
     ):
         self.repository = repository
@@ -29,6 +29,6 @@ class IndexChunksStage:
         # 每 10 筆切成一個批次
         for chunks in itertools.batched(result, 10):
             models = [KnowledgeChunk.model_validate(chunk) for chunk in chunks]
-            await self.es.index_batch_yt_document(YtInterviewConfig.index_name(), models)
+            await self.es.index_batch_yt_document(models)
 
         return document

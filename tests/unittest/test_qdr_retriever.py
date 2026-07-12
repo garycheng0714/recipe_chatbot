@@ -38,12 +38,12 @@ def empty_response():
 @pytest.mark.asyncio
 async def test_qdr_retriever(response):
     mock_qdr_repo = MagicMock()
-    mock_qdr_repo.search_recipe_groups = AsyncMock(side_effect=[response])
+    mock_qdr_repo.query_points_groups = AsyncMock(side_effect=[response])
 
     qdr_retriever = QdrantRetriever(mock_qdr_repo)
     result = await qdr_retriever.retrieve('泡菜炒豆腐', 1)
 
-    mock_qdr_repo.search_recipe_groups.assert_called_once_with('泡菜炒豆腐', 1)
+    mock_qdr_repo.query_points_groups.assert_called_once_with('泡菜炒豆腐', 1)
     assert len(result) == 1
 
     point_group = result[0]
@@ -56,10 +56,10 @@ async def test_qdr_retriever(response):
 @pytest.mark.asyncio
 async def test_qdr_retriever_empty_result(empty_response):
     mock_qdr_repo = MagicMock()
-    mock_qdr_repo.search_recipe_groups = AsyncMock(side_effect=[empty_response])
+    mock_qdr_repo.query_points_groups = AsyncMock(side_effect=[empty_response])
 
     qdr_retriever = QdrantRetriever(mock_qdr_repo)
     result = await qdr_retriever.retrieve(MagicMock(), MagicMock())
 
-    assert mock_qdr_repo.search_recipe_groups.call_count == 1
+    assert mock_qdr_repo.query_points_groups.call_count == 1
     assert len(result) == 0

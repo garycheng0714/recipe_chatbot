@@ -6,16 +6,16 @@ from app.infrastructure.elasticsearch.config.config import ElasticSearchConfig, 
 
 class YtInterviewConfig(ElasticSearchConfig):
 
-    @classmethod
-    def index_name(cls) -> str:
+    @property
+    def index_name(self) -> str:
         return "yt_interview"
 
-    @classmethod
-    def get_analysis_settings(cls) -> Dict[str, Any]:
+    @property
+    def analysis_settings(self) -> Dict[str, Any]:
         return {}
 
-    @classmethod
-    def mappings(cls) -> Dict[str, Any]:
+    @property
+    def mappings(self) -> Dict[str, Any]:
         return {
             "properties": {
                 "id": KEYWORD,

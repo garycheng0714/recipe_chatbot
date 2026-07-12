@@ -63,7 +63,7 @@ class DuplicateDetection:
         duplicates = []
 
         async with self.semaphore:
-            results = await self.qdrant.query_points(vector=point.vector["dense"], collection_name=self.collection_name, limit=query_limit)
+            results = await self.qdrant.query_points_by_vector(vector=point.vector["dense"], limit=query_limit)
 
         for r in results.points:
             if r.id == point.id:

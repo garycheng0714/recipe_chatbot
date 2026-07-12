@@ -42,10 +42,10 @@ def recipe_without_ingredients():
 @pytest.mark.asyncio
 async def test_es_repo_index_recipe_document(recipe):
     client = AsyncMock()
-    repo = ElasticSearchRepository(client)
+    repo = ElasticSearchRepository(client, RecipeTestConfig())
 
     document = RecipeDocument.from_recipe(recipe)
-    await repo.index_document(RecipeTestConfig.index_name(), document)
+    await repo.index_document(document)
 
     expected_payload = {
         'id': '123',
@@ -68,10 +68,10 @@ async def test_es_repo_index_recipe_document(recipe):
 @pytest.mark.asyncio
 async def test_es_repo_index_recipe_document_without_ingredients(recipe_without_ingredients):
     client = AsyncMock()
-    repo = ElasticSearchRepository(client)
+    repo = ElasticSearchRepository(client, RecipeTestConfig())
 
     document = RecipeDocument.from_recipe(recipe_without_ingredients)
-    await repo.index_document(RecipeTestConfig.index_name(), document)
+    await repo.index_document(document)
 
     expected_payload = {
         'id': '123',
@@ -92,7 +92,7 @@ async def test_es_repo_index_recipe_document_without_ingredients(recipe_without_
 @pytest.mark.asyncio
 async def test_es_repo_index_batch_recipe_document(recipe, recipe_without_ingredients):
     client = AsyncMock()
-    repo = ElasticSearchRepository(client)
+    repo = ElasticSearchRepository(client, RecipeTestConfig())
 
     document = RecipeDocument.from_recipe(recipe)
     document2 = RecipeDocument.from_recipe(recipe_without_ingredients)
@@ -118,7 +118,7 @@ async def test_es_repo_index_batch_recipe_document(recipe, recipe_without_ingred
     }
 
     with patch("app.repositories.es_repository.async_bulk", new=AsyncMock()) as mock_async_bulk:
-        await repo.index_batch_document(RecipeTestConfig.index_name(), [document, document2])
+        await repo.index_batch_document([document, document2])
 
         mock_async_bulk.assert_called_once_with(
             client=client,
@@ -140,7 +140,7 @@ async def test_es_repo_index_batch_recipe_document(recipe, recipe_without_ingred
 @pytest.mark.asyncio
 async def test_es_repo_index_batch_recipe_document(recipe, recipe_without_ingredients):
     client = AsyncMock()
-    repo = ElasticSearchRepository(client)
+    repo = ElasticSearchRepository(client, YtInterviewConfig())
 
     knowledge_1 = KnowledgeChunk(
         id=uuid.uuid4(),
@@ -166,7 +166,7 @@ async def test_es_repo_index_batch_recipe_document(recipe, recipe_without_ingred
     expected_payload2 = knowledge_2.model_dump(exclude={'embedding_text'})
 
     with patch("app.repositories.es_repository.async_bulk", new=AsyncMock()) as mock_async_bulk:
-        await repo.index_batch_yt_document(YtInterviewConfig.index_name(), [knowledge_1, knowledge_2])
+        await repo.index_batch_yt_document([knowledge_1, knowledge_2])
 
         mock_async_bulk.assert_called_once_with(
             client=client,

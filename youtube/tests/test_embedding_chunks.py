@@ -63,10 +63,7 @@ async def test_embedding_chunks(chunks, mock_session_factory):
 
     args, _ = qdrant.upsert_batch_chunk.call_args
 
-    collection_name = args[0]
-    assert collection_name == "yt_interview"
-
-    embed_models = args[1]
+    embed_models = args[0]
 
     assert len(embed_models) == 2
     assert embed_models[0] == KnowledgeChunk.model_validate(chunks[0])

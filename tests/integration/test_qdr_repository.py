@@ -6,23 +6,23 @@ from qdrant_client import AsyncQdrantClient
 from qdrant_client.models import VectorParams, Distance
 
 from app.domain.chunks import MainChunk, OverviewChunk, InstructionChunk
-from app.infrastructure.qdrant.config import qdrant_settings
+from app.infrastructure.qdrant.config import RecipeQdrantSetting
 from app.repositories import QdrantRepository
 from web_crawler.schema.tasty_note_detail_schema import TastyNoteRecipe, Ingredient, Step
 
 
 @pytest_asyncio.fixture
 async def qdrant_client():
-    collection_name = qdrant_settings.recipe_collection_name
+    setting = RecipeQdrantSetting()
 
     client = AsyncQdrantClient(":memory:")
 
-    if not await client.collection_exists(collection_name):
+    if not await client.collection_exists(setting.collection_name):
         await client.create_collection(
-            collection_name=collection_name,
+            collection_name=setting.collection_name,
             vectors_config={
-                qdrant_settings.vectors_name: VectorParams(
-                    size=qdrant_settings.vectors_size,  # BGE-M3 的維度
+                setting.vectors_name: VectorParams(
+                    size=setting.vectors_size,  # BGE-M3 的維度
                     distance=Distance.COSINE
                 )
             }
@@ -66,7 +66,7 @@ async def test_qdr_repository_upsert_main_chunk(qdrant_client, recipe):
     mock_embedder_client = MagicMock()
     mock_embedder_client.post = AsyncMock()
 
-    qdr_repo = QdrantRepository(qdrant_client, mock_embedder_client)
+    qdr_repo = QdrantRepository(RecipeQdrantSetting(), qdrant_client, mock_embedder_client)
 
     with patch.object(qdr_repo, "_compute_embeddings", new_callable=AsyncMock) as mock_compute_embeddings:
         mock_compute_embeddings.return_value = [[0.1] * 1024]
@@ -89,7 +89,7 @@ async def test_qdr_repository_upsert_main_chunk_without_ingredients(qdrant_clien
     mock_embedder_client = MagicMock()
     mock_embedder_client.post = AsyncMock()
 
-    qdr_repo = QdrantRepository(qdrant_client, mock_embedder_client)
+    qdr_repo = QdrantRepository(RecipeQdrantSetting(), qdrant_client, mock_embedder_client)
 
     with patch.object(qdr_repo, "_compute_embeddings", new_callable=AsyncMock) as mock_compute_embeddings:
         mock_compute_embeddings.return_value = [[0.1] * 1024]
@@ -114,7 +114,7 @@ async def test_qdr_repository_upsert_chunk_idempotence(qdrant_client, recipe):
     mock_embedder_client = MagicMock()
     mock_embedder_client.post = AsyncMock()
 
-    qdr_repo = QdrantRepository(qdrant_client, mock_embedder_client)
+    qdr_repo = QdrantRepository(RecipeQdrantSetting(), qdrant_client, mock_embedder_client)
 
     with patch.object(qdr_repo, "_compute_embeddings", new_callable=AsyncMock) as mock_compute_embeddings:
         mock_compute_embeddings.return_value = [[0.1] * 1024]
@@ -138,7 +138,7 @@ async def test_qdr_repository_upsert_overview_chunk(qdrant_client, recipe):
     mock_embedder_client = MagicMock()
     mock_embedder_client.post = AsyncMock()
 
-    qdr_repo = QdrantRepository(qdrant_client, mock_embedder_client)
+    qdr_repo = QdrantRepository(RecipeQdrantSetting(), qdrant_client, mock_embedder_client)
 
     with patch.object(qdr_repo, "_compute_embeddings", new_callable=AsyncMock) as mock_compute_embeddings:
         mock_compute_embeddings.return_value = [[0.1] * 1024]
@@ -161,7 +161,7 @@ async def test_qdr_repository_upsert_instruction_chunk(qdrant_client, recipe):
     mock_embedder_client = MagicMock()
     mock_embedder_client.post = AsyncMock()
 
-    qdr_repo = QdrantRepository(qdrant_client, mock_embedder_client)
+    qdr_repo = QdrantRepository(RecipeQdrantSetting(), qdrant_client, mock_embedder_client)
 
     with patch.object(qdr_repo, "_compute_embeddings", new_callable=AsyncMock) as mock_compute_embeddings:
         mock_compute_embeddings.return_value = [[0.1] * 1024]
@@ -184,7 +184,7 @@ async def test_qdr_repository_bulk_upsert_then_search(qdrant_client, recipe):
     mock_embedder_client = MagicMock()
     mock_embedder_client.post = AsyncMock()
 
-    qdr_repo = QdrantRepository(qdrant_client, mock_embedder_client)
+    qdr_repo = QdrantRepository(RecipeQdrantSetting(), qdrant_client, mock_embedder_client)
 
     with patch.object(qdr_repo, "_compute_embeddings", new_callable=AsyncMock) as mock_compute_embeddings:
         mock_compute_embeddings.return_value = [[0.1] * 1024, [0.1] * 1024, [0.1] * 1024]
@@ -195,7 +195,7 @@ async def test_qdr_repository_bulk_upsert_then_search(qdrant_client, recipe):
             InstructionChunk.from_recipe(recipe),
         ]
 
-        await qdr_repo.upsert_batch_chunk(qdrant_settings.recipe_collection_name, chunks)
+        await qdr_repo.upsert_batch_chunk(chunks)
 
         result = await qdr_repo.search_recipe("banana")
 

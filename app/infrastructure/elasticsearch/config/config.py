@@ -18,27 +18,27 @@ KEYWORD_INDEX_FALSE = {"type": "keyword", "index": False, "doc_values": False}
 
 class ElasticSearchConfig(ABC):
 
-    @classmethod
+    @property
     @abstractmethod
-    def index_name(cls) -> str:
+    def index_name(self) -> str:
         ...
 
-    @classmethod
+    @property
     @abstractmethod
-    def mappings(cls) -> Dict[str, Any]:
+    def mappings(self) -> Dict[str, Any]:
         """子類別必須提供 mappings"""
         ...
 
     # 1. 抽離共享的 Analysis 設定
-    @classmethod
+    @property
     @abstractmethod
-    def get_analysis_settings(cls) -> Dict[str, Any]:
+    def analysis_settings(self) -> Dict[str, Any]:
         ...
 
     # 4. 統一的配置生成器
-    @classmethod
-    def get_index_config(cls) -> Dict[str, Any]:
+    @property
+    def index_config(self) -> Dict[str, Any]:
         return {
-            "settings": cls.get_analysis_settings(),
-            "mappings": cls.mappings()
+            "settings": self.analysis_settings,
+            "mappings": self.mappings
         }

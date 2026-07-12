@@ -3,20 +3,19 @@ from typing import Sequence
 
 from app.client import qdr_client, embed_client
 from app.database import AsyncSessionLocal
-from app.infrastructure.qdrant.config import qdrant_settings
+from app.infrastructure.qdrant.config import YtQdrantSetting
 from app.repositories import QdrantRepository
 from app.repositories.yt_repository import YtRepository
 from youtube.domain.knowledge_chunk import KnowledgeChunk
 from youtube.domain.models.models import Chunk
 from youtube.domain.video_document import VideoDocument
 
-COLLECTION_NAME = qdrant_settings.interview_collection_name
 
 class EmbeddingChunksStage:
     def __init__(
         self,
         repository: YtRepository = YtRepository(),
-        qdrant: QdrantRepository = QdrantRepository(qdr_client, embed_client),
+        qdrant: QdrantRepository = QdrantRepository(YtQdrantSetting(), qdr_client, embed_client),
         session_factory=AsyncSessionLocal
     ):
         self.repository = repository
@@ -30,6 +29,6 @@ class EmbeddingChunksStage:
         # 每 10 筆切成一個批次
         for chunks in itertools.batched(result, 10):
             models = [KnowledgeChunk.model_validate(chunk) for chunk in chunks]
-            await self.qdrant.upsert_batch_chunk(COLLECTION_NAME, models)
+            await self.qdrant.upsert_batch_chunk(models)
 
         return document

@@ -11,6 +11,7 @@ from app.domain.chunks import MainChunk, OverviewChunk, InstructionChunk
 from app.domain.document import RecipeDocument
 from app.domain.models import PgRecipeModel, OutboxModel, EsPointsModel
 from app.dto.distributed_payload import DistributedPayload
+from app.infrastructure.qdrant.config import RecipeQdrantSetting
 from app.repositories import PgRepository, QdrantRepository
 from app.repositories.outbox_repository import OutboxRepository
 from app.services.event.recipe_event import RecipeEvent
@@ -173,7 +174,7 @@ async def test_get_outbox_pending_event_then_insert_data_to_es_and_qdr(session, 
         instruction_chunk=InstructionChunk.from_recipe(fake_recipe),
     )
 
-    qdr_repo = QdrantRepository(qdrant_client, embed_client)
+    qdr_repo = QdrantRepository(RecipeQdrantSetting(), qdrant_client, embed_client)
 
     await sync_to_distributed_db(
         payloads=[payload],
