@@ -15,6 +15,10 @@ class YtInterviewConfig(ElasticSearchConfig):
         return {}
 
     @property
+    def fields(self) -> list:
+        return ["question^5", "answer^3"]
+
+    @property
     def mappings(self) -> Dict[str, Any]:
         return {
             "properties": {

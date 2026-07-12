@@ -23,6 +23,16 @@ class RecipeConfig(ElasticSearchConfig):
         }
 
     @property
+    def fields(self) -> list:
+        return [
+            "question^5",
+            "tags^3",
+            "ingredients^3",
+            "description^2",
+            "steps"
+        ]
+
+    @property
     def mappings(self) -> Dict[str, Any]:
         return {
             "properties": {

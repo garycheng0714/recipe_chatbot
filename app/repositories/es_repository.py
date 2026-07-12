@@ -66,13 +66,7 @@ class ElasticSearchRepository:
                         {
                             "multi_match": {
                                 "query": query_text,
-                                "fields": [
-                                    "name^5",
-                                    "tags^3",
-                                    "ingredients^3",
-                                    "description^2",
-                                    "steps"
-                                ]
+                                "fields": self.config.fields
                             }
                         }
                     ],

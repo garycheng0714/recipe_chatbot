@@ -35,6 +35,11 @@ class ElasticSearchConfig(ABC):
     def analysis_settings(self) -> Dict[str, Any]:
         ...
 
+    @property
+    @abstractmethod
+    def fields(self) -> list:
+        ...
+
     # 4. 統一的配置生成器
     @property
     def index_config(self) -> Dict[str, Any]:
