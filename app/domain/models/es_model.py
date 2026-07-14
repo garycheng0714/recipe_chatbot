@@ -19,23 +19,11 @@ class Total(BaseModel):
     relation: str
 
 
-class FieldSource(BaseModel):
-    id: str
-    name: str | None = None
-    quantity: str | None = None
-    ingredients: list[str] | None = None
-    category: str | None = None
-    tags: list[str] | None = None
-    description: str | None = None
-    seasoning: list[str] | None = None
-    steps: str | None = None
-
-
 class Hit(BaseModel):
     field_index: str = Field(..., alias='_index')
     field_id: str = Field(..., alias='_id')
     field_score: float = Field(..., alias='_score')
-    field_source: FieldSource = Field(..., alias='_source')
+    field_source: dict = Field(..., alias='_source')
 
 
 class Hits(BaseModel):

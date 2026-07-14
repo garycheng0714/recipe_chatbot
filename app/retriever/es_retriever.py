@@ -14,8 +14,8 @@ class ElasticSearchRetriever:
 
         docs = [
             RetrievedDoc(
-                id=point.field_source.id,
-                content=point.field_source.model_dump(exclude_none=True),
+                id=point.field_source["id"],
+                content=point.field_source,
                 score=point.field_score,
             )
             for point in points
