@@ -1,0 +1,28 @@
+[
+    {
+        "question": "Münster",
+        "relevant_id": [
+          "4e5914c6-6263-4031-9dc6-6b7509cd0f46"
+        ]
+    },
+    {
+        "question": "recreational runners",
+        "relevant_id": [
+          "a6c3aa1c-abbb-4539-ac9c-7283995c1a53", "e47fa7f6-a2a9-4255-b6ee-ee851fe02063"
+        ]
+    },
+    {
+        "question": "recovery",
+        "relevant_id": [
+          "3c0a2f27-3ef2-4286-a33c-dc7c0f9c2d99",
+          "b2ff5b72-0d81-4fb0-8164-7375e896767b",
+          "a342d787-246c-4010-83cc-546e8f62de1b",
+          "dae9e75b-323f-4000-8d13-a7bb53ce0868",
+          "373bd79e-1970-4c77-b3c6-d321c12f6fca"
+        ]
+    },
+    {
+        "question": "python",
+        "relevant_id": []
+    }
+]
