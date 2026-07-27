@@ -3,15 +3,11 @@ import json
 from typing import List
 
 import pytest
-from pydantic import BaseModel, TypeAdapter
+from pydantic import TypeAdapter
 
 from app.client import get_yt_es_retriever, get_yt_qdr_retriever, get_yt_hybrid_retriever
 from app.retriever.retriever_protocol import Retriever
-
-
-class TestSet(BaseModel):
-    question: str
-    relevant_id: str
+from youtube.tests.retrieve.model import TestSet
 
 
 @pytest.fixture(scope="class")
@@ -37,7 +33,11 @@ async def is_hit(retriever: Retriever, test_set: TestSet, sem) -> bool:
     async with sem:
         result = await retriever.retrieve(test_set.question, 5)
         result_ids = [r.id for r in result]
-        if test_set.relevant_id in result_ids:
+
+        relevant_set = set(test_set.relevant_id)
+        result_set = set(result_ids)
+
+        if relevant_set.issubset(result_set):
             return True
         else:
             print(f"{retriever.__class__.__name__}: \n{test_set.question}\n {test_set.relevant_id} is not in {result_ids}")
