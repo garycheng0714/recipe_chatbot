@@ -1,20 +1,10 @@
 import asyncio
-import json
-from typing import List
-
 import pytest
-from pydantic import TypeAdapter
 
 from app.client import get_yt_es_retriever, get_yt_qdr_retriever, get_yt_hybrid_retriever
 from app.retriever.retriever_protocol import Retriever
 from youtube.tests.retrieve.model import TestSet
 
-
-@pytest.fixture(scope="class")
-def all_qa_pair():
-    with open('youtube/tests/retrieve/assets/foundation_test_sets.json', 'r') as f:
-        pairs = json.load(f)
-    return TypeAdapter(List[TestSet]).validate_python(pairs)
 
 @pytest.fixture
 def yt_es_retriever():
@@ -64,10 +54,12 @@ pytestmark = pytest.mark.asyncio(loop_scope="session")
     "yt_qdr_retriever",
     "yt_hybrid_retriever"
 ])
-async def test_retriever_foundation(all_qa_pair, retriever_name, request):
+async def test_retriever_foundation(test_set_reader, retriever_name, request):
+    test_sets = test_set_reader("youtube/tests/retrieve/assets/foundation_test_sets.json")
+
     retriever = request.getfixturevalue(retriever_name)
 
-    recall = await calculate_recall(retriever, all_qa_pair)
+    recall = await calculate_recall(retriever, test_sets)
 
     assert recall == 1.0
 
