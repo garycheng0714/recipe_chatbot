@@ -1,5 +1,6 @@
 import asyncio
 import json
+from enum import StrEnum
 from typing import List
 
 import pandas as pd
@@ -9,6 +10,16 @@ from pydantic import TypeAdapter
 from app.client import get_yt_es_retriever, get_yt_qdr_retriever, get_yt_hybrid_retriever
 from app.retriever.retriever_protocol import Retriever
 from youtube.tests.retrieve.model import TestSet
+
+
+class Method(StrEnum):
+    BM25 = "BM25"
+    VECTORS = "Vectors"
+    HYBRID = "Hybrid"
+
+class Columns(StrEnum):
+    METHOD = "Method"
+    RECALL_5 = "Recall@5"
 
 
 @pytest.fixture(scope="class")
@@ -57,9 +68,9 @@ def calculate_recall():
 def create_matrix(calculate_recall):
     async def _create_matrix(test_sets: list[TestSet]) -> pd.DataFrame:
         retrievers = [
-            ("BM25", get_yt_es_retriever()),
-            ("Qdrant", get_yt_qdr_retriever()),
-            ("Hybrid", get_yt_hybrid_retriever())
+            (Method.BM25, get_yt_es_retriever()),
+            (Method.VECTORS, get_yt_qdr_retriever()),
+            (Method.HYBRID, get_yt_hybrid_retriever())
         ]
 
         tasks = [
@@ -71,8 +82,8 @@ def create_matrix(calculate_recall):
 
         df = pd.DataFrame([
             {
-                "Method": method,
-                "Recall@5": r
+                Columns.METHOD: method,
+                Columns.RECALL_5: r
             }
             for (method, _), r in zip(retrievers, results)
         ])

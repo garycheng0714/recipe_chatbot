@@ -1,6 +1,7 @@
 import pytest
 
 from app.client import get_yt_es_retriever
+from youtube.tests.retrieve.conftest import Method, Columns
 
 
 @pytest.mark.asyncio
@@ -20,8 +21,8 @@ async def test_crate_retriever_keyword_matrix(data_test_set_reader, create_matri
 
     df = await create_matrix(test_sets)
 
-    bm25_recall = df.loc[df["Method"] == "BM25", "Recall@5"].item()
-    hybrid_recall = df.loc[df["Method"] == "Hybrid", "Recall@5"].item()
+    bm25_recall = df.loc[df[Columns.METHOD] == Method.BM25, Columns.RECALL_5].item()
+    hybrid_recall = df.loc[df[Columns.METHOD] == Method.HYBRID, Columns.RECALL_5].item()
 
     assert bm25_recall == 1.0
     assert hybrid_recall == 1.0

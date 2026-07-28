@@ -4,6 +4,7 @@ import pandas as pd
 import pytest
 
 from app.client import get_yt_qdr_retriever
+from youtube.tests.retrieve.conftest import Columns, Method
 
 
 @pytest.mark.asyncio
@@ -23,6 +24,12 @@ async def test_retrievers(data_test_set_reader, create_matrix):
     test_sets = data_test_set_reader("youtube/tests/retrieve/assets/semantic_test_sets.json")
 
     df = await create_matrix(test_sets)
+
+    vectors_recall = df.loc[df[Columns.METHOD] == Method.VECTORS, Columns.RECALL_5].item()
+    hybrid_recall = df.loc[df[Columns.METHOD] == Method.HYBRID, Columns.RECALL_5].item()
+
+    assert vectors_recall == 1.0
+    assert hybrid_recall == 1.0
 
     print(df)
 
