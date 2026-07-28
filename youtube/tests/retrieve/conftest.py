@@ -2,9 +2,11 @@ import asyncio
 import json
 from typing import List
 
+import pandas as pd
 import pytest
 from pydantic import TypeAdapter
 
+from app.client import get_yt_es_retriever, get_yt_qdr_retriever, get_yt_hybrid_retriever
 from app.retriever.retriever_protocol import Retriever
 from youtube.tests.retrieve.model import TestSet
 
@@ -38,7 +40,7 @@ async def is_hit(retriever: Retriever, test_set: TestSet, sem) -> bool:
 
 @pytest.fixture
 def calculate_recall():
-    async def calculate_recall(retriever: Retriever, test_sets: list[TestSet]) -> float:
+    async def _calculate_recall(retriever: Retriever, test_sets: list[TestSet]) -> float:
         semaphore = asyncio.Semaphore(20)
 
         tasks = [is_hit(retriever, pair, semaphore) for pair in test_sets]
@@ -48,4 +50,33 @@ def calculate_recall():
         recall = sum(result) / len(test_sets)
 
         return recall
-    return calculate_recall
+    return _calculate_recall
+
+
+@pytest.fixture
+def create_matrix(calculate_recall):
+    async def _create_matrix(test_sets: list[TestSet]) -> pd.DataFrame:
+        retrievers = [
+            ("BM25", get_yt_es_retriever()),
+            ("Qdrant", get_yt_qdr_retriever()),
+            ("Hybrid", get_yt_hybrid_retriever())
+        ]
+
+        tasks = [
+            calculate_recall(retriever, test_sets)
+            for _, retriever in retrievers
+        ]
+
+        results = await asyncio.gather(*tasks)
+
+        df = pd.DataFrame([
+            {
+                "Method": method,
+                "Recall@5": r
+            }
+            for (method, _), r in zip(retrievers, results)
+        ])
+
+        return df
+
+    return _create_matrix
