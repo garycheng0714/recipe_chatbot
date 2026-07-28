@@ -48,4 +48,5 @@ dependencies = [
     "jieba>=0.42.1",
     "sentence-transformers>=5.2.2",
     "pydantic-ai-slim[google]>=1.51.0",
+    "tabulate>=0.10.0",
 ]

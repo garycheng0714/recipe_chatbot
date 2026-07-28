@@ -19,6 +19,7 @@ class Method(StrEnum):
 
 class Columns(StrEnum):
     METHOD = "Method"
+    QUERY = "Query"
     RECALL_5 = "Recall@5"
 
 
@@ -50,22 +51,20 @@ async def is_hit(retriever: Retriever, test_set: TestSet, sem) -> bool:
 
 
 @pytest.fixture
-def calculate_recall():
-    async def _calculate_recall(retriever: Retriever, test_sets: list[TestSet]) -> float:
+def calculate_recall_all():
+    async def _calculate_recall_all(retriever: Retriever, test_sets: list[TestSet]) -> list[bool]:
         semaphore = asyncio.Semaphore(20)
 
         tasks = [is_hit(retriever, pair, semaphore) for pair in test_sets]
 
         result = await asyncio.gather(*tasks)
 
-        recall = sum(result) / len(test_sets)
-
-        return recall
-    return _calculate_recall
+        return result
+    return _calculate_recall_all
 
 
 @pytest.fixture
-def create_matrix(calculate_recall):
+def create_matrix(calculate_recall_all):
     async def _create_matrix(test_sets: list[TestSet]) -> pd.DataFrame:
         retrievers = [
             (Method.BM25, get_yt_es_retriever()),
@@ -74,20 +73,39 @@ def create_matrix(calculate_recall):
         ]
 
         tasks = [
-            calculate_recall(retriever, test_sets)
+            calculate_recall_all(retriever, test_sets)
             for _, retriever in retrievers
         ]
 
         results = await asyncio.gather(*tasks)
+        results = sum(results, []) # 快速扁平化: [[True, False], [True, True], [False, False]] -> [True, False, True, True, False, False]
+        queries = [test.question for test in test_sets] * len(retrievers)
+        methods = sum([[method] * len(test_sets) for method, _ in retrievers], [])
 
         df = pd.DataFrame([
             {
                 Columns.METHOD: method,
-                Columns.RECALL_5: r
+                Columns.QUERY: query,
+                Columns.RECALL_5: float(r)
             }
-            for (method, _), r in zip(retrievers, results)
+            for method, query, r in zip(methods, queries, results)
         ])
 
-        return df
+        # === 關鍵：在這裡進行 Pivot ===
+        # index: 固定在左邊的欄位
+        # columns: 要橫向展開的欄位 (Query 內容)
+        # values: 填入格子裡的數值
+        df_pivot = df.pivot(
+            index=Columns.METHOD,
+            columns=Columns.QUERY,
+            values=Columns.RECALL_5
+        )
+
+        # 計算平均 Recall@5 並放到最右邊一欄
+        df_pivot["Recall@5 (Average)"] = df_pivot.mean(axis=1)
+
+        # df_final = df_pivot.reset_index()
+
+        return df_pivot
 
     return _create_matrix
