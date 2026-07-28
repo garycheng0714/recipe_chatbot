@@ -1,13 +1,12 @@
-import asyncio
-
-import pandas as pd
 import pytest
 
 from app.client import get_yt_qdr_retriever
 from youtube.tests.retrieve.conftest import Columns, Method
 
 
-@pytest.mark.asyncio
+pytestmark = pytest.mark.asyncio(loop_scope="session")
+
+
 async def test_retriever_semantic_search(data_test_set_reader, calculate_recall):
     test_sets = data_test_set_reader("youtube/tests/retrieve/assets/semantic_test_sets.json")
 
@@ -19,7 +18,6 @@ async def test_retriever_semantic_search(data_test_set_reader, calculate_recall)
 
 
 
-@pytest.mark.asyncio
 async def test_retrievers(data_test_set_reader, create_matrix):
     test_sets = data_test_set_reader("youtube/tests/retrieve/assets/semantic_test_sets.json")
 

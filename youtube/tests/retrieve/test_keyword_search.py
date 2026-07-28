@@ -3,8 +3,9 @@ import pytest
 from app.client import get_yt_es_retriever
 from youtube.tests.retrieve.conftest import Method, Columns
 
+pytestmark = pytest.mark.asyncio(loop_scope="session")
 
-@pytest.mark.asyncio
+
 async def test_retriever_keyword(data_test_set_reader, calculate_recall):
     test_sets = data_test_set_reader("youtube/tests/retrieve/assets/keyword_test_sets.json")
 
@@ -15,7 +16,7 @@ async def test_retriever_keyword(data_test_set_reader, calculate_recall):
     assert recall == 1.0
 
 
-@pytest.mark.asyncio
+
 async def test_crate_retriever_keyword_matrix(data_test_set_reader, create_matrix):
     test_sets = data_test_set_reader("youtube/tests/retrieve/assets/keyword_test_sets.json")
 
