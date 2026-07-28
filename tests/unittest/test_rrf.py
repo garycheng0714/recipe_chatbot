@@ -1,4 +1,4 @@
-from app.retriever.rankers.rrf import RRFRanker
+from app.retriever.rankers.rrf import RRFRanker, RankList
 
 
 def test_rrf_two_rank_list_then_a_got_top_rank():
@@ -7,7 +7,7 @@ def test_rrf_two_rank_list_then_a_got_top_rank():
 
     rrf_ranker = RRFRanker()
 
-    fused = rrf_ranker.reciprocal_rank_fusion([list_1, list_2])
+    fused = rrf_ranker.reciprocal_rank_fusion([RankList(ids=list_1), RankList(ids=list_2)])
 
     assert fused[0].id == "A"
 
@@ -18,7 +18,7 @@ def test_rrf_two_rank_list_then_a_and_b_have_same_rank():
 
     rrf_ranker = RRFRanker()
 
-    fused = rrf_ranker.reciprocal_rank_fusion([list_1, list_2])
+    fused = rrf_ranker.reciprocal_rank_fusion([RankList(ids=list_1), RankList(ids=list_2)])
 
     scores = {r.id: r.score for r in fused}
 
@@ -31,7 +31,7 @@ def test_rrf_two_rank_list_then_all_elements_exist():
 
     rrf_ranker = RRFRanker()
 
-    fused = rrf_ranker.reciprocal_rank_fusion([list_1, list_2])
+    fused = rrf_ranker.reciprocal_rank_fusion([RankList(ids=list_1), RankList(ids=list_2)])
 
     ids = {r.id for r in fused}
 

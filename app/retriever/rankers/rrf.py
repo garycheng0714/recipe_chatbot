@@ -1,28 +1,30 @@
-from typing import TypeVar, List
+from pydantic import BaseModel
 
 from app.schema import RRFResult
 
+class RankList(BaseModel):
+    ids: list[str]
+    weight: float = 1.0
 
-T = TypeVar('T')
 
 class RRFRanker:
 
     @staticmethod
-    def reciprocal_rank_fusion(search_results_list: List[List[T]], k=60) -> list[RRFResult]:
+    def reciprocal_rank_fusion(rank_lists: list[RankList], k=60):
         """
         search_results_list: 一個列表的列表，例如 [[doc_id1, doc_id2], [doc_id2, doc_id3]]
         k: 平滑常數，預設 60
         """
-        if not search_results_list:
+        if not rank_lists:
             return []
 
         fused_scores = {}
 
-        for rank_list in search_results_list:
-            for rank, doc_id in enumerate(rank_list):
+        for rank_list in rank_lists:
+            for rank, doc_id in enumerate(rank_list.ids):
                 # rank 從 0 開始，所以公式中要 +1
                 # 如果找不到 doc_id，就回傳 0，然後再加分數
-                fused_scores[doc_id] = fused_scores.get(doc_id, 0) + 1 / (k + (rank + 1))
+                fused_scores[doc_id] = fused_scores.get(doc_id, 0) + rank_list.weight / (k + (rank + 1))
 
         # 按分數從高到低排序
         """
