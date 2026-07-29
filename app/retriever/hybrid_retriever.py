@@ -2,7 +2,7 @@ import asyncio
 
 from app.retriever.es_retriever import ElasticSearchRetriever
 from app.retriever.qdr_retriever import QdrantRetriever
-from app.retriever.rankers.rrf import RRFRanker, RankList
+from app.retriever.fusion.rrf import RRFRanker, RankList
 from app.schema import RRFResult
 
 
