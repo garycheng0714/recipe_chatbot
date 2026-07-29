@@ -17,10 +17,10 @@ async def test_retriever_keyword(data_test_set_reader, calculate_recall_all):
 
 
 
-async def test_crate_retriever_keyword_matrix(data_test_set_reader, create_matrix):
+async def test_crate_retriever_keyword_metrics(data_test_set_reader, create_metrics):
     test_sets = data_test_set_reader("youtube/tests/retrieve/assets/keyword_test_sets.json")
 
-    df = await create_matrix(test_sets)
+    df = await create_metrics(test_sets)
 
     bm25_recall = df.at[Method.BM25, "Recall@5 (Average)"]
     hybrid_recall = df.at[Method.HYBRID, "Recall@5 (Average)"]

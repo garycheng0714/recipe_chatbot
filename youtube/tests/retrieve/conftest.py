@@ -64,8 +64,8 @@ def calculate_recall_all():
 
 
 @pytest.fixture
-def create_matrix(calculate_recall_all):
-    async def _create_matrix(test_sets: list[TestSet]) -> pd.DataFrame:
+def create_metrics(calculate_recall_all):
+    async def _create_metrics(test_sets: list[TestSet]) -> pd.DataFrame:
         retrievers = [
             (Method.BM25, get_yt_es_retriever()),
             (Method.VECTORS, get_yt_qdr_retriever()),
@@ -108,4 +108,4 @@ def create_matrix(calculate_recall_all):
 
         return df_pivot
 
-    return _create_matrix
+    return _create_metrics

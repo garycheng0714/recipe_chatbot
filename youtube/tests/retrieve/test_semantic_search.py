@@ -18,10 +18,10 @@ async def test_retriever_semantic_search(data_test_set_reader, calculate_recall_
 
 
 
-async def test_retrievers(data_test_set_reader, create_matrix):
+async def test_retrievers(data_test_set_reader, create_metrics):
     test_sets = data_test_set_reader("youtube/tests/retrieve/assets/semantic_test_sets.json")
 
-    df = await create_matrix(test_sets)
+    df = await create_metrics(test_sets)
 
     vectors_recall = df.at[Method.VECTORS, "Recall@5 (Average)"]
     hybrid_recall = df.at[Method.HYBRID, "Recall@5 (Average)"]
