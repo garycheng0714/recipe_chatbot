@@ -1,19 +1,19 @@
 [
     {
         "question": "Münster",
-        "relevant_id": [
+        "relevant_ids": [
           "4e5914c6-6263-4031-9dc6-6b7509cd0f46"
         ]
     },
     {
         "question": "recreational runners",
-        "relevant_id": [
+        "relevant_ids": [
           "a6c3aa1c-abbb-4539-ac9c-7283995c1a53", "e47fa7f6-a2a9-4255-b6ee-ee851fe02063"
         ]
     },
     {
         "question": "recovery",
-        "relevant_id": [
+        "relevant_ids": [
           "3c0a2f27-3ef2-4286-a33c-dc7c0f9c2d99",
           "b2ff5b72-0d81-4fb0-8164-7375e896767b",
           "a342d787-246c-4010-83cc-546e8f62de1b",
@@ -23,6 +23,6 @@
     },
     {
         "question": "python",
-        "relevant_id": []
+        "relevant_ids": []
     }
 ]
