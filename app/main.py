@@ -13,7 +13,7 @@ from app.client import (
     get_hybrid_retriever,
     es_client,
     get_yt_hybrid_retriever,
-    get_yt_db, get_yt_es_retriever, get_yt_qdr_retriever,
+    get_yt_db, get_yt_es_retriever, get_yt_qdr_retriever, get_yt_answer_hybrid_retriever, get_yt_answer_qdr_retriever,
 )
 
 import app.database as database
@@ -57,6 +57,13 @@ async def get_yt_retrieval_service(
     hydrator = YtHydrator(db)
     return RetrievalService(hybrid_retriever, hydrator)
 
+async def get_yt_answer_retrieval_service(
+    hybrid_retriever=Depends(get_yt_answer_hybrid_retriever),
+    db=Depends(get_yt_db)
+):
+    hydrator = YtHydrator(db)
+    return RetrievalService(hybrid_retriever, hydrator)
+
 # 3. 定義一個帶有參數的路徑
 @app.get("/recipe/{query_text}")
 async def search_recipe(
@@ -84,12 +91,31 @@ async def search_recipe(
 
     return obj_list
 
+
+@app.get("/yt/search-answer/{query_text}")
+async def search_recipe(
+    query_text: str,
+    service: RetrievalService = Depends(get_yt_answer_retrieval_service)
+):
+    obj_list = await service.search_recipe(query_text)
+
+    # 安全檢查：找不到就報 404，不要讓後續程式碼崩潰
+    if obj_list is None:
+        raise HTTPException(status_code=404, detail="Recipe not found")
+
+    return obj_list
+
+
 @app.get("/yt/es/{query}")
 async def es_search(query: str, retriever: Retriever = Depends(get_yt_es_retriever)):
     return await retriever.retrieve(query, 5)
 
 @app.get("/yt/qdr/{query}")
 async def qdr_search(query: str, retriever: Retriever = Depends(get_yt_qdr_retriever)):
+    return await retriever.retrieve(query, 5)
+
+@app.get("/yt/qdr-answer/{query}")
+async def qdr_search(query: str, retriever: Retriever = Depends(get_yt_answer_qdr_retriever)):
     return await retriever.retrieve(query, 5)
 
 @app.get("/es/{query}")

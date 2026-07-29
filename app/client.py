@@ -3,10 +3,9 @@ from elasticsearch import AsyncElasticsearch
 from qdrant_client import AsyncQdrantClient
 from typing import AsyncGenerator
 from app.database import ES_URL, QDRANT_URL, EMBED_URL
-from app.hydrator.recipe.recipe_hydrator import RecipeHydrator
 from app.infrastructure.elasticsearch.config.recipe import RecipeConfig
 from app.infrastructure.elasticsearch.config.yt_interview import YtInterviewConfig
-from app.infrastructure.qdrant.config import RecipeQdrantSetting, YtQdrantSetting
+from app.infrastructure.qdrant.config import RecipeQdrantSetting, YtQdrantSetting, YtQdrantSettingAnswer
 from app.repositories import (
     PgRepository,
     ElasticSearchRepository
@@ -90,6 +89,10 @@ def get_yt_qdr_retriever():
     qdr_repo = QdrantRepository(YtQdrantSetting(), qdr_client, embed_client)
     return QdrantRetriever(qdr_repo)
 
+def get_yt_answer_qdr_retriever():
+    qdr_repo = QdrantRepository(YtQdrantSettingAnswer(), qdr_client, embed_client)
+    return QdrantRetriever(qdr_repo)
+
 def get_hybrid_retriever():
     hybrid_retriever = HybridRetriever(
         es_retriever=get_es_retriever(),
@@ -103,6 +106,15 @@ def get_yt_hybrid_retriever():
     hybrid_retriever = HybridRetriever(
         es_retriever=get_yt_es_retriever(),
         qdr_retriever=get_yt_qdr_retriever()
+    )
+
+    return hybrid_retriever
+
+
+def get_yt_answer_hybrid_retriever():
+    hybrid_retriever = HybridRetriever(
+        es_retriever=get_yt_es_retriever(),
+        qdr_retriever=get_yt_answer_qdr_retriever()
     )
 
     return hybrid_retriever

@@ -26,3 +26,9 @@ class YtQdrantSetting(QdrantSettings):
     @property
     def collection_name(self) -> str:
         return "yt_interview"
+
+
+class YtQdrantSettingAnswer(QdrantSettings):
+    @property
+    def collection_name(self) -> str:
+        return "yt_interview_answers"
