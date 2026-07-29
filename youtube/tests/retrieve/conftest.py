@@ -8,7 +8,7 @@ import pytest
 from pydantic import TypeAdapter
 
 from app.client import get_yt_es_retriever, get_yt_qdr_retriever, get_yt_hybrid_retriever
-from app.retriever.recall_calculator import RecallCalculator
+from app.retriever.metrics.recall_calculator import RecallCalculator
 from app.retriever.retriever_protocol import Retriever
 from youtube.tests.retrieve.model import TestSet
 
