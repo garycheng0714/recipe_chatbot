@@ -8,6 +8,7 @@ import pytest
 from pydantic import TypeAdapter
 
 from app.client import get_yt_es_retriever, get_yt_qdr_retriever, get_yt_hybrid_retriever
+from app.retriever.recall_calculator import RecallCalculator
 from app.retriever.retriever_protocol import Retriever
 from youtube.tests.retrieve.model import TestSet
 
@@ -34,27 +35,19 @@ def data_test_set_reader():
     return _reader
 
 
-async def calculate_recall(retriever: Retriever, test_set: TestSet, sem) -> float:
+async def calculate_recall_by_each_query(retriever: Retriever, test_set: TestSet, sem) -> float:
     async with sem:
         result = await retriever.retrieve(test_set.question, 5)
         result_ids = [r.id for r in result]
 
-        relevant_set = set(test_set.relevant_id)
-        result_set = set(result_ids)
+        recall = RecallCalculator.calculate(test_set.relevant_ids, result_ids)
 
-        hits = len(relevant_set & result_set)
-
-        if hits == 0 and len(relevant_set) == 0:
-            # 沒有答案的問題
-            return 1.0
-
-        if hits == 0:
+        if recall != 1.0:
             print(
-                f"{retriever.__class__.__name__}: \n{test_set.question}\n {test_set.relevant_id} is not in {result_ids}"
+                f"\n{retriever.__class__.__name__}: \n{test_set.question}\n {test_set.relevant_ids} is not in {result_ids}"
             )
-            return 0.0
 
-        return hits / len(relevant_set)
+        return recall
 
 
 @pytest.fixture
@@ -62,7 +55,7 @@ def calculate_recall_all():
     async def _calculate_recall_all(retriever: Retriever, test_sets: list[TestSet]) -> list[float]:
         semaphore = asyncio.Semaphore(20)
 
-        tasks = [calculate_recall(retriever, pair, semaphore) for pair in test_sets]
+        tasks = [calculate_recall_by_each_query(retriever, pair, semaphore) for pair in test_sets]
 
         result = await asyncio.gather(*tasks)
 
