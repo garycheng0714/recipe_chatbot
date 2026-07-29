@@ -46,7 +46,7 @@ urlscanner:
 	uv run python -m web_crawler.urlscanner
 
 emb:
-	uv run infinity_emb v2 --model-id BAAI/bge-m3 --device mps
+	uv run infinity_emb v2 --model-id BAAI/bge-m3 --device mps --batch-size 8
 
 service:
 	honcho start
