@@ -24,12 +24,12 @@ pytestmark = pytest.mark.asyncio(loop_scope="session")
     "yt_qdr_retriever",
     "yt_hybrid_retriever"
 ])
-async def test_retriever_foundation(data_test_set_reader, retriever_name, request, calculate_recall_all):
+async def test_retriever_foundation(data_test_set_reader, retriever_name, request, calculate_recall):
     test_sets = data_test_set_reader("youtube/tests/retrieve/assets/foundation_test_sets.json")
 
     retriever = request.getfixturevalue(retriever_name)
 
-    result = await calculate_recall_all(retriever, test_sets)
+    result = await calculate_recall(retriever, test_sets)
 
     assert sum(result) / len(test_sets) == 1.0
 

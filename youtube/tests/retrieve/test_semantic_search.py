@@ -7,12 +7,12 @@ from youtube.tests.retrieve.conftest import Method
 pytestmark = pytest.mark.asyncio(loop_scope="session")
 
 
-async def test_retriever_semantic_search(data_test_set_reader, calculate_recall_all):
+async def test_retriever_semantic_search(data_test_set_reader, calculate_recall):
     test_sets = data_test_set_reader("youtube/tests/retrieve/assets/semantic_test_sets.json")
 
     retriever = get_yt_qdr_retriever()
 
-    result = await calculate_recall_all(retriever, test_sets)
+    result = await calculate_recall(retriever, test_sets)
 
     assert sum(result) / len(test_sets) == 1.0
 

@@ -8,9 +8,9 @@ import pytest
 from pydantic import TypeAdapter
 
 from app.client import get_yt_es_retriever, get_yt_qdr_retriever, get_yt_hybrid_retriever
-from app.retriever.metrics.recall_calculator import RecallCalculator
 from app.retriever.retriever_protocol import Retriever
-from youtube.tests.retrieve.model import TestSet
+from app.retriever.model import TestSet
+from app.retriever.service.recall_service import RecallService
 
 
 class Method(StrEnum):
@@ -22,6 +22,7 @@ class Columns(StrEnum):
     METHOD = "Method"
     QUERY = "Query"
     RECALL_5 = "Recall@5"
+    MRR = "MRR"
 
 
 @pytest.fixture(scope="class")
@@ -35,36 +36,16 @@ def data_test_set_reader():
     return _reader
 
 
-async def calculate_recall_by_each_query(retriever: Retriever, test_set: TestSet, sem) -> float:
-    async with sem:
-        result = await retriever.retrieve(test_set.question, 5)
-        result_ids = [r.id for r in result]
-
-        recall = RecallCalculator.calculate(test_set.relevant_ids, result_ids)
-
-        if recall != 1.0:
-            print(
-                f"\n{retriever.__class__.__name__}: \n{test_set.question}\n {test_set.relevant_ids} is not in {result_ids}"
-            )
-
-        return recall
+@pytest.fixture
+def calculate_recall():
+    async def _calculate_recall(retriever: Retriever, test_sets: list[TestSet]) -> list[float]:
+        recall_service = RecallService()
+        return await recall_service.calculate_recall(retriever, test_sets)
+    return _calculate_recall
 
 
 @pytest.fixture
-def calculate_recall_all():
-    async def _calculate_recall_all(retriever: Retriever, test_sets: list[TestSet]) -> list[float]:
-        semaphore = asyncio.Semaphore(20)
-
-        tasks = [calculate_recall_by_each_query(retriever, pair, semaphore) for pair in test_sets]
-
-        result = await asyncio.gather(*tasks)
-
-        return result
-    return _calculate_recall_all
-
-
-@pytest.fixture
-def create_metrics(calculate_recall_all):
+def create_metrics():
     async def _create_metrics(test_sets: list[TestSet]) -> pd.DataFrame:
         retrievers = [
             (Method.BM25, get_yt_es_retriever()),
@@ -72,8 +53,10 @@ def create_metrics(calculate_recall_all):
             (Method.HYBRID, get_yt_hybrid_retriever())
         ]
 
+        recall_service = RecallService()
+
         tasks = [
-            calculate_recall_all(retriever, test_sets)
+            recall_service.calculate_recall(retriever, test_sets)
             for _, retriever in retrievers
         ]
 
