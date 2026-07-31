@@ -3,15 +3,16 @@
 import asyncio
 from typing import List
 
-from app.retriever.metrics.recall_calculator import RecallCalculator
+from app.retriever.metrics.base_metrics import BaseMetrics
+from app.retriever.metrics.recall_metrics import RecallMetrics
 from app.retriever.model import TestSet
 from app.retriever.retriever_protocol import RetrieverBase
 
 
-class RecallService:
+class CalculateService:
     def __init__(
         self,
-        calculator: RecallCalculator = RecallCalculator,
+        calculator: BaseMetrics = RecallMetrics(),
         max_concurrency: int = 20,
         top_k: int = 5,
         verbose: bool = True
@@ -29,7 +30,7 @@ class RecallService:
         self.top_k = top_k
         self.verbose = verbose
 
-    async def calculate_recall_by_query(self, retriever: RetrieverBase, test_set: TestSet) -> float:
+    async def calculate_by_query(self, retriever: RetrieverBase, test_set: TestSet) -> float:
         """
         計算單一 Query 的 Recall
         """
@@ -37,36 +38,36 @@ class RecallService:
             result = await retriever.retrieve(test_set.question, self.top_k)
             result_ids = [r.id for r in result]
 
-            recall = self.calculator.calculate(test_set.relevant_ids, result_ids)
+            score = self.calculator.calculate(test_set.relevant_ids, result_ids)
 
-            if self.verbose and recall != 1.0:
+            if self.verbose and score < self.calculator.criteria:
                 print(
-                    f"\n[{retriever.__class__.__name__}] Recall < 1.0:\n"
+                    f"\n[{retriever.__class__.__name__}] {self.calculator.metrics_name} < 1.0:\n"
                     f"  Question: {test_set.question}\n"
                     f"  Expected: {test_set.relevant_ids}\n"
                     f"  Retrieved: {result_ids}"
                 )
 
-            return recall
+            return score
 
 
-    async def calculate_recall(self, retriever: RetrieverBase, test_sets: List[TestSet]) -> List[float]:
+    async def calculate(self, retriever: RetrieverBase, test_sets: List[TestSet]) -> List[float]:
         """
         批次計算所有 TestSet 的 Recall
         """
         tasks = [
-            self.calculate_recall_by_query(retriever, test_set)
+            self.calculate_by_query(retriever, test_set)
             for test_set in test_sets
         ]
         return await asyncio.gather(*tasks)
 
 
-    async def calculate_mean_recall(self, retriever: RetrieverBase, test_sets: List[TestSet]) -> float:
+    async def calculate_mean(self, retriever: RetrieverBase, test_sets: List[TestSet]) -> float:
         """
         便利方法：直接計算全體 TestSet 的平均 Recall
         """
         if not test_sets:
             return 0.0
 
-        recalls = await self.calculate_recall(retriever, test_sets)
+        recalls = await self.calculate(retriever, test_sets)
         return sum(recalls) / len(recalls) if recalls else 0.0

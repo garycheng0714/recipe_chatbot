@@ -1,6 +1,16 @@
+from app.retriever.metrics.base_metrics import BaseMetrics
 
 
-class MRR:
+class MRR(BaseMetrics):
+
+    @property
+    def criteria(self) -> float:
+        # 先不要設定 criteria
+        return 0.0
+
+    @property
+    def metrics_name(self) -> str:
+        return "MRR"
 
     @staticmethod
     def calculate(relevant_ids: list[str], result_ids: list[str]) -> float:

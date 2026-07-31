@@ -3,8 +3,9 @@ from unittest.mock import MagicMock, AsyncMock, patch
 import pytest
 
 from app.dto.retriever_dto import RetrievedDoc
+from app.retriever.metrics.recall_metrics import RecallMetrics
 from app.retriever.model import TestSet
-from app.retriever.service.recall_service import RecallService
+from app.retriever.service.calculate_service import CalculateService
 
 
 @pytest.fixture
@@ -21,14 +22,14 @@ def mock_retriever():
 @pytest.mark.asyncio
 async def test_calculate_recall_by_query_success(mock_retriever):
     """測試單一 Query 計算是否正確帶入參數"""
-    calculator = MagicMock()
+    calculator = RecallMetrics()
     calculator.calculate = MagicMock(return_value=1.0)
 
     test_set = TestSet(question="What is Python?", relevant_ids=["doc_1"])
 
-    service = RecallService(calculator=calculator)
+    service = CalculateService(calculator=calculator)
 
-    await service.calculate_recall_by_query(mock_retriever, test_set)
+    await service.calculate_by_query(mock_retriever, test_set)
 
     # 驗證傳給 retriever 的參數 (top_k=3)
     mock_retriever.retrieve.assert_awaited_once_with("What is Python?", 5)
@@ -39,15 +40,15 @@ async def test_calculate_recall_by_query_success(mock_retriever):
 
 @pytest.mark.asyncio
 async def test_calculate_recall_all(mock_retriever):
-    service = RecallService(verbose=False)
+    service = CalculateService(verbose=False)
 
     test_sets = [
         TestSet(question="Q1", relevant_ids=["doc_1"]),
         TestSet(question="Q2", relevant_ids=["doc_3"]),
     ]
 
-    with patch.object(RecallService, "calculate_recall_by_query", return_value=MagicMock()) as mock_calculate_recall:
-        await service.calculate_recall(mock_retriever, test_sets)
+    with patch.object(CalculateService, "calculate_by_query", return_value=MagicMock()) as mock_calculate_recall:
+        await service.calculate(mock_retriever, test_sets)
 
         assert mock_calculate_recall.await_count == 2
 
@@ -56,12 +57,12 @@ async def test_calculate_recall_all(mock_retriever):
 async def test_calculate_mean_recall(mock_retriever):
     """測試平均 Recall 計算"""
     # mock_calc.side_effect = [1.0, 0.5, 0.0]
-    service = RecallService(verbose=False)
+    service = CalculateService(verbose=False)
 
-    with patch.object(RecallService, "calculate_recall", return_value=MagicMock()) as mock_calculate_recall:
+    with patch.object(CalculateService, "calculate", return_value=MagicMock()) as mock_calculate_recall:
         mock_calculate_recall.return_value = [1.0, 0.5, 0.0]
 
-        mean_recall = await service.calculate_mean_recall(mock_retriever, MagicMock())
+        mean_recall = await service.calculate_mean(mock_retriever, MagicMock())
 
         # (1.0 + 0.5 + 0.0) / 3 = 0.5
         assert mean_recall == pytest.approx(0.5)
@@ -70,20 +71,20 @@ async def test_calculate_mean_recall(mock_retriever):
 @pytest.mark.asyncio
 async def test_calculate_mean_recall_empty_test_set(mock_retriever):
     """測試空 TestSet 邊界條件，應回傳 0.0 而非 ZeroDivisionError"""
-    service = RecallService()
-    mean_recall = await service.calculate_mean_recall(mock_retriever, [])
+    service = CalculateService()
+    mean_recall = await service.calculate_mean(mock_retriever, [])
     assert mean_recall == 0.0
 
 
 @pytest.mark.asyncio
 async def test_calculate_mean_recall_with_zero_recall(mock_retriever):
     """測試空 TestSet 邊界條件，應回傳 0.0 而非 ZeroDivisionError"""
-    service = RecallService()
+    service = CalculateService()
 
-    with patch.object(RecallService, "calculate_recall", return_value=MagicMock()) as mock_calculate_recall:
+    with patch.object(CalculateService, "calculate", return_value=MagicMock()) as mock_calculate_recall:
         mock_calculate_recall.return_value = [0.0, 0.0, 0.0]
 
-        mean_recall = await service.calculate_mean_recall(mock_retriever, MagicMock())
+        mean_recall = await service.calculate_mean(mock_retriever, MagicMock())
         assert mean_recall == 0.0
 
 

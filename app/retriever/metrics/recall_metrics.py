@@ -1,6 +1,15 @@
+from app.retriever.metrics.base_metrics import BaseMetrics
 
 
-class RecallCalculator:
+class RecallMetrics(BaseMetrics):
+
+    @property
+    def criteria(self) -> float:
+        return 1.0
+
+    @property
+    def metrics_name(self) -> str:
+        return "Recall"
 
     @staticmethod
     def calculate(relevant_ids: list[str], result_ids: list[str]) -> float:

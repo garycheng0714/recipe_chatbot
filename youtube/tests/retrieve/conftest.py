@@ -10,7 +10,7 @@ from pydantic import TypeAdapter
 from app.retriever.enums import Retriever
 from app.retriever.retriever_protocol import RetrieverBase
 from app.retriever.model import TestSet
-from app.retriever.service.recall_service import RecallService
+from app.retriever.service.calculate_service import CalculateService
 
 
 
@@ -36,8 +36,8 @@ def data_test_set_reader():
 @pytest.fixture
 def calculate_recall():
     async def _calculate_recall(retriever: RetrieverBase, test_sets: list[TestSet]) -> list[float]:
-        recall_service = RecallService()
-        return await recall_service.calculate_recall(retriever, test_sets)
+        recall_service = CalculateService()
+        return await recall_service.calculate(retriever, test_sets)
     return _calculate_recall
 
 
@@ -46,10 +46,10 @@ def create_metrics():
     async def _create_metrics(test_sets: list[TestSet]) -> pd.DataFrame:
         retrievers = [Retriever.BM25, Retriever.VECTORS, Retriever.HYBRID]
 
-        recall_service = RecallService()
+        recall_service = CalculateService()
 
         tasks = [
-            recall_service.calculate_recall(retriever.get_retriever(), test_sets)
+            recall_service.calculate(retriever.get_retriever(), test_sets)
             for retriever in retrievers
         ]
 
