@@ -1,7 +1,8 @@
 import pytest
 
 from app.client import get_yt_es_retriever
-from youtube.tests.retrieve.conftest import Method
+from app.retriever.enums import Retriever
+
 
 pytestmark = pytest.mark.asyncio(loop_scope="session")
 
@@ -22,8 +23,8 @@ async def test_crate_retriever_keyword_metrics(data_test_set_reader, create_metr
 
     df = await create_metrics(test_sets)
 
-    bm25_recall = df.at[Method.BM25, "Recall@5 (Average)"]
-    hybrid_recall = df.at[Method.HYBRID, "Recall@5 (Average)"]
+    bm25_recall = df.at[Retriever.BM25, "Recall@5 (Average)"]
+    hybrid_recall = df.at[Retriever.HYBRID, "Recall@5 (Average)"]
 
     print(df)
 

@@ -7,16 +7,13 @@ import pandas as pd
 import pytest
 from pydantic import TypeAdapter
 
-from app.client import get_yt_es_retriever, get_yt_qdr_retriever, get_yt_hybrid_retriever
-from app.retriever.retriever_protocol import Retriever
+from app.retriever.enums import Retriever
+from app.retriever.retriever_protocol import RetrieverBase
 from app.retriever.model import TestSet
 from app.retriever.service.recall_service import RecallService
 
 
-class Method(StrEnum):
-    BM25 = "BM25"
-    VECTORS = "Vectors"
-    HYBRID = "Hybrid"
+
 
 class Columns(StrEnum):
     METHOD = "Method"
@@ -38,7 +35,7 @@ def data_test_set_reader():
 
 @pytest.fixture
 def calculate_recall():
-    async def _calculate_recall(retriever: Retriever, test_sets: list[TestSet]) -> list[float]:
+    async def _calculate_recall(retriever: RetrieverBase, test_sets: list[TestSet]) -> list[float]:
         recall_service = RecallService()
         return await recall_service.calculate_recall(retriever, test_sets)
     return _calculate_recall
@@ -47,17 +44,13 @@ def calculate_recall():
 @pytest.fixture
 def create_metrics():
     async def _create_metrics(test_sets: list[TestSet]) -> pd.DataFrame:
-        retrievers = [
-            (Method.BM25, get_yt_es_retriever()),
-            (Method.VECTORS, get_yt_qdr_retriever()),
-            (Method.HYBRID, get_yt_hybrid_retriever())
-        ]
+        retrievers = [Retriever.BM25, Retriever.VECTORS, Retriever.HYBRID]
 
         recall_service = RecallService()
 
         tasks = [
-            recall_service.calculate_recall(retriever, test_sets)
-            for _, retriever in retrievers
+            recall_service.calculate_recall(retriever.get_retriever(), test_sets)
+            for retriever in retrievers
         ]
 
         method_results = await asyncio.gather(*tasks)
@@ -66,8 +59,8 @@ def create_metrics():
 
         # 直接構建矩陣字典: { Method_Name: [score_1, score_2, ...] }
         data = {
-            method: [float(r) for r in score_list]
-            for (method, _), score_list in zip(retrievers, method_results)
+            retriever: [float(r) for r in score_list]
+            for retriever, score_list in zip(retrievers, method_results)
         }
 
         # Data shape: 列為 Query, 欄為 Method，轉置後轉回想要的 shape
