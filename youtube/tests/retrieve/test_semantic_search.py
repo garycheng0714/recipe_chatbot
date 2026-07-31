@@ -17,10 +17,10 @@ async def test_retriever_semantic_search(data_test_set_reader, calculate_recall)
 
 
 
-async def test_retrievers(data_test_set_reader, create_metrics):
+async def test_retrievers(data_test_set_reader, create_recall_5_metrics):
     test_sets = data_test_set_reader("youtube/tests/retrieve/assets/semantic_test_sets.json")
 
-    df = await create_metrics(test_sets)
+    df = await create_recall_5_metrics(test_sets)
 
     vectors_recall = df.at[Retriever.VECTORS, "Recall@5 (Average)"]
     hybrid_recall = df.at[Retriever.HYBRID, "Recall@5 (Average)"]
@@ -31,3 +31,13 @@ async def test_retrievers(data_test_set_reader, create_metrics):
     assert hybrid_recall == 1.0
 
 
+
+async def test_create_mrr_5_metrics(data_test_set_reader, create_mrr_5_metrics):
+    test_sets = data_test_set_reader("youtube/tests/retrieve/assets/semantic_test_sets.json")
+
+    df = await create_mrr_5_metrics(test_sets)
+
+    # vectors_mrr = df.at[Retriever.VECTORS, "MRR@5 (Average)"]
+    # hybrid_mrr = df.at[Retriever.HYBRID, "MRR@5 (Average)"]
+
+    print(f"\n{df.to_markdown()}")
