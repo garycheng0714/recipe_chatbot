@@ -4,7 +4,7 @@ from fastapi import FastAPI, Depends, HTTPException
 from app.hydrator.recipe.recipe_hydrator import RecipeHydrator
 from app.hydrator.yt.yt_hydrator import YtHydrator
 from app.retriever.hybrid_retriever import HybridRetriever
-from app.retriever.retriever_protocol import Retriever
+from app.retriever.retriever_protocol import RetrieverBase
 
 from app.client import (
     get_db,
@@ -107,23 +107,23 @@ async def search_recipe(
 
 
 @app.get("/yt/es/{query}")
-async def es_search(query: str, retriever: Retriever = Depends(get_yt_es_retriever)):
+async def es_search(query: str, retriever: RetrieverBase = Depends(get_yt_es_retriever)):
     return await retriever.retrieve(query, 5)
 
 @app.get("/yt/qdr/{query}")
-async def qdr_search(query: str, retriever: Retriever = Depends(get_yt_qdr_retriever)):
+async def qdr_search(query: str, retriever: RetrieverBase = Depends(get_yt_qdr_retriever)):
     return await retriever.retrieve(query, 5)
 
 @app.get("/yt/qdr-answer/{query}")
-async def qdr_search(query: str, retriever: Retriever = Depends(get_yt_answer_qdr_retriever)):
+async def qdr_search(query: str, retriever: RetrieverBase = Depends(get_yt_answer_qdr_retriever)):
     return await retriever.retrieve(query, 5)
 
 @app.get("/es/{query}")
-async def es_search(query: str, retriever: Retriever = Depends(get_es_retriever)):
+async def es_search(query: str, retriever: RetrieverBase = Depends(get_es_retriever)):
     return await retriever.retrieve(query, 10)
 
 @app.get("/qdr/{query}")
-async def qdr_search(query: str, retriever: Retriever = Depends(get_qdr_retriever)):
+async def qdr_search(query: str, retriever: RetrieverBase = Depends(get_qdr_retriever)):
     return await retriever.retrieve(query, 3)
 
 @app.get("/hybrid/{query}")

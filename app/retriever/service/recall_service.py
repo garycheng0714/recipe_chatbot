@@ -5,7 +5,7 @@ from typing import List
 
 from app.retriever.metrics.recall_calculator import RecallCalculator
 from app.retriever.model import TestSet
-from app.retriever.retriever_protocol import Retriever
+from app.retriever.retriever_protocol import RetrieverBase
 
 
 class RecallService:
@@ -29,7 +29,7 @@ class RecallService:
         self.top_k = top_k
         self.verbose = verbose
 
-    async def calculate_recall_by_query(self, retriever: Retriever, test_set: TestSet) -> float:
+    async def calculate_recall_by_query(self, retriever: RetrieverBase, test_set: TestSet) -> float:
         """
         計算單一 Query 的 Recall
         """
@@ -50,7 +50,7 @@ class RecallService:
             return recall
 
 
-    async def calculate_recall(self, retriever: Retriever, test_sets: List[TestSet]) -> List[float]:
+    async def calculate_recall(self, retriever: RetrieverBase, test_sets: List[TestSet]) -> List[float]:
         """
         批次計算所有 TestSet 的 Recall
         """
@@ -61,7 +61,7 @@ class RecallService:
         return await asyncio.gather(*tasks)
 
 
-    async def calculate_mean_recall(self, retriever: Retriever, test_sets: List[TestSet]) -> float:
+    async def calculate_mean_recall(self, retriever: RetrieverBase, test_sets: List[TestSet]) -> float:
         """
         便利方法：直接計算全體 TestSet 的平均 Recall
         """
