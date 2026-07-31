@@ -13,6 +13,11 @@ class BaseMetrics(ABC):
     def metrics_name(self) -> str:
         ...
 
+    @property
+    @abstractmethod
+    def allow_empty_relevant_ids(self) -> bool:
+        ...
+
     @staticmethod
     @abstractmethod
     def calculate(relevant_ids: list[str], result_ids: list[str]) -> float:

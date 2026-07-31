@@ -11,6 +11,10 @@ class RecallMetrics(BaseMetrics):
     def metrics_name(self) -> str:
         return "Recall"
 
+    @property
+    def allow_empty_relevant_ids(self) -> bool:
+        return True
+
     @staticmethod
     def calculate(relevant_ids: list[str], result_ids: list[str]) -> float:
         relevant_set = set(relevant_ids)

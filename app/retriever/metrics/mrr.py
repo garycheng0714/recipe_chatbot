@@ -12,6 +12,10 @@ class MRR(BaseMetrics):
     def metrics_name(self) -> str:
         return "MRR"
 
+    @property
+    def allow_empty_relevant_ids(self) -> bool:
+        return False
+
     @staticmethod
     def calculate(relevant_ids: list[str], result_ids: list[str]) -> float:
         if len(relevant_ids) == 0:
