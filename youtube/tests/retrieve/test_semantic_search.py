@@ -5,9 +5,11 @@ from app.retriever.enums import Retriever
 
 pytestmark = pytest.mark.asyncio(loop_scope="session")
 
+file_path = "youtube/tests/retrieve/assets/semantic_test_sets.json"
+
 
 async def test_retriever_semantic_search(data_test_set_reader, calculate_recall):
-    test_sets = data_test_set_reader("youtube/tests/retrieve/assets/semantic_test_sets.json")
+    test_sets = data_test_set_reader(file_path)
 
     retriever = get_yt_qdr_retriever()
 
@@ -18,7 +20,7 @@ async def test_retriever_semantic_search(data_test_set_reader, calculate_recall)
 
 
 async def test_retrievers(data_test_set_reader, create_recall_5_metrics):
-    test_sets = data_test_set_reader("youtube/tests/retrieve/assets/semantic_test_sets.json")
+    test_sets = data_test_set_reader(file_path)
 
     df = await create_recall_5_metrics(test_sets)
 
@@ -33,7 +35,7 @@ async def test_retrievers(data_test_set_reader, create_recall_5_metrics):
 
 
 async def test_create_mrr_5_metrics(data_test_set_reader, create_mrr_5_metrics):
-    test_sets = data_test_set_reader("youtube/tests/retrieve/assets/semantic_test_sets.json")
+    test_sets = data_test_set_reader(file_path)
 
     df = await create_mrr_5_metrics(test_sets)
 
@@ -41,3 +43,11 @@ async def test_create_mrr_5_metrics(data_test_set_reader, create_mrr_5_metrics):
     # hybrid_mrr = df.at[Retriever.HYBRID, "MRR@5 (Average)"]
 
     print(f"\n{df.to_markdown()}")
+
+
+async def test_crate_retriever_semantic_recall_and_mrr_metrics(data_test_set_reader, create_recall_mrr_metrics):
+    test_sets = data_test_set_reader(file_path)
+
+    df = await create_recall_mrr_metrics(test_sets)
+
+    print(df)

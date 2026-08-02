@@ -1,8 +1,9 @@
+import pandas as pd
 import pytest
 
 from app.client import get_yt_es_retriever
 from app.retriever.enums import Retriever
-
+from app.retriever.service.metrics_service import Columns
 
 pytestmark = pytest.mark.asyncio(loop_scope="session")
 
@@ -37,7 +38,18 @@ async def test_crate_retriever_keyword_mrr_metrics(data_test_set_reader, create_
 
     df = await create_mrr_5_metrics(test_sets)
 
-    bm25_mrr = df.at[Retriever.BM25, "MRR@5 (Average)"]
-    hybrid_mrr = df.at[Retriever.HYBRID, "MRR@5 (Average)"]
+    bm25_mrr_5 = df.at[Retriever.BM25, Columns.MRR_5]
+    hybrid_mrr_5 = df.at[Retriever.HYBRID, Columns.MRR_5]
+
+    assert bm25_mrr_5 == 1.0
+    assert hybrid_mrr_5 == 1.0
 
     print(f"\n{df.to_markdown()}")
+
+
+async def test_crate_retriever_keyword_recall_and_mrr_metrics(data_test_set_reader, create_recall_mrr_metrics):
+    test_sets = data_test_set_reader("youtube/tests/retrieve/assets/keyword_test_sets.json")
+
+    df = await create_recall_mrr_metrics(test_sets)
+
+    print(df)

@@ -56,3 +56,18 @@ def create_mrr_5_metrics():
         return df
 
     return _create_mrr_metrics
+
+
+@pytest.fixture
+def create_recall_mrr_metrics():
+    async def _create_metrics(test_sets: list[TestSet]) -> pd.DataFrame:
+        calculate_service = CalculateService(calculator=MRR())
+        df_mrr = await MetricsService.create_metrics(calculate_service, test_sets)
+
+        calculate_service = CalculateService(calculator=RecallMetrics())
+        df_recall = await MetricsService.create_metrics(calculate_service, test_sets)
+
+        df = MetricsService.merge(df_recall, df_mrr)
+
+        return df
+    return _create_metrics

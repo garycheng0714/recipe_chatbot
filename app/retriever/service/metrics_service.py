@@ -10,8 +10,8 @@ from app.retriever.service.calculate_service import CalculateService
 class Columns(StrEnum):
     METHOD = "Method"
     QUERY = "Query"
-    RECALL_5 = "Recall@5"
-    MRR = "MRR"
+    RECALL_5 = "Recall@5 (Average)"
+    MRR_5 = "MRR@5 (Average)"
 
 
 class MetricsService:
@@ -56,3 +56,32 @@ class MetricsService:
 
         return df
 
+
+    @classmethod
+    def merge(cls, df_recall: pd.DataFrame, df_mrr: pd.DataFrame):
+
+        columns = [col for col in df_recall.columns if 'Average' not in col] + ['Recall@5 (Average)', 'MRR@5 (Average)']
+
+        # 1. 幫 df_mrr 加標籤：一般欄位叫 'MRR'，平均欄位第二層留空 ''
+        df_mrr.columns = pd.MultiIndex.from_tuples(
+            [(col, '') if 'Average' in col else (col, 'MRR') for col in df_mrr.columns]
+        )
+
+        # 2. 幫 df_recall 加標籤：一般欄位叫 'Recall'，平均欄位第二層留空 ''
+        df_recall.columns = pd.MultiIndex.from_tuples(
+            [(col, '') if 'Average' in col else (col, 'Recall') for col in df_recall.columns]
+        )
+
+        # 3. 左右直接拼起來 (axis=1)
+        df_final = pd.concat([df_mrr, df_recall], axis=1)
+
+        # 4. 排序欄位 (讓 MRR 和 Recall 交錯放在一起，並且把 Average 移到最後)
+        df_final = df_final.sort_index(axis=1, level=0).reindex(columns=columns, level=0)
+
+        # 解除欄位數限制（顯示所有欄位）
+        pd.set_option('display.max_columns', None)
+
+        # 解除單行寬度限制（防止自動換行折疊）
+        pd.set_option('display.width', 1000)
+
+        return df_final
