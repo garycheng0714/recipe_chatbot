@@ -41,11 +41,16 @@ class CalculateService:
             score = self.calculator.calculate(test_set.relevant_ids, result_ids)
 
             if self.verbose and score < self.calculator.criteria:
+                lost = [result_id for result_id in result_ids if result_id not in test_set.relevant_ids]
+                answer_not_match = [answer for answer in test_set.relevant_ids if answer not in result_ids]
+
                 print(
                     f"\n[{retriever.__class__.__name__}] {self.calculator.metrics_name} < 1.0:\n"
                     f"  Question: {test_set.question}\n"
                     f"  Expected: {test_set.relevant_ids}\n"
-                    f"  Retrieved: {result_ids}"
+                    f"  Retrieved: {result_ids}\n"
+                    f"  Lost: {lost}\n"
+                    f"  Answer not match: {answer_not_match}\n"
                 )
 
             return score
