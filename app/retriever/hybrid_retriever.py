@@ -1,8 +1,10 @@
 import asyncio
 
 from app.retriever.es_retriever import ElasticSearchRetriever
+from app.retriever.model import DynamicWeight
 from app.retriever.qdr_retriever import QdrantRetriever
 from app.retriever.fusion.rrf import RRFRanker, RankList
+from app.retriever.softmax_probability import SoftmaxProbability
 from app.schema import RRFResult
 
 
@@ -11,15 +13,18 @@ class HybridRetriever:
         self.es_retriever = es_retriever
         self.qdr_retriever = qdr_retriever
 
+    def _dynamic_weight(self, scores: list[float]) -> DynamicWeight:
+        probs = SoftmaxProbability.bm25_to_confidence(scores)
+        print(probs)
+        if not probs:
+            return DynamicWeight(bm25=1.0, vectors=1.0)
+
+        if probs[0] > 0.5:
+            return DynamicWeight(bm25=1.0, vectors=1.0)
+        else:
+            return DynamicWeight(bm25=0.4, vectors=0.6)
+
     async def retrieve(self, query_text: str, top_k: int) -> list[RRFResult]:
-        es_weight = 1.0
-        qdr_weight = 1.0
-
-        keywords = ["who", "how", "what"]
-
-        if any(word in query_text.lower() for word in keywords):
-            es_weight = 0.4
-            qdr_weight = 0.6
 
         search_k = top_k * 2
 
@@ -30,12 +35,16 @@ class HybridRetriever:
         es_res, qd_res = await asyncio.gather(es_task, qdr_task)
 
         es_ids = [r.id for r in es_res]
+
+        es_scores = [r.score for r in es_res]
+        dynamic_weights = self._dynamic_weight(es_scores)
+
         qdr_ids = [r.id for r in qd_res]
 
         fused_results = RRFRanker.reciprocal_rank_fusion(
             [
-                RankList(ids=es_ids, weight=es_weight),
-                RankList(ids=qdr_ids, weight=qdr_weight),
+                RankList(ids=es_ids, weight=dynamic_weights.bm25),
+                RankList(ids=qdr_ids, weight=dynamic_weights.vectors),
             ],
             k=60
         )

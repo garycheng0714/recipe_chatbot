@@ -6,3 +6,8 @@ class TestSet(BaseModel):
 
     question: str
     relevant_ids: list[str]
+
+
+class DynamicWeight(BaseModel):
+    bm25: float
+    vectors: float
