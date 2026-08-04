@@ -13,4 +13,4 @@ async def test_crate_golden_set_recall_and_mrr_metrics(data_test_set_reader, cre
 
     create_metrics_json_data(df)
 
-    check_metrics_diff()
+    assert check_metrics_diff(), "📉 Metrics Decline"

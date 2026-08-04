@@ -1,6 +1,4 @@
 import ast
-import json
-import os
 
 from jinja2 import Environment, FileSystemLoader
 import pandas as pd
@@ -21,6 +19,8 @@ def generate_benchmark_html(
         )
         return df
 
+    success = True
+
     df_b = parse_df(data_base)
     df_c = parse_df(data_curr)
     df_diff = df_c - df_b
@@ -39,6 +39,7 @@ def generate_benchmark_html(
             if diff < 0:
                 badge_class = "badge badge-negative"
                 diff_text = f"({diff:+.2f})"
+                success = False
             elif diff > 0:
                 badge_class = "badge badge-positive"
                 diff_text = f"({diff:+.2f})"
@@ -64,7 +65,7 @@ def generate_benchmark_html(
         )
 
     # 3. 讀取 template.html 並渲染結果
-    env = Environment(loader=FileSystemLoader("../../../../app/retriever/service/report"))
+    env = Environment(loader=FileSystemLoader("app/retriever/service/report/"))
     template = env.get_template(template_path)
     rendered_html = template.render(rows=rows)
 
@@ -74,14 +75,4 @@ def generate_benchmark_html(
 
     print(f"✅ 報告已生成：{output_filename}")
 
-
-if __name__ == "__main__":
-    with open("/youtube/tests/retrieve/report/golden_set_base.json", "r") as f:
-        data = json.load(f)
-        base_data = pd.DataFrame.from_dict(data)
-
-    with open("/youtube/tests/retrieve/report/golden_set_curr.json", "r") as f:
-        data = json.load(f)
-        curr_data = pd.DataFrame.from_dict(data)
-
-    generate_benchmark_html(base_data, curr_data)
+    return success

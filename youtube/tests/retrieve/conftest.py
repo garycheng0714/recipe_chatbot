@@ -11,7 +11,7 @@ from app.retriever.retriever_protocol import RetrieverBase
 from app.retriever.model import TestSet
 from app.retriever.service.calculate_service import CalculateService
 from app.retriever.service.metrics_service import MetricsService
-from youtube.tests.retrieve.report.report_generator import generate_benchmark_html
+from app.retriever.service.report.report_generator import generate_benchmark_html
 
 
 @pytest.fixture(scope="class")
@@ -57,9 +57,12 @@ def check_metrics_diff(request):
             with open(curr_file, 'r') as f:
                 curr_data = json.load(f)
 
-            generate_benchmark_html(base_data, curr_data, output_filename=output_file)
+            result = generate_benchmark_html(base_data, curr_data, output_filename=output_file)
         else:
             print("No file to check diff")
+            result = True
+
+        return result
 
     return _check_metrics_diff
 
