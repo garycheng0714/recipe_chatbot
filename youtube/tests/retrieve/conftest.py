@@ -25,6 +25,21 @@ def data_test_set_reader():
 
 
 @pytest.fixture
+def create_metrics_json_data(request):
+    def _export_json(df: pd.DataFrame):
+        report_dir = request.path / "report"
+        prefix_name = request.path.stem.removeprefix('test_')
+
+        file = report_dir / f"{prefix_name}_base.json"
+
+        if file.exists():
+            file = report_dir / f"{prefix_name}_curr.json"
+
+        df.to_json(path_or_buf=file, indent=2, force_ascii=False)
+    return _export_json
+
+
+@pytest.fixture
 def calculate_recall():
     async def _calculate_recall(retriever: RetrieverBase, test_sets: list[TestSet]) -> list[float]:
         recall_service = CalculateService()
