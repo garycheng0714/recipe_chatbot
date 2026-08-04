@@ -27,7 +27,7 @@ def data_test_set_reader():
 @pytest.fixture
 def create_metrics_json_data(request):
     def _export_json(df: pd.DataFrame):
-        report_dir = request.path / "report"
+        report_dir = request.path.parent / "report"
         prefix_name = request.path.stem.removeprefix('test_')
 
         file = report_dir / f"{prefix_name}_base.json"
