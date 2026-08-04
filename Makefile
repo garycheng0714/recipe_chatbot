@@ -76,4 +76,4 @@ alembic_upgrade:
 	alembic upgrade head
 
 unittest-yt :
-	pytest --ignore=tests/ --ignore=web_crawler/tests/
+	pytest --ignore=tests/ --ignore=web_crawler/tests/ --html=yt_unittest_report.html
