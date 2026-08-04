@@ -15,14 +15,13 @@ class HybridRetriever:
 
     def _dynamic_weight(self, scores: list[float]) -> DynamicWeight:
         probs = SoftmaxProbability.bm25_to_confidence(scores)
-        print(probs)
-        if not probs:
-            return DynamicWeight(bm25=1.0, vectors=1.0)
-
-        if probs[0] > 0.5:
-            return DynamicWeight(bm25=1.0, vectors=1.0)
-        else:
+        if not probs or probs[0] < 0.5:
+            """
+            BM25 沒找到任何 KU 或信心度不足
+            """
             return DynamicWeight(bm25=0.4, vectors=0.6)
+
+        return DynamicWeight(bm25=1.0, vectors=1.0)
 
     async def retrieve(self, query_text: str, top_k: int) -> list[RRFResult]:
 
