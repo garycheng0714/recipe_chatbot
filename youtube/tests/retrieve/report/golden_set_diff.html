@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="utf-8">
+    <title>RAG Search Strategy & Regression Benchmark</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <h1 class="report-title">📊 RAG 檢索策略與評測對比報告</h1>
+        <p class="report-subtitle">比較不同 Query 在各檢索策略下的表現變化 (Base vs. Current)</p>
+
+        <div class="table-card">
+            <table class="benchmark-table">
+                <thead>
+                    <tr class="table-header">
+                        <th>Query</th>
+                        <th>Metric</th>
+                        <th class="text-center">BM25 (Curr / Diff)</th>
+                        <th class="text-center">Vectors (Curr / Diff)</th>
+                        <th class="text-center">Hybrid (Curr / Diff)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    
+                    <tr class="table-row">
+                        <td class="cell-query">What was the difference between his failed first attempt at Monza and his successful attempt in Vienna?</td>
+                        <td class="cell-metric">MRR</td>
+                        
+                        <td class="cell-value">
+                            <span class="val-text">1.00</span>
+                            
+                        </td>
+                        
+                        <td class="cell-value">
+                            <span class="val-text">1.00</span>
+                            
+                        </td>
+                        
+                        <td class="cell-value">
+                            <span class="val-text">1.00</span>
+                            
+                        </td>
+                        
+                    </tr>
+                    
+                    <tr class="table-row">
+                        <td class="cell-query">What was the difference between his failed first attempt at Monza and his successful attempt in Vienna?</td>
+                        <td class="cell-metric">Recall</td>
+                        
+                        <td class="cell-value">
+                            <span class="val-text">1.00</span>
+                            
+                        </td>
+                        
+                        <td class="cell-value">
+                            <span class="val-text">0.80</span>
+                            
+                        </td>
+                        
+                        <td class="cell-value">
+                            <span class="val-text">1.00</span>
+                            
+                        </td>
+                        
+                    </tr>
+                    
+                    <tr class="table-row">
+                        <td class="cell-query">How does he view self-improvement and the learning process in running?</td>
+                        <td class="cell-metric">MRR</td>
+                        
+                        <td class="cell-value">
+                            <span class="val-text">1.00</span>
+                            
+                        </td>
+                        
+                        <td class="cell-value">
+                            <span class="val-text">1.00</span>
+                            
+                        </td>
+                        
+                        <td class="cell-value">
+                            <span class="val-text">1.00</span>
+                            
+                        </td>
+                        
+                    </tr>
+                    
+                    <tr class="table-row">
+                        <td class="cell-query">How does he view self-improvement and the learning process in running?</td>
+                        <td class="cell-metric">Recall</td>
+                        
+                        <td class="cell-value">
+                            <span class="val-text">0.25</span>
+                            
+                        </td>
+                        
+                        <td class="cell-value">
+                            <span class="val-text">0.75</span>
+                            
+                        </td>
+                        
+                        <td class="cell-value">
+                            <span class="val-text">0.75</span>
+                            
+                        </td>
+                        
+                    </tr>
+                    
+                    <tr class="table-row">
+                        <td class="cell-query">What analogy did he use to describe his mindset during his first Breaking2 attempt?</td>
+                        <td class="cell-metric">MRR</td>
+                        
+                        <td class="cell-value">
+                            <span class="val-text">1.00</span>
+                            
+                        </td>
+                        
+                        <td class="cell-value">
+                            <span class="val-text">0.50</span>
+                            
+                        </td>
+                        
+                        <td class="cell-value">
+                            <span class="val-text">1.00</span>
+                            
+                        </td>
+                        
+                    </tr>
+                    
+                    <tr class="table-row">
+                        <td class="cell-query">What analogy did he use to describe his mindset during his first Breaking2 attempt?</td>
+                        <td class="cell-metric">Recall</td>
+                        
+                        <td class="cell-value">
+                            <span class="val-text">1.00</span>
+                            
+                        </td>
+                        
+                        <td class="cell-value">
+                            <span class="val-text">1.00</span>
+                            
+                        </td>
+                        
+                        <td class="cell-value">
+                            <span class="val-text">1.00</span>
+                            
+                        </td>
+                        
+                    </tr>
+                    
+                    <tr class="table-row">
+                        <td class="cell-query">How much slower is his easy run pace compared to his sub-two-hour marathon pace?</td>
+                        <td class="cell-metric">MRR</td>
+                        
+                        <td class="cell-value">
+                            <span class="val-text">1.00</span>
+                            
+                        </td>
+                        
+                        <td class="cell-value">
+                            <span class="val-text">1.00</span>
+                            
+                        </td>
+                        
+                        <td class="cell-value">
+                            <span class="val-text">1.00</span>
+                            
+                        </td>
+                        
+                    </tr>
+                    
+                    <tr class="table-row">
+                        <td class="cell-query">How much slower is his easy run pace compared to his sub-two-hour marathon pace?</td>
+                        <td class="cell-metric">Recall</td>
+                        
+                        <td class="cell-value">
+                            <span class="val-text">1.00</span>
+                            
+                        </td>
+                        
+                        <td class="cell-value">
+                            <span class="val-text">1.00</span>
+                            
+                        </td>
+                        
+                        <td class="cell-value">
+                            <span class="val-text">1.00</span>
+                            
+                        </td>
+                        
+                    </tr>
+                    
+                    <tr class="table-row">
+                        <td class="cell-query">What technology does his team use to monitor his nutrition and blood glucose in real time?</td>
+                        <td class="cell-metric">MRR</td>
+                        
+                        <td class="cell-value">
+                            <span class="val-text">1.00</span>
+                            
+                        </td>
+                        
+                        <td class="cell-value">
+                            <span class="val-text">1.00</span>
+                            
+                        </td>
+                        
+                        <td class="cell-value">
+                            <span class="val-text">1.00</span>
+                            
+                        </td>
+                        
+                    </tr>
+                    
+                    <tr class="table-row">
+                        <td class="cell-query">What technology does his team use to monitor his nutrition and blood glucose in real time?</td>
+                        <td class="cell-metric">Recall</td>
+                        
+                        <td class="cell-value">
+                            <span class="val-text">1.00</span>
+                            
+                        </td>
+                        
+                        <td class="cell-value">
+                            <span class="val-text">1.00</span>
+                            
+                        </td>
+                        
+                        <td class="cell-value">
+                            <span class="val-text">1.00</span>
+                            
+                        </td>
+                        
+                    </tr>
+                    
+                    <tr class="table-row">
+                        <td class="cell-query">What key training lets his body sustain high speed for a long time?</td>
+                        <td class="cell-metric">MRR</td>
+                        
+                        <td class="cell-value">
+                            <span class="val-text">1.00</span>
+                            
+                        </td>
+                        
+                        <td class="cell-value">
+                            <span class="val-text">0.33</span>
+                            
+                        </td>
+                        
+                        <td class="cell-value">
+                            <span class="val-text">0.50</span>
+                            
+                        </td>
+                        
+                    </tr>
+                    
+                    <tr class="table-row">
+                        <td class="cell-query">What key training lets his body sustain high speed for a long time?</td>
+                        <td class="cell-metric">Recall</td>
+                        
+                        <td class="cell-value">
+                            <span class="val-text">0.67</span>
+                            
+                        </td>
+                        
+                        <td class="cell-value">
+                            <span class="val-text">0.67</span>
+                            
+                        </td>
+                        
+                        <td class="cell-value">
+                            <span class="val-text">0.67</span>
+                            
+                        </td>
+                        
+                    </tr>
+                    
+                    <tr class="table-row">
+                        <td class="cell-query">At the Kaptagat training camp, how does his lifestyle and training differ from other athletes despite being a world record holder?</td>
+                        <td class="cell-metric">MRR</td>
+                        
+                        <td class="cell-value">
+                            <span class="val-text">1.00</span>
+                            
+                        </td>
+                        
+                        <td class="cell-value">
+                            <span class="val-text">1.00</span>
+                            
+                        </td>
+                        
+                        <td class="cell-value">
+                            <span class="val-text">1.00</span>
+                            
+                        </td>
+                        
+                    </tr>
+                    
+                    <tr class="table-row">
+                        <td class="cell-query">At the Kaptagat training camp, how does his lifestyle and training differ from other athletes despite being a world record holder?</td>
+                        <td class="cell-metric">Recall</td>
+                        
+                        <td class="cell-value">
+                            <span class="val-text">0.50</span>
+                            
+                        </td>
+                        
+                        <td class="cell-value">
+                            <span class="val-text">1.00</span>
+                            
+                        </td>
+                        
+                        <td class="cell-value">
+                            <span class="val-text">1.00</span>
+                            
+                        </td>
+                        
+                    </tr>
+                    
+                    <tr class="table-row">
+                        <td class="cell-query">What advice would he give recreational runners about planning their training?</td>
+                        <td class="cell-metric">MRR</td>
+                        
+                        <td class="cell-value">
+                            <span class="val-text">0.50</span>
+                            
+                        </td>
+                        
+                        <td class="cell-value">
+                            <span class="val-text">1.00</span>
+                            
+                        </td>
+                        
+                        <td class="cell-value">
+                            <span class="val-text">1.00</span>
+                            
+                        </td>
+                        
+                    </tr>
+                    
+                    <tr class="table-row">
+                        <td class="cell-query">What advice would he give recreational runners about planning their training?</td>
+                        <td class="cell-metric">Recall</td>
+                        
+                        <td class="cell-value">
+                            <span class="val-text">1.00</span>
+                            
+                        </td>
+                        
+                        <td class="cell-value">
+                            <span class="val-text">0.50</span>
+                            
+                        </td>
+                        
+                        <td class="cell-value">
+                            <span class="val-text">1.00</span>
+                            
+                        </td>
+                        
+                    </tr>
+                    
+                    <tr class="table-row">
+                        <td class="cell-query">Even after a hard session, what state does he try to finish training in?</td>
+                        <td class="cell-metric">MRR</td>
+                        
+                        <td class="cell-value">
+                            <span class="val-text">1.00</span>
+                            
+                        </td>
+                        
+                        <td class="cell-value">
+                            <span class="val-text">1.00</span>
+                            
+                        </td>
+                        
+                        <td class="cell-value">
+                            <span class="val-text">1.00</span>
+                            
+                        </td>
+                        
+                    </tr>
+                    
+                    <tr class="table-row">
+                        <td class="cell-query">Even after a hard session, what state does he try to finish training in?</td>
+                        <td class="cell-metric">Recall</td>
+                        
+                        <td class="cell-value">
+                            <span class="val-text">1.00</span>
+                            
+                        </td>
+                        
+                        <td class="cell-value">
+                            <span class="val-text">1.00</span>
+                            
+                        </td>
+                        
+                        <td class="cell-value">
+                            <span class="val-text">1.00</span>
+                            
+                        </td>
+                        
+                    </tr>
+                    
+                    <tr class="table-row table-row-avg">
+                        <td class="cell-query">Recall@5 (Average)</td>
+                        <td class="cell-metric"></td>
+                        
+                        <td class="cell-value">
+                            <span class="val-text">0.82</span>
+                            
+                        </td>
+                        
+                        <td class="cell-value">
+                            <span class="val-text">0.86</span>
+                            
+                        </td>
+                        
+                        <td class="cell-value">
+                            <span class="val-text">0.94</span>
+                            
+                        </td>
+                        
+                    </tr>
+                    
+                    <tr class="table-row table-row-avg">
+                        <td class="cell-query">MRR@5 (Average)</td>
+                        <td class="cell-metric"></td>
+                        
+                        <td class="cell-value">
+                            <span class="val-text">0.94</span>
+                            
+                        </td>
+                        
+                        <td class="cell-value">
+                            <span class="val-text">0.87</span>
+                            
+                        </td>
+                        
+                        <td class="cell-value">
+                            <span class="val-text">0.94</span>
+                            
+                        </td>
+                        
+                    </tr>
+                    
+                </tbody>
+            </table>
+        </div>
+    </div>
+</body>
+</html>

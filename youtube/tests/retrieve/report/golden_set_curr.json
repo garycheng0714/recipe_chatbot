@@ -1,0 +1,102 @@
+{
+  "('What was the difference between his failed first attempt at Monza and his successful attempt in Vienna?', 'MRR')":{
+    "BM25":1.0,
+    "Vectors":1.0,
+    "Hybrid":1.0
+  },
+  "('What was the difference between his failed first attempt at Monza and his successful attempt in Vienna?', 'Recall')":{
+    "BM25":1.0,
+    "Vectors":0.8,
+    "Hybrid":1.0
+  },
+  "('How does he view self-improvement and the learning process in running?', 'MRR')":{
+    "BM25":1.0,
+    "Vectors":1.0,
+    "Hybrid":1.0
+  },
+  "('How does he view self-improvement and the learning process in running?', 'Recall')":{
+    "BM25":0.25,
+    "Vectors":0.75,
+    "Hybrid":0.75
+  },
+  "('What analogy did he use to describe his mindset during his first Breaking2 attempt?', 'MRR')":{
+    "BM25":1.0,
+    "Vectors":0.5,
+    "Hybrid":1.0
+  },
+  "('What analogy did he use to describe his mindset during his first Breaking2 attempt?', 'Recall')":{
+    "BM25":1.0,
+    "Vectors":1.0,
+    "Hybrid":1.0
+  },
+  "('How much slower is his easy run pace compared to his sub-two-hour marathon pace?', 'MRR')":{
+    "BM25":1.0,
+    "Vectors":1.0,
+    "Hybrid":1.0
+  },
+  "('How much slower is his easy run pace compared to his sub-two-hour marathon pace?', 'Recall')":{
+    "BM25":1.0,
+    "Vectors":1.0,
+    "Hybrid":1.0
+  },
+  "('What technology does his team use to monitor his nutrition and blood glucose in real time?', 'MRR')":{
+    "BM25":1.0,
+    "Vectors":1.0,
+    "Hybrid":1.0
+  },
+  "('What technology does his team use to monitor his nutrition and blood glucose in real time?', 'Recall')":{
+    "BM25":1.0,
+    "Vectors":1.0,
+    "Hybrid":1.0
+  },
+  "('What key training lets his body sustain high speed for a long time?', 'MRR')":{
+    "BM25":1.0,
+    "Vectors":0.3333333333,
+    "Hybrid":0.5
+  },
+  "('What key training lets his body sustain high speed for a long time?', 'Recall')":{
+    "BM25":0.6666666667,
+    "Vectors":0.6666666667,
+    "Hybrid":0.6666666667
+  },
+  "('At the Kaptagat training camp, how does his lifestyle and training differ from other athletes despite being a world record holder?', 'MRR')":{
+    "BM25":1.0,
+    "Vectors":1.0,
+    "Hybrid":1.0
+  },
+  "('At the Kaptagat training camp, how does his lifestyle and training differ from other athletes despite being a world record holder?', 'Recall')":{
+    "BM25":0.5,
+    "Vectors":1.0,
+    "Hybrid":1.0
+  },
+  "('What advice would he give recreational runners about planning their training?', 'MRR')":{
+    "BM25":0.5,
+    "Vectors":1.0,
+    "Hybrid":1.0
+  },
+  "('What advice would he give recreational runners about planning their training?', 'Recall')":{
+    "BM25":1.0,
+    "Vectors":0.5,
+    "Hybrid":1.0
+  },
+  "('Even after a hard session, what state does he try to finish training in?', 'MRR')":{
+    "BM25":1.0,
+    "Vectors":1.0,
+    "Hybrid":1.0
+  },
+  "('Even after a hard session, what state does he try to finish training in?', 'Recall')":{
+    "BM25":1.0,
+    "Vectors":1.0,
+    "Hybrid":1.0
+  },
+  "('Recall@5 (Average)', '')":{
+    "BM25":0.8240740741,
+    "Vectors":0.8574074074,
+    "Hybrid":0.9351851852
+  },
+  "('MRR@5 (Average)', '')":{
+    "BM25":0.9444444444,
+    "Vectors":0.8703703704,
+    "Hybrid":0.9444444444
+  }
+}

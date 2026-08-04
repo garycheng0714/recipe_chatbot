@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="utf-8">
+    <title>RAG Search Strategy & Regression Benchmark</title>
+    <link rel="stylesheet" href="../../../../app/retriever/service/report/style.css">
+</head>
+<body>
+    <div class="container">
+        <h1 class="report-title">📊 RAG 檢索策略與評測對比報告</h1>
+        <p class="report-subtitle">比較不同 Query 在各檢索策略下的表現變化 (Base vs. Current)</p>
+
+        <div class="table-card">
+            <table class="benchmark-table">
+                <thead>
+                    <tr class="table-header">
+                        <th>Query</th>
+                        <th>Metric</th>
+                        <th class="text-center">BM25 (Curr / Diff)</th>
+                        <th class="text-center">Vectors (Curr / Diff)</th>
+                        <th class="text-center">Hybrid (Curr / Diff)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in rows %}
+                    <tr class="{{ row.row_class }}">
+                        <td class="cell-query">{{ row.query }}</td>
+                        <td class="cell-metric">{{ row.metric }}</td>
+                        {% for item in row.metrics %}
+                        <td class="cell-value">
+                            <span class="val-text">{{ item.val }}</span>
+                            {% if item.diff_text %}
+                            <span class="{{ item.badge_class }}">{{ item.diff_text }}</span>
+                            {% endif %}
+                        </td>
+                        {% endfor %}
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</body>
+</html>

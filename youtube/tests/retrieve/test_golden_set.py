@@ -3,7 +3,7 @@ import pytest
 pytestmark = pytest.mark.asyncio(loop_scope="session")
 
 
-async def test_crate_golden_set_recall_and_mrr_metrics(data_test_set_reader, create_recall_mrr_metrics, create_metrics_json_data):
+async def test_crate_golden_set_recall_and_mrr_metrics(data_test_set_reader, create_recall_mrr_metrics, create_metrics_json_data, check_metrics_diff):
     test_sets = data_test_set_reader("youtube/tests/retrieve/assets/golden_set.json")
 
 
@@ -12,3 +12,5 @@ async def test_crate_golden_set_recall_and_mrr_metrics(data_test_set_reader, cre
     print(df)
 
     create_metrics_json_data(df)
+
+    check_metrics_diff()
