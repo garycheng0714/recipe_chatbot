@@ -4,7 +4,6 @@ from uuid import UUID
 
 from pydantic import TypeAdapter
 from pydantic_ai import Agent
-from sqlalchemy import select
 
 from app.agent.task_processor import TaskProcessor
 from app.database import AsyncSessionLocal
@@ -36,23 +35,9 @@ if __name__ == "__main__":
             result = await yt.fetch_current_artifacts(session=session, stage="transcript normalize", uuids=uuids)
             sections = [str(r.output) for r in result]
 
-
-        tasks = [fetch_chunks_by_section(s) for s in uuids]
-
-        chunks_result = await asyncio.gather(*tasks)
-
         contents = [
-            SectionQuestionContent(
-                section=section,
-                chunks=format_chunks_for_prompt([
-                    {
-                        "chunk_id": str(chunk.id),
-                        "text": chunk.answer
-                    }
-                    for chunk in chunks
-                ])
-            )
-            for section, chunks in zip(sections, chunks_result)
+            SectionQuestionContent(section=section)
+            for section in sections
         ]
 
         prompts = [SectionQuestionGeneratorPrompt.render(c) for c in contents]
@@ -60,12 +45,18 @@ if __name__ == "__main__":
 
         agent = Agent(
             model='gemini-2.5-flash',
-            output_type=SectionQuestionOutput
+            output_type=list[SectionQuestionOutput]
         )
 
         processor = TaskProcessor(agent=agent)
 
-        result = await processor.process_all(prompts)
+        results_list = await processor.process_all(prompts)
+
+        result = []
+
+        for results in results_list:
+            for r in results:
+                result.append(r)
 
         adapter = TypeAdapter(list[SectionQuestionOutput])
 
