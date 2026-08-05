@@ -12,6 +12,9 @@ from youtube.domain.video_document import VideoDocument
 
 
 class IndexChunksStage:
+    """
+    批次將 chunks 存進 ES
+    """
     def __init__(
         self,
         repository: YtRepository = YtRepository(),
