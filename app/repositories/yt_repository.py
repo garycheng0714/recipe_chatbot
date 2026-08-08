@@ -1,7 +1,7 @@
 from typing import TypeVar, Sequence
 from uuid import UUID
 
-from sqlalchemy import select, update, delete
+from sqlalchemy import select, update, delete, func
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio.session import AsyncSession
 from sqlalchemy.orm import selectinload
@@ -25,7 +25,9 @@ class YtRepository:
 
     async def fetch(self, model: T, session: AsyncSession, uuid: list[UUID]) -> Sequence[T]:
         result = await session.execute(
-            select(model).where(model.id.in_(uuid))
+            select(model)
+            .where(model.id.in_(uuid))
+            .order_by(func.array_position(uuid, model.id))
         )
 
         return result.scalars().all()
@@ -56,10 +58,10 @@ class YtRepository:
 
         return result.scalars().all()
 
-    async def fetch_chunks_by_section_id(self, session: AsyncSession, id: str) -> Sequence[Chunk]:
+    async def fetch_chunks_by_section_id(self, session: AsyncSession, uuid: UUID) -> Sequence[Chunk]:
         result = await session.execute(
             select(Chunk)
-            .where(Chunk.section_id == id)
+            .where(Chunk.section_id == uuid)
         )
 
         return result.scalars().all()
@@ -140,8 +142,16 @@ if __name__ == '__main__':
         yt = YtRepository()
 
         async with AsyncSessionLocal() as session:
-            result = await yt.fetch_artifacts(session=session, uuid=[UUID('0d72446b-cebb-5eef-a81d-19b9604b4eaf')])
 
-        print(result[0].output)
+
+            result = await yt.fetch_current_artifacts(session=session, stage="transcript normalize", uuids=[UUID('4294aab7-a13f-5e06-9002-c9d2a6324e32')])
+
+            print(result[0].output)
+
+            # result = await yt.fetch_chunks_by_section_id(session, UUID('4294aab7-a13f-5e06-9002-c9d2a6324e32'))
+            # result = await yt.fetch(Chunk, session, [UUID('24ea303e-80e8-4bfb-89cf-9cb5680e9989')])
+
+        # for r in result:
+        #     print(r.embedding_text)
 
     asyncio.run(main())
