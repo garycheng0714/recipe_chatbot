@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="utf-8">
+    <title>RAG Search Strategy & Regression Benchmark</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <h1 class="report-title">📊 RAG 檢索策略與評測對比報告</h1>
+        <p class="report-subtitle">比較不同 Query 在各檢索策略下的表現變化 (Base vs. Current)</p>
+
+        <div class="table-card">
+            <table class="benchmark-table">
+                <thead>
+                    <tr class="table-header">
+                        <th>Query</th>
+                        <th>Metric</th>
+                        <th class="text-center">BM25 (Curr / Diff)</th>
+                        <th class="text-center">Vectors (Curr / Diff)</th>
+                        <th class="text-center">Hybrid (Curr / Diff)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    
+                    <tr class="table-row">
+                        <td class="cell-query">
+                            
+                                <span>Münster</span>
+                            
+                        </td>
+                        <td class="cell-metric">MRR</td>
+                        
+                        <td class="cell-value">
+                            <span class="val-text">1.00</span>
+                            
+                        </td>
+                        
+                        <td class="cell-value">
+                            <span class="val-text">1.00</span>
+                            
+                        </td>
+                        
+                        <td class="cell-value">
+                            <span class="val-text">1.00</span>
+                            
+                        </td>
+                        
+                    </tr>
+                    
+                    <tr class="table-row">
+                        <td class="cell-query">
+                            
+                                <span>Münster</span>
+                            
+                        </td>
+                        <td class="cell-metric">Recall</td>
+                        
+                        <td class="cell-value">
+                            <span class="val-text">1.00</span>
+                            
+                        </td>
+                        
+                        <td class="cell-value">
+                            <span class="val-text">1.00</span>
+                            
+                        </td>
+                        
+                        <td class="cell-value">
+                            <span class="val-text">1.00</span>
+                            
+                        </td>
+                        
+                    </tr>
+                    
+                    <tr class="table-row">
+                        <td class="cell-query">
+                            
+                                <span>recreational runners</span>
+                            
+                        </td>
+                        <td class="cell-metric">MRR</td>
+                        
+                        <td class="cell-value">
+                            <span class="val-text">1.00</span>
+                            
+                        </td>
+                        
+                        <td class="cell-value">
+                            <span class="val-text">0.50</span>
+                            
+                        </td>
+                        
+                        <td class="cell-value">
+                            <span class="val-text">1.00</span>
+                            
+                        </td>
+                        
+                    </tr>
+                    
+                    <tr class="table-row">
+                        <td class="cell-query">
+                            
+                                <span>recreational runners</span>
+                            
+                        </td>
+                        <td class="cell-metric">Recall</td>
+                        
+                        <td class="cell-value">
+                            <span class="val-text">1.00</span>
+                            
+                        </td>
+                        
+                        <td class="cell-value">
+                            <span class="val-text">1.00</span>
+                            
+                        </td>
+                        
+                        <td class="cell-value">
+                            <span class="val-text">1.00</span>
+                            
+                        </td>
+                        
+                    </tr>
+                    
+                    <tr class="table-row">
+                        <td class="cell-query">
+                            
+                                <span>recovery</span>
+                            
+                        </td>
+                        <td class="cell-metric">MRR</td>
+                        
+                        <td class="cell-value">
+                            <span class="val-text">1.00</span>
+                            
+                        </td>
+                        
+                        <td class="cell-value">
+                            <span class="val-text">1.00</span>
+                            
+                        </td>
+                        
+                        <td class="cell-value">
+                            <span class="val-text">1.00</span>
+                            
+                        </td>
+                        
+                    </tr>
+                    
+                    <tr class="table-row">
+                        <td class="cell-query">
+                            
+                                <span>recovery</span>
+                            
+                        </td>
+                        <td class="cell-metric">Recall</td>
+                        
+                        <td class="cell-value">
+                            <span class="val-text">1.00</span>
+                            
+                        </td>
+                        
+                        <td class="cell-value">
+                            <span class="val-text">0.80</span>
+                            
+                        </td>
+                        
+                        <td class="cell-value">
+                            <span class="val-text">1.00</span>
+                            
+                        </td>
+                        
+                    </tr>
+                    
+                    <tr class="table-row">
+                        <td class="cell-query">
+                            
+                                <span>python</span>
+                            
+                        </td>
+                        <td class="cell-metric">Recall</td>
+                        
+                        <td class="cell-value">
+                            <span class="val-text">1.00</span>
+                            
+                        </td>
+                        
+                        <td class="cell-value">
+                            <span class="val-text">1.00</span>
+                            
+                        </td>
+                        
+                        <td class="cell-value">
+                            <span class="val-text">1.00</span>
+                            
+                        </td>
+                        
+                    </tr>
+                    
+                    <tr class="table-row">
+                        <td class="cell-query">
+                            
+                                <span>In preparation for the 159 Challenge, how did long runs condition the body to sustain a high speed over an extended period, and why was this specific endurance stimulus so crucial?</span>
+                            
+                        </td>
+                        <td class="cell-metric">MRR</td>
+                        
+                        <td class="cell-value">
+                            <span class="val-text">1.00</span>
+                            
+                        </td>
+                        
+                        <td class="cell-value">
+                            <span class="val-text">1.00</span>
+                            
+                        </td>
+                        
+                        <td class="cell-value">
+                            <span class="val-text">1.00</span>
+                            
+                        </td>
+                        
+                    </tr>
+                    
+                    <tr class="table-row">
+                        <td class="cell-query">
+                            
+                                <span>In preparation for the 159 Challenge, how did long runs condition the body to sustain a high speed over an extended period, and why was this specific endurance stimulus so crucial?</span>
+                            
+                        </td>
+                        <td class="cell-metric">Recall</td>
+                        
+                        <td class="cell-value">
+                            <span class="val-text">1.00</span>
+                            
+                        </td>
+                        
+                        <td class="cell-value">
+                            <span class="val-text">1.00</span>
+                            
+                        </td>
+                        
+                        <td class="cell-value">
+                            <span class="val-text">1.00</span>
+                            
+                        </td>
+                        
+                    </tr>
+                    
+                    <tr class="table-row">
+                        <td class="cell-query">
+                            
+                                <span>How do fast-twitch muscle adaptations differ between interval training on the track and variable-pace fartlek runs when training to hold a fast pace over long distances?</span>
+                            
+                        </td>
+                        <td class="cell-metric">MRR</td>
+                        
+                        <td class="cell-value">
+                            <span class="val-text">0.50</span>
+                            
+                        </td>
+                        
+                        <td class="cell-value">
+                            <span class="val-text">0.25</span>
+                            
+                        </td>
+                        
+                        <td class="cell-value">
+                            <span class="val-text">0.50</span>
+                            
+                        </td>
+                        
+                    </tr>
+                    
+                    <tr class="table-row">
+                        <td class="cell-query">
+                            
+                                <span>How do fast-twitch muscle adaptations differ between interval training on the track and variable-pace fartlek runs when training to hold a fast pace over long distances?</span>
+                            
+                        </td>
+                        <td class="cell-metric">Recall</td>
+                        
+                        <td class="cell-value">
+                            <span class="val-text">1.00</span>
+                            
+                        </td>
+                        
+                        <td class="cell-value">
+                            <span class="val-text">1.00</span>
+                            
+                        </td>
+                        
+                        <td class="cell-value">
+                            <span class="val-text">1.00</span>
+                            
+                        </td>
+                        
+                    </tr>
+                    
+                    <tr class="table-row">
+                        <td class="cell-query">
+                            
+                                <span>Regarding the quote that 'recovery runs helped my muscles to recover very fast,' what is the physiological mechanism behind active recovery compared to complete rest?</span>
+                            
+                        </td>
+                        <td class="cell-metric">MRR</td>
+                        
+                        <td class="cell-value">
+                            <span class="val-text">1.00</span>
+                            
+                        </td>
+                        
+                        <td class="cell-value">
+                            <span class="val-text">1.00</span>
+                            
+                        </td>
+                        
+                        <td class="cell-value">
+                            <span class="val-text">1.00</span>
+                            
+                        </td>
+                        
+                    </tr>
+                    
+                    <tr class="table-row">
+                        <td class="cell-query">
+                            
+                                <span>Regarding the quote that 'recovery runs helped my muscles to recover very fast,' what is the physiological mechanism behind active recovery compared to complete rest?</span>
+                            
+                        </td>
+                        <td class="cell-metric">Recall</td>
+                        
+                        <td class="cell-value">
+                            <span class="val-text">1.00</span>
+                            
+                        </td>
+                        
+                        <td class="cell-value">
+                            <span class="val-text">1.00</span>
+                            
+                        </td>
+                        
+                        <td class="cell-value">
+                            <span class="val-text">1.00</span>
+                            
+                        </td>
+                        
+                    </tr>
+                    
+                    <tr class="table-row table-row-avg">
+                        <td class="cell-query">
+                            
+                                <span>Recall@5 (Average)</span>
+                            
+                        </td>
+                        <td class="cell-metric"></td>
+                        
+                        <td class="cell-value">
+                            <span class="val-text">1.00</span>
+                            
+                        </td>
+                        
+                        <td class="cell-value">
+                            <span class="val-text">0.97</span>
+                            
+                        </td>
+                        
+                        <td class="cell-value">
+                            <span class="val-text">1.00</span>
+                            
+                        </td>
+                        
+                    </tr>
+                    
+                    <tr class="table-row table-row-avg">
+                        <td class="cell-query">
+                            
+                                <span>MRR@5 (Average)</span>
+                            
+                        </td>
+                        <td class="cell-metric"></td>
+                        
+                        <td class="cell-value">
+                            <span class="val-text">0.92</span>
+                            
+                        </td>
+                        
+                        <td class="cell-value">
+                            <span class="val-text">0.79</span>
+                            
+                        </td>
+                        
+                        <td class="cell-value">
+                            <span class="val-text">0.92</span>
+                            
+                        </td>
+                        
+                    </tr>
+                    
+                </tbody>
+            </table>
+        </div>
+    </div>
+</body>
+</html>

@@ -24,5 +24,24 @@
     {
         "question": "python",
         "relevant_ids": []
+    },
+    {
+      "question": "In preparation for the 159 Challenge, how did long runs condition the body to sustain a high speed over an extended period, and why was this specific endurance stimulus so crucial?",
+      "relevant_ids": [
+        "c4df3380-9b91-4366-8017-3436a2e39173"
+      ]
+    },
+    {
+      "question": "How do fast-twitch muscle adaptations differ between interval training on the track and variable-pace fartlek runs when training to hold a fast pace over long distances?",
+      "relevant_ids": [
+        "373bd79e-1970-4c77-b3c6-d321c12f6fca"
+      ]
+    },
+    {
+      "question": "Regarding the quote that 'recovery runs helped my muscles to recover very fast,' what is the physiological mechanism behind active recovery compared to complete rest?",
+      "relevant_ids": [
+        "3c0a2f27-3ef2-4286-a33c-dc7c0f9c2d99",
+        "373bd79e-1970-4c77-b3c6-d321c12f6fca"
+      ]
     }
 ]

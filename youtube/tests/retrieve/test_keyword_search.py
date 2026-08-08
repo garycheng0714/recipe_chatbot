@@ -47,9 +47,13 @@ async def test_crate_retriever_keyword_mrr_metrics(data_test_set_reader, create_
     print(f"\n{df.to_markdown()}")
 
 
-async def test_crate_retriever_keyword_recall_and_mrr_metrics(data_test_set_reader, create_recall_mrr_metrics):
+async def test_crate_retriever_keyword_recall_and_mrr_metrics(data_test_set_reader, create_recall_mrr_metrics, create_metrics_json_data, check_metrics_diff):
     test_sets = data_test_set_reader("youtube/tests/retrieve/assets/keyword_test_sets.json")
 
     df = await create_recall_mrr_metrics(test_sets)
 
     print(df)
+
+    create_metrics_json_data(df)
+
+    assert check_metrics_diff(), "📉 Metrics Decline"

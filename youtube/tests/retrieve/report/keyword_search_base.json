@@ -1,0 +1,77 @@
+{
+  "('Münster', 'MRR')":{
+    "BM25":1.0,
+    "Vectors":1.0,
+    "Hybrid":1.0
+  },
+  "('Münster', 'Recall')":{
+    "BM25":1.0,
+    "Vectors":1.0,
+    "Hybrid":1.0
+  },
+  "('recreational runners', 'MRR')":{
+    "BM25":1.0,
+    "Vectors":0.5,
+    "Hybrid":1.0
+  },
+  "('recreational runners', 'Recall')":{
+    "BM25":1.0,
+    "Vectors":1.0,
+    "Hybrid":1.0
+  },
+  "('recovery', 'MRR')":{
+    "BM25":1.0,
+    "Vectors":1.0,
+    "Hybrid":1.0
+  },
+  "('recovery', 'Recall')":{
+    "BM25":1.0,
+    "Vectors":0.8,
+    "Hybrid":1.0
+  },
+  "('python', 'Recall')":{
+    "BM25":1.0,
+    "Vectors":1.0,
+    "Hybrid":1.0
+  },
+  "('In preparation for the 159 Challenge, how did long runs condition the body to sustain a high speed over an extended period, and why was this specific endurance stimulus so crucial?', 'MRR')":{
+    "BM25":1.0,
+    "Vectors":1.0,
+    "Hybrid":1.0
+  },
+  "('In preparation for the 159 Challenge, how did long runs condition the body to sustain a high speed over an extended period, and why was this specific endurance stimulus so crucial?', 'Recall')":{
+    "BM25":1.0,
+    "Vectors":1.0,
+    "Hybrid":1.0
+  },
+  "('How do fast-twitch muscle adaptations differ between interval training on the track and variable-pace fartlek runs when training to hold a fast pace over long distances?', 'MRR')":{
+    "BM25":0.5,
+    "Vectors":0.25,
+    "Hybrid":0.5
+  },
+  "('How do fast-twitch muscle adaptations differ between interval training on the track and variable-pace fartlek runs when training to hold a fast pace over long distances?', 'Recall')":{
+    "BM25":1.0,
+    "Vectors":1.0,
+    "Hybrid":1.0
+  },
+  "(\"Regarding the quote that 'recovery runs helped my muscles to recover very fast,' what is the physiological mechanism behind active recovery compared to complete rest?\", 'MRR')":{
+    "BM25":1.0,
+    "Vectors":1.0,
+    "Hybrid":1.0
+  },
+  "(\"Regarding the quote that 'recovery runs helped my muscles to recover very fast,' what is the physiological mechanism behind active recovery compared to complete rest?\", 'Recall')":{
+    "BM25":1.0,
+    "Vectors":1.0,
+    "Hybrid":1.0
+  },
+  "('Recall@5 (Average)', '')":{
+    "BM25":1.0,
+    "Vectors":0.9714285714,
+    "Hybrid":1.0
+  },
+  "('MRR@5 (Average)', '')":{
+    "BM25":0.9166666667,
+    "Vectors":0.7916666667,
+    "Hybrid":0.9166666667
+  }
+}
