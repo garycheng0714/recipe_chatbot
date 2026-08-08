@@ -24,7 +24,17 @@
                 <tbody>
                     {% for row in rows %}
                     <tr class="{{ row.row_class }}">
-                        <td class="cell-query">{{ row.query }}</td>
+                        <td class="cell-query">
+                            {% if row.is_new_query %}
+                                <div class="query-diff-container">
+                                    <div class="badge badge-modified">Query Modified</div>
+                                    <div class="query-old">{{ row.query_base }}</div>
+                                    <div class="query-new">{{ row.query_curr }}</div>
+                                </div>
+                            {% else %}
+                                <span>{{ row.query_curr }}</span>
+                            {% endif %}
+                        </td>
                         <td class="cell-metric">{{ row.metric }}</td>
                         {% for item in row.metrics %}
                         <td class="cell-value">

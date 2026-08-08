@@ -23,18 +23,27 @@ def generate_benchmark_html(
 
     df_b = parse_df(data_base)
     df_c = parse_df(data_curr)
-    df_diff = df_c - df_b
 
     # 2. 轉換資料為字典結構給 Jinja2 渲染
     rows = []
-    for (query, metric), row in df_c.iterrows():
-        is_avg = "Average" in query
+    for i, ((query_c, metric_c), row_c) in enumerate(df_c.iterrows()):
+        is_avg = "Average" in query_c
         row_class = "table-row table-row-avg" if is_avg else "table-row"
+
+        query_b = df_b.index[i][0]
+
+        # 1. 檢查這個 Query 是否為全新的（不在 Base 資料庫中）
+        is_new_query = query_c != query_b
+
+        row_b = df_b.iloc[i]
 
         metrics_data = []
         for col in ["BM25", "Vectors", "Hybrid"]:
-            val_c = row[col]
-            diff = df_diff.loc[(query, metric), col]
+            val_b = row_b[col]
+            val_c = row_c[col]
+
+            # 純粹按順序計算數值差
+            diff = round(val_c - val_b, 2)
 
             if diff < 0:
                 badge_class = "badge badge-negative"
@@ -57,8 +66,10 @@ def generate_benchmark_html(
 
         rows.append(
             {
-                "query": query,
-                "metric": metric,
+                "query_curr": query_c,
+                "query_base": query_b,
+                "metric": metric_c,
+                "is_new_query": is_new_query,  # 傳遞註記給 Jinja2 模板
                 "row_class": row_class,
                 "metrics": metrics_data,
             }
