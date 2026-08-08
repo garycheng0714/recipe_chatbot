@@ -9,32 +9,20 @@ from web_crawler.requester import HttpxRequester
 
 QUERIES = [
         {
-            "query": "What was the difference between his failed first attempt at Monza and his successful attempt in Vienna?",
+            "query": "How can recreational runners establish a structured weekly program and maintain a detailed running log to track their long-term progress?",
         },
         {
-            "query": "How does he view self-improvement and the learning process in running?",
+            "query": "How can runners develop better body awareness to distinguish between normal fatigue and injury risks during their training adaptation?",
         },
         {
-            "query": "What analogy did he use to describe his mindset during his first Breaking2 attempt?",
+            "query": "Beyond selecting appropriate running gear, how can athletes effectively utilize heart rate monitoring and physiological data to guide their training?",
         },
         {
-            "query": "How much slower is his easy run pace compared to his sub-two-hour marathon pace?",
+            "query": "How can runners maintain a positive psychological mindset and ensure genuine enjoyment while staying committed to their training goals?",
         },
         {
-            "query": "What technology does his team use to monitor his nutrition and blood glucose in real time?",
-        },
-        {
-            "query": "What key training lets his body sustain high speed for a long time?"
-        },
-        {
-            "query": "At the Kaptagat training camp, how does his lifestyle and training differ from other athletes despite being a world record holder?",
-        },
-        {
-            "query": "What advice would he give recreational runners about planning their training?"
-        },
-        {
-            "query": "Even after a hard session, what state does he try to finish training in?",
-        },
+            "query": "Since performance gains require continuous effort, how can recreational runners build long-term consistency and stay driven by dedication over weeks and months?",
+        }
     ]
 
 VERIFY_PROMPT_TEMPLATE = """You are helping build a golden test set for evaluating a retrieval system.
@@ -49,19 +37,17 @@ VERIFY_PROMPT_TEMPLATE = """You are helping build a golden test set for evaluati
     For each candidate, judge whether it DIRECTLY and SUBSTANTIVELY answers the query.
 
     Classify each candidate id into exactly one of:
-    - "must_have": the answer content directly and clearly answers the query
-    - "nice_to_have": partially relevant, touches the topic but doesn't fully answer it
+    - "relevant_ids": the answer content directly and clearly answers the query
     - (omit entirely if irrelevant — don't list irrelevant ids anywhere)
 
-    Be strict about "must_have" — only use it when the answer would genuinely satisfy
+    Be strict about "relevant_ids" — only use it when the answer would genuinely satisfy
     someone asking this exact query. Don't force a match if nothing qualifies.
     """
 
 
 class LabelResult(BaseModel):
-    must_have: list[str] = Field(description="The id of the answer that directly and clearly answers the query")
-    nice_to_have: list[str] = Field(description="The id of the answer that partially relevant, touches the topic but doesn't fully answer it")
-    reasoning: dict[str, str] = Field(description="The reason why choose the answer")
+    question: str = Field(description="The question you are answering.")
+    relevant_ids: list[str] = Field(description="The id of the answer that directly and clearly answers the query")
 
 
 def format_candidates(results: list) -> str:
