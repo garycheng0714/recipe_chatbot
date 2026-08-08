@@ -51,13 +51,13 @@
   },
   "('What key training lets his body sustain high speed for a long time?', 'MRR')":{
     "BM25":1.0,
-    "Vectors":0.3333333333,
+    "Vectors":1.0,
     "Hybrid":0.5
   },
   "('What key training lets his body sustain high speed for a long time?', 'Recall')":{
-    "BM25":0.6666666667,
-    "Vectors":0.6666666667,
-    "Hybrid":0.6666666667
+    "BM25":0.5,
+    "Vectors":0.5,
+    "Hybrid":0.5
   },
   "('At the Kaptagat training camp, how does his lifestyle and training differ from other athletes despite being a world record holder?', 'MRR')":{
     "BM25":1.0,
@@ -89,14 +89,74 @@
     "Vectors":1.0,
     "Hybrid":1.0
   },
+  "('According to the speaker, what is improvement closely linked with?', 'MRR')":{
+    "BM25":0.0,
+    "Vectors":1.0,
+    "Hybrid":1.0
+  },
+  "('According to the speaker, what is improvement closely linked with?', 'Recall')":{
+    "BM25":0.0,
+    "Vectors":1.0,
+    "Hybrid":0.6666666667
+  },
+  "('What kind of program tracking does the speaker recommend for recreational runners to improve?', 'MRR')":{
+    "BM25":1.0,
+    "Vectors":1.0,
+    "Hybrid":1.0
+  },
+  "('What kind of program tracking does the speaker recommend for recreational runners to improve?', 'Recall')":{
+    "BM25":1.0,
+    "Vectors":1.0,
+    "Hybrid":1.0
+  },
+  "('How does the speaker suggest recreational runners can better understand their own bodies during training?', 'MRR')":{
+    "BM25":1.0,
+    "Vectors":1.0,
+    "Hybrid":1.0
+  },
+  "('How does the speaker suggest recreational runners can better understand their own bodies during training?', 'Recall')":{
+    "BM25":1.0,
+    "Vectors":0.6666666667,
+    "Hybrid":1.0
+  },
+  "('What specific equipment does the speaker suggest runners get for training?', 'MRR')":{
+    "BM25":0.2,
+    "Vectors":1.0,
+    "Hybrid":1.0
+  },
+  "('What specific equipment does the speaker suggest runners get for training?', 'Recall')":{
+    "BM25":1.0,
+    "Vectors":1.0,
+    "Hybrid":1.0
+  },
+  "('What is one key psychological aspect the speaker emphasizes for runners to embrace during their runs?', 'MRR')":{
+    "BM25":1.0,
+    "Vectors":1.0,
+    "Hybrid":1.0
+  },
+  "('What is one key psychological aspect the speaker emphasizes for runners to embrace during their runs?', 'Recall')":{
+    "BM25":1.0,
+    "Vectors":1.0,
+    "Hybrid":1.0
+  },
+  "('How quickly does the speaker suggest improvement will occur for runners who are dedicated to their training?', 'MRR')":{
+    "BM25":0.5,
+    "Vectors":1.0,
+    "Hybrid":0.5
+  },
+  "('How quickly does the speaker suggest improvement will occur for runners who are dedicated to their training?', 'Recall')":{
+    "BM25":0.6666666667,
+    "Vectors":0.6666666667,
+    "Hybrid":0.6666666667
+  },
   "('Recall@5 (Average)', '')":{
-    "BM25":0.8240740741,
-    "Vectors":0.8574074074,
-    "Hybrid":0.9351851852
+    "BM25":0.7944444444,
+    "Vectors":0.8588888889,
+    "Hybrid":0.9055555556
   },
   "('MRR@5 (Average)', '')":{
-    "BM25":0.9444444444,
-    "Vectors":0.8703703704,
-    "Hybrid":0.9444444444
+    "BM25":0.8133333333,
+    "Vectors":0.9666666667,
+    "Hybrid":0.9333333333
   }
 }

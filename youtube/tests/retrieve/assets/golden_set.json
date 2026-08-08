@@ -41,7 +41,8 @@
     "relevant_ids": [
       "373bd79e-1970-4c77-b3c6-d321c12f6fca",
       "c4df3380-9b91-4366-8017-3436a2e39173",
-      "ac483723-f852-40c1-924c-18e98492d408"
+      "ac483723-f852-40c1-924c-18e98492d408",
+      "24ea303e-80e8-4bfb-89cf-9cb5680e9989"
     ]
   },
   {
@@ -62,6 +63,42 @@
     "question": "Even after a hard session, what state does he try to finish training in?",
     "relevant_ids": [
       "b2ff5b72-0d81-4fb0-8164-7375e896767b"
+    ]
+  },
+  {
+    "question": "According to the speaker, what is improvement closely linked with?",
+    "relevant_ids": [
+      "5984f515-22cb-4b4c-a406-9bd7a9eef989", "040fd5a0-79e8-44fd-ac5b-97ea7fe50a2f", "6d25a434-2096-418f-9ad7-d8aa5355154f"
+    ]
+  },
+  {
+    "question": "What kind of program tracking does the speaker recommend for recreational runners to improve?",
+    "relevant_ids": [
+      "a6c3aa1c-abbb-4539-ac9c-7283995c1a53"
+    ]
+  },
+  {
+    "question": "How does the speaker suggest recreational runners can better understand their own bodies during training?",
+    "relevant_ids": [
+      "bc4097a1-700e-4b1e-abe9-83d68832d04a", "a6c3aa1c-abbb-4539-ac9c-7283995c1a53", "20a641fd-1483-43f4-9d28-c08af5d9723e"
+    ]
+  },
+  {
+    "question": "What specific equipment does the speaker suggest runners get for training?",
+    "relevant_ids": [
+      "75926c9b-235c-4ae6-84f0-98579aa7dc9c"
+    ]
+  },
+  {
+    "question": "What is one key psychological aspect the speaker emphasizes for runners to embrace during their runs?",
+    "relevant_ids": [
+      "5cc73c20-ce14-4f3a-8d04-ce525ac6b387"
+    ]
+  },
+  {
+    "question": "How quickly does the speaker suggest improvement will occur for runners who are dedicated to their training?",
+    "relevant_ids": [
+      "5cc73c20-ce14-4f3a-8d04-ce525ac6b387", "8b733739-6caf-4ee1-9567-7e3a34759dad", "6d25a434-2096-418f-9ad7-d8aa5355154f"
     ]
   }
 ]

@@ -1,5 +1,7 @@
 import pytest
 
+from youtube.tests.retrieve.conftest import FileType
+
 pytestmark = pytest.mark.asyncio(loop_scope="session")
 
 
