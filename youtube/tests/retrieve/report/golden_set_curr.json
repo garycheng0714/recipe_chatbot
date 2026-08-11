@@ -2,161 +2,193 @@
   "('What was the difference between his failed first attempt at Monza and his successful attempt in Vienna?', 'MRR')":{
     "BM25":1.0,
     "Vectors":1.0,
-    "Hybrid":1.0
+    "Hybrid":1.0,
+    "Rerank":1.0
   },
   "('What was the difference between his failed first attempt at Monza and his successful attempt in Vienna?', 'Recall')":{
     "BM25":1.0,
     "Vectors":0.8,
-    "Hybrid":1.0
+    "Hybrid":1.0,
+    "Rerank":1.0
   },
   "('How does he view self-improvement and the learning process in running?', 'MRR')":{
     "BM25":1.0,
     "Vectors":1.0,
-    "Hybrid":1.0
+    "Hybrid":1.0,
+    "Rerank":1.0
   },
   "('How does he view self-improvement and the learning process in running?', 'Recall')":{
     "BM25":0.25,
     "Vectors":0.75,
-    "Hybrid":0.75
+    "Hybrid":0.75,
+    "Rerank":0.75
   },
   "('What analogy did he use to describe his mindset during his first Breaking2 attempt?', 'MRR')":{
     "BM25":1.0,
     "Vectors":0.5,
-    "Hybrid":1.0
+    "Hybrid":1.0,
+    "Rerank":1.0
   },
   "('What analogy did he use to describe his mindset during his first Breaking2 attempt?', 'Recall')":{
     "BM25":1.0,
     "Vectors":1.0,
-    "Hybrid":1.0
+    "Hybrid":1.0,
+    "Rerank":1.0
   },
   "('How much slower is his easy run pace compared to his sub-two-hour marathon pace?', 'MRR')":{
     "BM25":1.0,
     "Vectors":1.0,
-    "Hybrid":1.0
+    "Hybrid":1.0,
+    "Rerank":1.0
   },
   "('How much slower is his easy run pace compared to his sub-two-hour marathon pace?', 'Recall')":{
     "BM25":1.0,
     "Vectors":1.0,
-    "Hybrid":1.0
+    "Hybrid":1.0,
+    "Rerank":1.0
   },
   "('What technology does his team use to monitor his nutrition and blood glucose in real time?', 'MRR')":{
     "BM25":1.0,
     "Vectors":1.0,
-    "Hybrid":1.0
+    "Hybrid":1.0,
+    "Rerank":1.0
   },
   "('What technology does his team use to monitor his nutrition and blood glucose in real time?', 'Recall')":{
     "BM25":1.0,
     "Vectors":1.0,
-    "Hybrid":1.0
+    "Hybrid":1.0,
+    "Rerank":1.0
   },
   "('What key training lets his body sustain high speed for a long time?', 'MRR')":{
     "BM25":1.0,
     "Vectors":1.0,
-    "Hybrid":0.5
+    "Hybrid":0.5,
+    "Rerank":0.5
   },
   "('What key training lets his body sustain high speed for a long time?', 'Recall')":{
     "BM25":0.5,
     "Vectors":0.5,
-    "Hybrid":0.5
+    "Hybrid":0.5,
+    "Rerank":0.5
   },
   "('At the Kaptagat training camp, how does his lifestyle and training differ from other athletes despite being a world record holder?', 'MRR')":{
     "BM25":1.0,
     "Vectors":1.0,
-    "Hybrid":1.0
+    "Hybrid":1.0,
+    "Rerank":1.0
   },
   "('At the Kaptagat training camp, how does his lifestyle and training differ from other athletes despite being a world record holder?', 'Recall')":{
     "BM25":0.5,
     "Vectors":1.0,
-    "Hybrid":1.0
+    "Hybrid":1.0,
+    "Rerank":1.0
   },
   "('What advice would he give recreational runners about planning their training?', 'MRR')":{
     "BM25":0.5,
     "Vectors":1.0,
-    "Hybrid":1.0
+    "Hybrid":1.0,
+    "Rerank":1.0
   },
   "('What advice would he give recreational runners about planning their training?', 'Recall')":{
     "BM25":1.0,
     "Vectors":0.5,
-    "Hybrid":1.0
+    "Hybrid":1.0,
+    "Rerank":1.0
   },
   "('Even after a hard session, what state does he try to finish training in?', 'MRR')":{
     "BM25":1.0,
     "Vectors":1.0,
-    "Hybrid":1.0
+    "Hybrid":1.0,
+    "Rerank":1.0
   },
   "('Even after a hard session, what state does he try to finish training in?', 'Recall')":{
     "BM25":1.0,
     "Vectors":1.0,
-    "Hybrid":1.0
+    "Hybrid":1.0,
+    "Rerank":1.0
   },
   "('According to the speaker, what is improvement closely linked with?', 'MRR')":{
     "BM25":0.0,
     "Vectors":1.0,
-    "Hybrid":1.0
+    "Hybrid":1.0,
+    "Rerank":1.0
   },
   "('According to the speaker, what is improvement closely linked with?', 'Recall')":{
     "BM25":0.0,
     "Vectors":1.0,
-    "Hybrid":0.6666666667
+    "Hybrid":0.6666666667,
+    "Rerank":0.6666666667
   },
   "('What kind of program tracking does the speaker recommend for recreational runners to improve?', 'MRR')":{
     "BM25":1.0,
     "Vectors":1.0,
-    "Hybrid":1.0
+    "Hybrid":1.0,
+    "Rerank":1.0
   },
   "('What kind of program tracking does the speaker recommend for recreational runners to improve?', 'Recall')":{
     "BM25":1.0,
     "Vectors":1.0,
-    "Hybrid":1.0
+    "Hybrid":1.0,
+    "Rerank":1.0
   },
   "('How does the speaker suggest recreational runners can better understand their own bodies during training?', 'MRR')":{
     "BM25":1.0,
     "Vectors":1.0,
-    "Hybrid":1.0
+    "Hybrid":1.0,
+    "Rerank":1.0
   },
   "('How does the speaker suggest recreational runners can better understand their own bodies during training?', 'Recall')":{
     "BM25":1.0,
     "Vectors":0.6666666667,
-    "Hybrid":1.0
+    "Hybrid":1.0,
+    "Rerank":1.0
   },
   "('What specific equipment does the speaker suggest runners get for training?', 'MRR')":{
     "BM25":0.2,
     "Vectors":1.0,
-    "Hybrid":1.0
+    "Hybrid":1.0,
+    "Rerank":1.0
   },
   "('What specific equipment does the speaker suggest runners get for training?', 'Recall')":{
     "BM25":1.0,
     "Vectors":1.0,
-    "Hybrid":1.0
+    "Hybrid":1.0,
+    "Rerank":1.0
   },
   "('What is one key psychological aspect the speaker emphasizes for runners to embrace during their runs?', 'MRR')":{
     "BM25":1.0,
     "Vectors":1.0,
-    "Hybrid":1.0
+    "Hybrid":1.0,
+    "Rerank":1.0
   },
   "('What is one key psychological aspect the speaker emphasizes for runners to embrace during their runs?', 'Recall')":{
     "BM25":1.0,
     "Vectors":1.0,
-    "Hybrid":1.0
+    "Hybrid":1.0,
+    "Rerank":1.0
   },
   "('How quickly does the speaker suggest improvement will occur for runners who are dedicated to their training?', 'MRR')":{
     "BM25":0.5,
     "Vectors":1.0,
-    "Hybrid":0.5
+    "Hybrid":0.5,
+    "Rerank":0.5
   },
   "('How quickly does the speaker suggest improvement will occur for runners who are dedicated to their training?', 'Recall')":{
     "BM25":0.6666666667,
     "Vectors":0.6666666667,
-    "Hybrid":0.6666666667
+    "Hybrid":0.6666666667,
+    "Rerank":0.6666666667
   },
   "('Recall@5 (Average)', '')":{
     "BM25":0.7944444444,
     "Vectors":0.8588888889,
-    "Hybrid":0.9055555556
+    "Hybrid":0.9055555556,
+    "Rerank":0.9055555556
   },
   "('MRR@5 (Average)', '')":{
     "BM25":0.8133333333,
     "Vectors":0.9666666667,
-    "Hybrid":0.9333333333
+    "Hybrid":0.9333333333,
+    "Rerank":0.9333333333
   }
 }

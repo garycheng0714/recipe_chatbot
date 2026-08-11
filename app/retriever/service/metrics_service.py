@@ -20,7 +20,7 @@ class MetricsService:
         Retriever.BM25,
         Retriever.VECTORS,
         Retriever.HYBRID,
-        # Retriever.RERANK
+        Retriever.RERANK
     ]
 
     @classmethod
