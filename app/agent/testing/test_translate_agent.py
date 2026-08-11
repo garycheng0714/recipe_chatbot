@@ -52,3 +52,14 @@ async def test_translate_empty(agent):
 
     assert output == "請提供問題"
 
+
+@pytest.mark.parametrize("query,expected_valid", [
+    ("xxx", False),
+    ("🏃‍♂️🏃‍♂️", False),
+    ("1234567890", False),
+    ("他一週跑幾次課表？", True),
+    ("5k pace", True),
+])
+def test_query_validity(agent, query, expected_valid):
+    assert agent.check_query_validity(query).is_valid == expected_valid
+

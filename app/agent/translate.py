@@ -1,8 +1,14 @@
+import re
 from typing import Literal
 
 from pydantic import BaseModel
 from pydantic_ai import Agent, ModelSettings
 from app.agent.chat_model import model
+
+
+class ValidityResult(BaseModel):
+    is_valid: bool
+    reason: str | None = None
 
 
 class QueryAnalysis(BaseModel):
@@ -33,8 +39,34 @@ class TranslateAgent:
         if len(text) == 0:
             return "請提供問題"
 
+        if not self.check_query_validity(text).is_valid:
+            return "無效的問題，請再提供問題"
+
         result = await self.agent.run(f"以下是需要翻譯的問題\n{text}")
 
         print(result.output)
 
         return QueryAnalysis.model_validate_json(result.output)
+
+    def check_query_validity(self, text: str, min_length: int = 2) -> ValidityResult:
+        text = text.strip()
+
+        # 1. 空字串或太短
+        if len(text) < min_length:
+            return ValidityResult(is_valid=False, reason="too_short")
+
+        # 2. 完全沒有中文字或英文字母（例如純符號、純 emoji、純數字）
+        if not re.search(r'[a-zA-Z\u4e00-\u9fff]', text):
+            return ValidityResult(is_valid=False, reason="no_meaningful_characters")
+
+        # 3. 單一字元重複組成（xxx, aaaa, ????）
+        letters_only = re.sub(r'[^a-zA-Z\u4e00-\u9fff]', '', text)
+        if letters_only and len(set(letters_only.lower())) == 1:
+            return ValidityResult(is_valid=False, reason="repeated_character")
+
+        # 4. 鍵盤亂敲偵測（純英文、無母音、長度 > 3 —— 常見亂碼特徵，如 asdf, qwerty)
+        # if re.fullmatch(r'[a-zA-Z]+', text) and len(text) > 3:
+        #     if not re.search(r'[aeiouAEIOU]', text):
+        #         return ValidityResult(is_valid=False, reason="likely_keyboard_mash")
+
+        return ValidityResult(is_valid=True)
