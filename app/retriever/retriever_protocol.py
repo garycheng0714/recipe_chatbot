@@ -5,5 +5,5 @@ from app.dto.retriever_dto import RetrievedDoc
 
 class RetrieverBase(Protocol):
 
-    async def retrieve(self, query_text: str, k: int) -> list[RetrievedDoc]:
+    async def retrieve(self, query_text: str, k: int, filter_metadata: dict | None = None) -> list[RetrievedDoc]:
         ...
