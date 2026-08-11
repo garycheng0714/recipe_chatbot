@@ -1,4 +1,5 @@
 import json
+from enum import StrEnum
 from typing import List
 
 import pandas as pd
@@ -24,17 +25,22 @@ def data_test_set_reader():
 
     return _reader
 
+class FileType(StrEnum):
+    BASE = "base"
+    CURRENT = "curr"
+
 
 @pytest.fixture
 def create_metrics_json_data(request):
-    def _export_json(df: pd.DataFrame):
+    def _export_json(df: pd.DataFrame, file_type: FileType = FileType.CURRENT):
         report_dir = request.path.parent / "report"
         prefix_name = request.path.stem.removeprefix('test_')
 
-        file = report_dir / f"{prefix_name}_base.json"
+        file = report_dir / f"{prefix_name}_{file_type}.json"
 
-        if file.exists():
-            file = report_dir / f"{prefix_name}_curr.json"
+        if file_type == FileType.BASE:
+            for t in [FileType.BASE, FileType.CURRENT]:
+                (report_dir / f"{prefix_name}_{t}.json").unlink(missing_ok=True)
 
         df.to_json(path_or_buf=file, indent=2, force_ascii=False)
     return _export_json
