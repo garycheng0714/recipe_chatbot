@@ -28,7 +28,8 @@ class RecipeTestConfig(ElasticSearchConfig):
             "tags^3",
             "ingredients^3",
             "description^2",
-            "steps"
+            "name^2",
+            "steps",
         ]
 
     @property
