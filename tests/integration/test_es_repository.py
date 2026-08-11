@@ -69,12 +69,26 @@ def recipe():
         id="123",
         name="banana",
         source_url="https://example.com",
-        category="tw",
+        category="jp",
         description="Good fruit",
         quantity="1",
         ingredients=[Ingredient(name="a", amount="1"), Ingredient(name="b", amount="1")],
         steps=[Step(img="jpg", step="搗碎")],
         tags=["jp"],
+    )
+
+@pytest.fixture
+def recipe_2():
+    return TastyNoteRecipe(
+        id="123",
+        name="banana",
+        source_url="https://example.com",
+        category="tw",
+        description="Good fruit",
+        quantity="1",
+        ingredients=[Ingredient(name="a", amount="1"), Ingredient(name="b", amount="1")],
+        steps=[Step(img="jpg", step="搗碎")],
+        tags=["tw"],
     )
 
 
@@ -114,7 +128,7 @@ async def test_search_name_in_parent_chunk(setup, recipe, es_repo, es_client):
     hits = EsPointsModel(**result).hits.hits
 
     assert len(hits) == 1
-    assert hits[0].field_source.name == "banana"
+    assert hits[0].field_source["name"] == "banana"
 
 
 async def test_index_twice_then_search_one_result(setup, recipe, es_repo, es_client):
@@ -141,8 +155,8 @@ async def test_search_description(setup, recipe, es_repo, es_client):
     assert len(hits) == 1
 
     data = hits[0].field_source
-    assert data.description == recipe.description
-    assert data.id == f"{recipe.id}"
+    assert data["description"] == recipe.description
+    assert data["id"] == f"{recipe.id}"
 
 
 async def test_search_instruction(setup, recipe, es_repo, es_client):
@@ -152,8 +166,24 @@ async def test_search_instruction(setup, recipe, es_repo, es_client):
     assert len(hits) == 1
 
     data = hits[0].field_source
-    assert data.steps == "搗碎"
-    assert data.id == f"{recipe.id}"
+    assert data["steps"] == "搗碎"
+    assert data["id"] == f"{recipe.id}"
+
+
+async def test_search_recipe_by_filter_metadata(recipe, recipe_2, es_client, es_repo):
+    document = RecipeDocument.from_recipe(recipe)
+    document_2 = RecipeDocument.from_recipe(recipe_2)
+
+    await es_repo.index_batch_document([document, document_2])
+    await es_client.indices.refresh(index=es_repo.config.index_name)
+
+    result = await es_repo.search("banana", filter_metadata={"category": "tw"})
+    hits = EsPointsModel(**result).hits.hits
+
+    assert len(hits) == 1
+
+    data = hits[0].field_source
+    assert data["category"] == "tw"
 
 
 # async def test_name_field_boosted_over_content(es_repo, es_client, index_name):

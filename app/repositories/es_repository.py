@@ -54,28 +54,37 @@ class ElasticSearchRepository:
             actions=actions
         )
 
-    async def search(self, query_text: str, size: int = 5):
+    async def search(self, query_text: str, filter_metadata: dict = None, top_k: int = 5):
+
+        query = {
+            "must": [
+                {
+                    "multi_match": {
+                        "query": query_text,
+                        "fields": self.config.fields
+                    }
+                }
+            ]
+        }
+
+        query_filter = {
+            "filter": [
+                {
+                    "term": filter_metadata
+                }
+            ]
+        }
+
+        if filter_metadata:
+            query_cmd = query | query_filter
+        else:
+            query_cmd = query
+
+
         return await self.client.search(
             index=self.config.index_name,
             query={
-                # "match": {
-                #     "tags": query
-                # }
-                "bool": {
-                    "must": [
-                        {
-                            "multi_match": {
-                                "query": query_text,
-                                "fields": self.config.fields
-                            }
-                        }
-                    ],
-                    # "filter": {
-                    #       "terms": {
-                    #         "tags": ["素食料理", "日式料理"]
-                    #       }
-                    #     }
-                }
+                "bool": query_cmd
             },
-            size=size
+            size=top_k
         )
