@@ -3,6 +3,8 @@ import ast
 from jinja2 import Environment, FileSystemLoader
 import pandas as pd
 
+from app.retriever.service.metrics_service import MetricsService
+
 
 def generate_benchmark_html(
     data_base,
@@ -38,7 +40,7 @@ def generate_benchmark_html(
         row_b = df_b.iloc[i]
 
         metrics_data = []
-        for col in ["BM25", "Vectors", "Hybrid"]:
+        for col in MetricsService.retrievers:
             val_b = row_b[col]
             val_c = row_c[col]
 
