@@ -46,11 +46,11 @@ async def test_es_retriever_fetch_result(response):
 
     retriever = ElasticSearchRetriever(mock_es_repo)
 
-    resp = await retriever.retrieve("豆腐", 1)
+    resp = await retriever.retrieve("豆腐", 1, {"category": "tw"})
 
     recipe = resp[0]
 
-    mock_es_repo.search.assert_called_with("豆腐", 1)
+    mock_es_repo.search.assert_called_with("豆腐", filter_metadata={"category": "tw"}, top_k=1)
 
     assert recipe.id == "tofu-kimuchi"
     assert recipe.score == 44.751045
@@ -66,6 +66,6 @@ async def test_es_retriever_fetch_empty_result(empty_response):
 
     resp = await retriever.retrieve("越野跑", 1)
 
-    mock_es_repo.search.assert_called_with("越野跑", 1)
+    mock_es_repo.search.assert_called_with("越野跑", filter_metadata=None, top_k=1)
 
     assert len(resp) == 0

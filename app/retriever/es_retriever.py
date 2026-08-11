@@ -8,8 +8,8 @@ class ElasticSearchRetriever:
     def __init__(self, es_repo: ElasticSearchRepository):
         self.es_repo = es_repo
 
-    async def retrieve(self, query_text: str, k: int) -> list[RetrievedDoc]:
-        resp = await self.es_repo.search(query_text, k)
+    async def retrieve(self, query_text: str, top_k: int, filter_metadata: dict | None = None) -> list[RetrievedDoc]:
+        resp = await self.es_repo.search(query_text, filter_metadata=filter_metadata, top_k=top_k)
         points = EsPointsModel(**resp).hits.hits
 
         docs = [
