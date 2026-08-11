@@ -184,16 +184,16 @@ async def test_get_outbox_pending_event_then_insert_data_to_es_and_qdr(session, 
         session_factory=session_factory,
     )
 
-    result = await es_repo.search("banana")
+    result = await es_repo.retrieve("banana")
     hits = EsPointsModel(**result).hits.hits
 
     assert len(hits) == 1
 
-    overview_result = await es_repo.search("delicious fruit")
+    overview_result = await es_repo.retrieve("delicious fruit")
     hits = EsPointsModel(**overview_result).hits.hits
     assert len(hits) == 1
 
-    instruction_result = await es_repo.search("剝皮")
+    instruction_result = await es_repo.retrieve("剝皮")
     hits = EsPointsModel(**instruction_result).hits.hits
     assert len(hits) == 1
 

@@ -21,7 +21,7 @@ class RerankResult(BaseModel):
     answer: str
     topic: str
     speaker: str
-    rerank_score: float
+    # rerank_score: float
 
     @field_validator("id", mode="before")
     @classmethod
