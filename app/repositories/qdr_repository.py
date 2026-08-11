@@ -2,7 +2,7 @@ from concurrent.futures import ThreadPoolExecutor
 from typing import List
 
 from httpx import AsyncClient
-from qdrant_client import AsyncQdrantClient
+from qdrant_client import AsyncQdrantClient, models
 from qdrant_client.conversions.common_types import GroupsResult, Record
 from qdrant_client.http.models import PointStruct, Filter, FieldCondition, MatchValue
 
@@ -104,7 +104,7 @@ class QdrantRepository:
             query=query_dense,
             using=self.setting.vectors_name,
             limit=k,
-            # query=models.FusionQuery(fusion=models.Fusion.RRF),  # 使用 RRF 融合
+            # query=models.FusionQuery(ranking=models.Fusion.RRF),  # 使用 RRF 融合
         )
 
     async def query_points_by_vector(self, vector: list[float], limit: int = 2):
@@ -116,10 +116,24 @@ class QdrantRepository:
             with_payload=True,
         )
 
-    async def query_points_groups(self, query_text, k: int) -> GroupsResult:
+    async def query_points_groups(self, query_text, k: int, filter_metadata: dict | None = None) -> GroupsResult:
         embedding_list = await self._compute_embeddings(query_text)
 
         query_dense = embedding_list[0]
+
+        query_filter = None
+
+        if filter_metadata:
+            query_filter = models.Filter(
+                must=[
+                    # 精確匹配 (Match Value)
+                    models.FieldCondition(
+                        key="topic",
+                        match=models.MatchValue(value="mental-prep")
+                    )
+                ],
+            )
+
 
         return await self.client.query_points_groups(
             collection_name=self.setting.collection_name,
@@ -127,6 +141,7 @@ class QdrantRepository:
             using=self.setting.vectors_name,
             group_by="id",
             limit=k,        # 最多 k 個 recipe
+            query_filter=query_filter,
             group_size=1    # 每個 recipe 最多 1 個 chunk
         )
 

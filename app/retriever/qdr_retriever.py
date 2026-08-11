@@ -6,8 +6,8 @@ class QdrantRetriever:
     def __init__(self, qdr_repo: QdrantRepository):
         self.qdr_repo = qdr_repo
 
-    async def retrieve(self, query_text: str, k: int) -> list[RetrievedDoc]:
-        result = await self.qdr_repo.query_points_groups(query_text, k)
+    async def retrieve(self, query_text: str, k: int, filter_metadata: dict | None = None) -> list[RetrievedDoc]:
+        result = await self.qdr_repo.query_points_groups(query_text, k, filter_metadata)
 
         if len(result.groups) == 0:
             return []
