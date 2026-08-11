@@ -16,11 +16,10 @@ class TranslateAgent:
             model=model,
             model_settings=ModelSettings(temperature=0.0),
             system_prompt=(
-                "1. 將使用者的中文問題翻譯成英文,保留原意,不要意譯過度。\n"
-                "2. 如果問題已經是英文，直接沿用不用翻譯。\n"
-                "3. 判斷這個問題屬於哪個主題類別 [training, recovery, nutrition, gear, mental-prep, career, personal-life, racing-strategy]。\n"
-                "4. 以 json 為輸出格式：{\"translated_en\": \"翻譯後的內容\", \"topic\": \"主題類別\"}\n"
-                "5. 只輸出 json，不要有其他不相關的輸出。"
+                "1. 將使用者的中文問題翻譯成英文,保留原意,不要意譯過度。如果問題已經是英文，直接沿用不用翻譯。\n"
+                "2. 判斷這個問題屬於哪個主題類別 [training, recovery, nutrition, gear, mental-prep, career, personal-life, racing-strategy]。\n"
+                "3. 以 json 為輸出格式：{\"translated_en\": \"翻譯後的內容\", \"topic\": \"主題類別\"}\n"
+                "4. 只輸出 json，不要有其他不相關的輸出。"
             )
         )
 
