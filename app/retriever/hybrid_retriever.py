@@ -3,7 +3,7 @@ import asyncio
 from app.retriever.es_retriever import ElasticSearchRetriever
 from app.retriever.model import DynamicWeight
 from app.retriever.qdr_retriever import QdrantRetriever
-from app.retriever.fusion.rrf import RRFRanker, RankList
+from app.retriever.ranking.rrf import RRFRanker, RankList
 from app.retriever.softmax_probability import SoftmaxProbability
 from app.schema import RRFResult
 
@@ -23,12 +23,12 @@ class HybridRetriever:
 
         return DynamicWeight(bm25=1.0, vectors=1.0)
 
-    async def retrieve(self, query_text: str, top_k: int) -> list[RRFResult]:
+    async def retrieve(self, query_text: str, top_k: int, metadata_filter: dict | None = None) -> list[RRFResult]:
 
         search_k = top_k * 2
 
-        es_task = self.es_retriever.retrieve(query_text, search_k)
-        qdr_task = self.qdr_retriever.retrieve(query_text, search_k)
+        es_task = self.es_retriever.retrieve(query_text, search_k, metadata_filter)
+        qdr_task = self.qdr_retriever.retrieve(query_text, search_k, metadata_filter)
 
         # 等待兩者完成
         es_res, qd_res = await asyncio.gather(es_task, qdr_task)

@@ -16,13 +16,14 @@ async def test_hybrid_retriever_call_es_and_qdrant():
 
     query_text = 'hello world'
     top_k = 2
+    metadata_filter = {"a": 1}
 
     hybrid_retriever = HybridRetriever(mock_es_retriever, mock_qdr_retriever)
 
-    await hybrid_retriever.retrieve(query_text, top_k)
+    await hybrid_retriever.retrieve(query_text, top_k, metadata_filter)
 
-    mock_es_retriever.retrieve.assert_called_once_with(query_text, top_k * 2)
-    mock_qdr_retriever.retrieve.assert_called_once_with(query_text, top_k * 2)
+    mock_es_retriever.retrieve.assert_called_once_with(query_text, top_k * 2, metadata_filter)
+    mock_qdr_retriever.retrieve.assert_called_once_with(query_text, top_k * 2, metadata_filter)
 
 
 @pytest.mark.asyncio
@@ -52,7 +53,7 @@ async def test_hybrid_retrieve_top_k():
 
     hybrid_retriever = HybridRetriever(mock_es_retriever, mock_qdr_retriever)
 
-    result = await hybrid_retriever.retrieve(query_text, top_k)
+    result = await hybrid_retriever.retrieve(query_text, top_k, None)
 
     assert len(result) == 2
     assert result[0].id == 'a'
