@@ -1,6 +1,8 @@
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, Depends, HTTPException
 
+from app.agent.generation import GenerationAgent
+from app.agent.translate import TranslateAgent
 from app.hydrator.recipe.recipe_hydrator import RecipeHydrator
 from app.hydrator.yt.yt_hydrator import YtHydrator
 from app.retriever.hybrid_retriever import HybridRetriever
@@ -13,11 +15,11 @@ from app.client import (
     get_hybrid_retriever,
     es_client,
     get_yt_hybrid_retriever,
-    get_yt_db, get_yt_es_retriever, get_yt_qdr_retriever, get_yt_answer_hybrid_retriever, get_yt_answer_qdr_retriever,
+    get_yt_db, get_yt_es_retriever, get_yt_qdr_retriever
 )
 
 import app.database as database
-from app.services.retriever import RetrievalService
+from app.services.retriever_service import RetrievalService
 
 
 # 自動建立資料表 (如果不存在的話)
@@ -57,12 +59,6 @@ async def get_yt_retrieval_service(
     hydrator = YtHydrator(db)
     return RetrievalService(hybrid_retriever, hydrator)
 
-async def get_yt_answer_retrieval_service(
-    hybrid_retriever=Depends(get_yt_answer_hybrid_retriever),
-    db=Depends(get_yt_db)
-):
-    hydrator = YtHydrator(db)
-    return RetrievalService(hybrid_retriever, hydrator)
 
 # 3. 定義一個帶有參數的路徑
 @app.get("/recipe/{query_text}")
@@ -70,7 +66,7 @@ async def search_recipe(
     query_text: str,
     service: RetrievalService = Depends(get_recipe_retrieval_service)
 ):
-    obj_list = await service.search(query_text)
+    obj_list = await service.retrieve(query_text, 5)
 
     # 安全檢查：找不到就報 404，不要讓後續程式碼崩潰
     if obj_list is None:
@@ -83,13 +79,19 @@ async def search_yt(
     query_text: str,
     service: RetrievalService = Depends(get_yt_retrieval_service)
 ):
-    obj_list = await service.search(query_text, 10)
+    result = await TranslateAgent().run(query_text)
+
+    obj_list = await service.retrieve(result.translated_en, 5)
 
     # 安全檢查：找不到就報 404，不要讓後續程式碼崩潰
     if obj_list is None:
         raise HTTPException(status_code=404, detail="Recipe not found")
 
-    return obj_list
+    # return obj_list
+
+    chunks_content = [obj.answer for obj in obj_list]
+
+    return await GenerationAgent().run(chunks_content, query_text)
 
 
 @app.get("/yt/es/{query}")
@@ -108,6 +110,6 @@ async def es_search(query: str, retriever: RetrieverBase = Depends(get_es_retrie
 async def qdr_search(query: str, retriever: RetrieverBase = Depends(get_qdr_retriever)):
     return await retriever.retrieve(query, 3)
 
-@app.get("/hybrid/{query}")
+@app.get("/yt/hybrid/{query}")
 async def qdr_search(query: str, retriever: HybridRetriever = Depends(get_yt_hybrid_retriever)):
     return await retriever.retrieve(query, 5)
