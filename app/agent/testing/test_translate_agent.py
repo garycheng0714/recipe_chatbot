@@ -61,6 +61,7 @@ async def test_translate_empty(agent):
     ("1234567890", False),
     ("他一週跑幾次課表？", True),
     ("5k pace", True),
+    ("これはテストケースです", False)
 ])
 def test_query_validity(agent, query, expected_valid):
     assert agent.check_query_validity(query).is_valid == expected_valid
@@ -93,7 +94,7 @@ ZH_CASES = [
     "今天天氣如何？",
     "最大攝氧量要如何量測？",
     "川普是誰？",
-    "今天心情好差"
+    "今天心情好差",
 ]
 
 @pytest.mark.asyncio
@@ -105,5 +106,6 @@ async def test_translate_with_prompt_injection(agent, query):
         return not has_chinese
 
     output = await agent.run(query)
+    print(output)
 
     assert is_english_sentence(output.question)
