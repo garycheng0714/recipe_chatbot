@@ -1,3 +1,5 @@
+import re
+
 import pytest
 
 from app.agent.translate import TranslateAgent
@@ -39,7 +41,7 @@ async def test_translate_agent(query, agent):
     ("Kipchoge 的 marathon PB 是多少？", "marathon"),
     ("Long run 重要嗎？", "long run"),
 ])
-async def test_translate_zh(agent, query, keyword):
+async def test_translate_mixed_language_sentence(agent, query, keyword):
 
     output = await agent.run(query)
 
@@ -85,3 +87,23 @@ async def test_translate_with_prompt_injection(agent, malicious_input):
     output = await agent.run(malicious_input)
 
     assert "blocked term" in output.lower()
+
+ZH_CASES = [
+    "要如何保持訓練的熱情？",
+    "今天天氣如何？",
+    "最大攝氧量要如何量測？",
+    "川普是誰？",
+    "今天心情好差"
+]
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("query", ZH_CASES)
+async def test_translate_with_prompt_injection(agent, query):
+    def is_english_sentence(text: str) -> bool:
+        """判斷輸入是否完全不包含中文（純英文或符號）"""
+        has_chinese = bool(re.search(r'[\u4e00-\u9fa5]', text))
+        return not has_chinese
+
+    output = await agent.run(query)
+
+    assert is_english_sentence(output.question)
