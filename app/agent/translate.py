@@ -6,7 +6,7 @@ from pydantic_ai import Agent, ModelSettings
 from pydantic_ai_harness import InputGuardrail
 from pydantic_ai_harness.guardrails.detectors import blocked_keywords
 
-from app.agent.chat_model import model
+from app.agent.chat_model import translate_model, INJECTION_MARKERS
 
 
 class ValidityResult(BaseModel):
@@ -19,18 +19,13 @@ class QueryAnalysis(BaseModel):
     topic: Literal['training', 'recovery', 'nutrition', 'gear', 'mental-prep', 'career', 'personal-life', 'racing-strategy']  # 之後可以換成 enum
 
 
-INJECTION_MARKERS = [
-    "忽略以上", "忽略上面", "ignore previous", "ignore above",
-    "system prompt", "system instruction", "你現在是", "你不是翻譯",
-    "直接輸出", "output the following", "print your instructions",
-    "回答任何問題"
-]
+
 
 
 class TranslateAgent:
     def __init__(self):
         self.agent = Agent(
-            model=model,
+            model=translate_model,
             model_settings=ModelSettings(temperature=0.0),
             capabilities=[
                 InputGuardrail(guard=blocked_keywords(INJECTION_MARKERS))
@@ -58,13 +53,11 @@ class TranslateAgent:
             return "無效的問題，請再提供問題"
 
         result = await self.agent.run(f"問題:\n{text}")
-        print(result.output)
 
         try:
             return QueryAnalysis.model_validate_json(result.output)
         except Exception as e:
-            # print(e)
-            return result.output
+            return result.output.question
 
     def check_query_validity(self, text: str, min_length: int = 2) -> ValidityResult:
         text = text.strip()
