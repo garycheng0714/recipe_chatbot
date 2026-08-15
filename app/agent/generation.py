@@ -27,7 +27,7 @@ class GenerationAgent:
             ),
         )
 
-    async def run(self, chunks: list, query_text: str):
+    async def run(self, chunks: list[str], query_text: str):
         if not chunks:
             return "很抱歉，我無法回答這個問題"
 
