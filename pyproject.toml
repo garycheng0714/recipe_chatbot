@@ -56,4 +56,5 @@ dependencies = [
     "ollama>=0.6.2",
     "pydantic-ai-harness>=0.18.1",
     "opencc>=1.4.1",
+    "logfire>=4.21.0",
 ]

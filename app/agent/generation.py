@@ -31,10 +31,14 @@ class GenerationAgent:
         if not chunks:
             return "很抱歉，我無法回答這個問題"
 
+        # print(self.build_user_prompt(chunks, query_text))
+
         result = await self.agent.run(self.build_user_prompt(chunks, query_text))
 
         converter = opencc.OpenCC('s2twp.json')  # 簡體→繁體(台灣用語+慣用詞)
         zh_tw_text = converter.convert(result.output)
+
+        # print(result.output)
 
         return zh_tw_text
 
