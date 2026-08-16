@@ -61,7 +61,7 @@
   },
   "('What key training lets his body sustain high speed for a long time?', 'MRR')":{
     "BM25":1.0,
-    "Vectors":1.0,
+    "Vectors":0.3333333333,
     "Hybrid":0.5,
     "Rerank":0.5
   },
@@ -187,7 +187,7 @@
   },
   "('MRR@5 (Average)', '')":{
     "BM25":0.8133333333,
-    "Vectors":0.9666666667,
+    "Vectors":0.9222222222,
     "Hybrid":0.9333333333,
     "Rerank":0.9333333333
   }
