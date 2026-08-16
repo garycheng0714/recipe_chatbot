@@ -107,7 +107,7 @@ def create_mrr_5_metrics():
     return _create_mrr_metrics
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
 def create_recall_mrr_metrics():
     async def _create_metrics(test_sets: list[TestSet]) -> pd.DataFrame:
         calculate_service = CalculateService(calculator=MRR())
