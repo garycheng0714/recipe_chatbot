@@ -57,4 +57,5 @@ dependencies = [
     "pydantic-ai-harness>=0.18.1",
     "opencc>=1.4.1",
     "logfire>=4.21.0",
+    "googletrans>=4.0.2",
 ]

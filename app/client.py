@@ -1,7 +1,13 @@
+from functools import lru_cache
+
 import httpx
 from elasticsearch import AsyncElasticsearch
+from googletrans import Translator
 from qdrant_client import AsyncQdrantClient
 from typing import AsyncGenerator
+
+from app.agent.generation import GenerationAgent
+from app.agent.translate import TranslateAgent
 from app.database import ES_URL, QDRANT_URL, EMBED_URL
 from app.hydrator.yt.yt_hydrator import YtHydrator
 from app.infrastructure.elasticsearch.config.recipe import RecipeConfig
@@ -113,3 +119,15 @@ def get_yt_hybrid_retriever():
 def get_yt_rerank_retriever():
     hydrator = YtHydrator(YtRepository())
     return RetrievalService(get_yt_hybrid_retriever(), hydrator)
+
+@lru_cache()
+def get_translate_agent():
+    return TranslateAgent()
+
+@lru_cache()
+def get_translator():
+    return Translator()
+
+@lru_cache()
+def get_generation_agent():
+    return GenerationAgent()

@@ -1,8 +1,6 @@
 from contextlib import asynccontextmanager
-from fastapi import FastAPI, Depends, HTTPException
 
-from app.agent.generation import GenerationAgent
-from app.agent.translate import TranslateAgent
+from fastapi import FastAPI, Depends, HTTPException
 from app.hydrator.recipe.recipe_hydrator import RecipeHydrator
 from app.hydrator.yt.yt_hydrator import YtHydrator
 from app.retriever.hybrid_retriever import HybridRetriever
@@ -15,10 +13,11 @@ from app.client import (
     get_hybrid_retriever,
     es_client,
     get_yt_hybrid_retriever,
-    get_yt_db, get_yt_es_retriever, get_yt_qdr_retriever
+    get_yt_db, get_yt_es_retriever, get_yt_qdr_retriever, get_translate_agent, get_generation_agent, get_translator
 )
 
 import app.database as database
+from app.services.rag_service import RagService
 from app.services.retriever_service import RetrievalService
 
 
@@ -77,21 +76,16 @@ async def search_recipe(
 @app.get("/yt/search/{query_text}")
 async def search_yt(
     query_text: str,
-    service: RetrievalService = Depends(get_yt_retrieval_service)
+    translate_agent=Depends(get_translate_agent),
+    generation_agent=Depends(get_generation_agent),
+    translator=Depends(get_translator),
+    retrieval_service: RetrievalService = Depends(get_yt_retrieval_service)
 ):
-    result = await TranslateAgent().run(query_text)
+    rag_service = RagService(translate_agent, generation_agent, retrieval_service, translator)
 
-    obj_list = await service.retrieve(result.translated_en, 5)
+    result = await rag_service.execute(query_text)
 
-    # 安全檢查：找不到就報 404，不要讓後續程式碼崩潰
-    if obj_list is None:
-        raise HTTPException(status_code=404, detail="Recipe not found")
-
-    # return obj_list
-
-    chunks_content = [obj.answer for obj in obj_list]
-
-    return await GenerationAgent().run(chunks_content, query_text)
+    return result
 
 
 @app.get("/yt/es/{query}")

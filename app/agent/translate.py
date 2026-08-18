@@ -45,7 +45,7 @@ class TranslateAgent:
             )
         )
 
-    async def run(self, text):
+    async def run(self, text) -> str:
         if len(text) == 0:
             return "請提供問題"
 
@@ -55,7 +55,8 @@ class TranslateAgent:
         result = await self.agent.run(f"問題:\n{text}")
 
         try:
-            return QueryAnalysis.model_validate_json(result.output)
+            # TODO: handle the topic
+            return QueryAnalysis.model_validate_json(result.output).question
         except Exception as e:
             return result.output.question
 
