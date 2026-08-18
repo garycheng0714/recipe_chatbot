@@ -44,7 +44,7 @@ def data_test_set_reader():
 
 
 @pytest.mark.asyncio
-async def test_answer_question(agent, retriever, judge_model, data_test_set_reader):
+async def test_evaluation_agent_generation_with_faithfulness_and_relevancy(agent, retriever, judge_model, data_test_set_reader):
     test_sets = data_test_set_reader("youtube/tests/retrieve/assets/golden_set.json")
 
     questions = [t.question for t in test_sets]
