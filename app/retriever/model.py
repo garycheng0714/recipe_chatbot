@@ -8,6 +8,7 @@ class TestSet(BaseModel):
 
     question: str
     relevant_ids: list[str]
+    reference_answer: str
 
 
 class DynamicWeight(BaseModel):

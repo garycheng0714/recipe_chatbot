@@ -7,7 +7,8 @@
       "4bdae328-a0ab-42c6-b258-a47a0bebd029",
       "d4becf18-8da2-4c77-a339-53f59f2a2aee",
       "8ee4f96d-89a9-4d07-ae0b-2fcb153b3d80"
-    ]
+    ],
+    "reference_answer": "The first attempt, actually, is that me and the whole team would not know what would happen. But all in all, we transferred the huge experience from Monza to Vienna. We used that experience to really understand what had been missing. And that's why we achieved that run under two hours."
   },
   {
     "question": "How does he view self-improvement and the learning process in running?",
@@ -16,25 +17,29 @@
       "6d25a434-2096-418f-9ad7-d8aa5355154f",
       "040fd5a0-79e8-44fd-ac5b-97ea7fe50a2f",
       "8a2467ce-1d03-4e75-a5d1-9640e61f6716"
-    ]
+    ],
+    "reference_answer": "By consistently engaging in training day after day, week after week, and month after month, and by dedicating oneself to various elements of training, runners will see improvement over time. for the everyday runner, don't be afraid to fail. Aim for the moon, and even if you miss it, you're going to learn so many things in the process to improve."
   },
   {
     "question": "What analogy did he use to describe his mindset during his first Breaking2 attempt?",
     "relevant_ids": [
       "f3a707c5-fc62-4a84-8054-91f921ca39a8"
-    ]
+    ],
+    "reference_answer": "I was like a boxer going to the ring in 2017 without knowing whether I will win by points or by knockout, or if I'll be knocked out"
   },
   {
     "question": "How much slower is his easy run pace compared to his sub-two-hour marathon pace?",
     "relevant_ids": [
       "c9ee2d40-f88a-47a2-b195-8622913b0273"
-    ]
+    ],
+    "reference_answer": "2 minutes and 10 seconds per kilometer slower than his sub-two-hour marathon pace"
   },
   {
     "question": "What technology does his team use to monitor his nutrition and blood glucose in real time?",
     "relevant_ids": [
       "bca1d745-1c21-4b08-8e6c-5514bea1fa37"
-    ]
+    ],
+    "reference_answer": "Libre Sense by Abbott"
   },
   {
     "question": "What key training lets his body sustain high speed for a long time?",
@@ -42,62 +47,72 @@
       "373bd79e-1970-4c77-b3c6-d321c12f6fca",
       "c4df3380-9b91-4366-8017-3436a2e39173",
       "ac483723-f852-40c1-924c-18e98492d408"
-    ]
+    ],
+    "reference_answer": "Long runs to be critical and crucial because they conditioned his body to run at high speed for extended periods"
   },
   {
     "question": "At the Kaptagat training camp, how does his lifestyle and training differ from other athletes despite being a world record holder?",
     "relevant_ids": [
       "4c293ff5-367a-4992-8f34-2fcd7d5acb32",
       "0d0a38e9-57b2-46f8-849b-1b62e1ba457b"
-    ]
+    ],
+    "reference_answer": "Eliud's life is simple at the camp, with little distractions and a lot of focus on running. Here, he can truly focus all of his energy on improving his athletic performance, not only for that."
   },
   {
     "question": "What advice would he give recreational runners about planning their training?",
     "relevant_ids": [
       "a6c3aa1c-abbb-4539-ac9c-7283995c1a53",
       "20a641fd-1483-43f4-9d28-c08af5d9723e"
-    ]
+    ],
+    "reference_answer": "Improvement for recreational runners goes hand-in-hand with dedication. He advises runners to understand their bodies by logging their runs daily and noting how they feel, which helps in understanding their training progress.\n"
   },
   {
     "question": "Even after a hard session, what state does he try to finish training in?",
     "relevant_ids": [
       "b2ff5b72-0d81-4fb0-8164-7375e896767b"
-    ]
+    ],
+    "reference_answer": "Making sure that I finish the trainings when I still have a lot of energy to smile and recover very fast for the next day"
   },
   {
     "question": "According to the speaker, what is improvement closely linked with?",
     "relevant_ids": [
       "5984f515-22cb-4b4c-a406-9bd7a9eef989", "040fd5a0-79e8-44fd-ac5b-97ea7fe50a2f", "6d25a434-2096-418f-9ad7-d8aa5355154f"
-    ]
+    ],
+    "reference_answer": "Improvement actually goes hand-in-hand with dedication"
   },
   {
     "question": "What kind of program tracking does the speaker recommend for recreational runners to improve?",
     "relevant_ids": [
       "a6c3aa1c-abbb-4539-ac9c-7283995c1a53"
-    ]
+    ],
+    "reference_answer": "Eliud Kipchoge states that improvement for recreational runners goes hand-in-hand with education and dedication. He advises runners to understand their bodies by logging their runs daily and noting how they feel, which helps in understanding their training progress."
   },
   {
     "question": "How does the speaker suggest recreational runners can better understand their own bodies during training?",
     "relevant_ids": [
       "bc4097a1-700e-4b1e-abe9-83d68832d04a", "a6c3aa1c-abbb-4539-ac9c-7283995c1a53", "20a641fd-1483-43f4-9d28-c08af5d9723e"
-    ]
+    ],
+    "reference_answer": "Please write what happened on Monday and Tuesday, Wednesday, Thursday, and Friday, Saturday, and Sunday. In order for you to understand your body, you should actually have a pain and be tired to know what you are doing."
   },
   {
     "question": "What specific equipment does the speaker suggest runners get for training?",
     "relevant_ids": [
       "75926c9b-235c-4ae6-84f0-98579aa7dc9c"
-    ]
+    ],
+    "reference_answer": "Get good shoes, good care for training, good words for measuring your heart, and all the psychological things which are happening in your body."
   },
   {
     "question": "What is one key psychological aspect the speaker emphasizes for runners to embrace during their runs?",
     "relevant_ids": [
       "5cc73c20-ce14-4f3a-8d04-ce525ac6b387"
-    ]
+    ],
+    "reference_answer": "Enjoy when you are running. Please enjoy. Just run and finish."
   },
   {
     "question": "How quickly does the speaker suggest improvement will occur for runners who are dedicated to their training?",
     "relevant_ids": [
       "5cc73c20-ce14-4f3a-8d04-ce525ac6b387", "8b733739-6caf-4ee1-9567-7e3a34759dad", "6d25a434-2096-418f-9ad7-d8aa5355154f"
-    ]
+    ],
+    "reference_answer": "Simply run and finish, emphasizing consistency month after month, day after day, week after week. He believes that improvement goes hand-in-hand with dedication and consistency in training."
   }
 ]

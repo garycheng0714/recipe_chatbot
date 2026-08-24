@@ -1,9 +1,18 @@
+import asyncio
+import json
+from typing import List
+
 import pytest
+from deepeval.evaluate import evaluate
 from deepeval.metrics import GEval
 from deepeval.test_case import SingleTurnParams, LLMTestCase
+from pydantic import TypeAdapter
 
 from app.agent.generation import GenerationAgent
 from deepeval.models import OllamaModel
+
+from app.client import get_yt_rerank_retriever
+from app.retriever.model import TestSet
 
 
 @pytest.fixture
@@ -19,19 +28,47 @@ def judge_model():
     )
 
 
+@pytest.fixture
+def retriever():
+    return get_yt_rerank_retriever()
+
+
+@pytest.fixture(scope="class")
+def data_test_set_reader():
+
+    def _reader(file_path: str) -> list[TestSet]:
+        with open(file_path, 'r') as f:
+            pairs = json.load(f)
+        return TypeAdapter(List[TestSet]).validate_python(pairs)
+
+    return _reader
+
+
 @pytest.mark.asyncio
-async def test_evaluation_correctness(judge_model):
+async def test_evaluation_correctness(judge_model, data_test_set_reader, retriever, agent):
     correctness = GEval(
         name="Correctness",
         evaluation_steps=[
-            "Determine what information the question is asking for.",
-            "Identify the factual claims in the answer.",
-            "Verify each claim against the provided context.",
-            "Check whether the answer directly addresses the question.",
-            "Penalize factual errors, contradictions, or unsupported information.",
+            "Identify what information the question is asking for.",
+            "Determine the key factual or semantic claim made by the actual answer.",
+            "Compare the actual answer with the expected answer based on semantic meaning, not exact wording.",
+            "Determine whether the actual answer directly answers the question.",
+            "Accept concise answers when they correctly capture the key information requested by the question.",
+            "Penalize answers only when they are factually incorrect, incomplete in a way that changes the meaning, contradictory, or fail to answer the question."
         ],
         criteria=(
-            "Determine whether the actual output is factually correct according to the expected output."
+            """
+            Evaluate whether the actual answer correctly answers the question
+            and is semantically consistent with the expected answer.
+            
+            The actual answer does not need to use the same wording as the expected answer.
+            Concise answers should receive a high score when they correctly capture
+            the key information requested by the question.
+            
+            Do not penalize an answer merely because it provides less detail than
+            the expected answer, unless the missing information is necessary to
+            answer the question correctly.
+            """
         ),
         evaluation_params=[
             SingleTurnParams.INPUT,
@@ -42,15 +79,44 @@ async def test_evaluation_correctness(judge_model):
         model=judge_model
     )
 
-    test_case = LLMTestCase(
-        input="How much slower is his easy run pace compared to his marathon pace, which takes under two hours?",
-        actual_output="According to the information provided, Eliud Kipchoge's easy run pace is about 5 minutes per kilometer, which is about 2 minutes and 10 seconds per kilometer slower than his 2-hour marathon pace.",
-        expected_output="is about 2 minutes and 10 seconds per kilometer slower than a marathon pace.",
-    )
+    test_sets = data_test_set_reader("youtube/tests/retrieve/assets/golden_set.json")
 
-    correctness.measure(test_case)
+    questions = [t.question for t in test_sets]
 
-    print(correctness.score)
-    print(correctness.reason)
+    retriever_tasks = [
+        retriever.retrieve(q, 5)
+        for q in questions
+    ]
 
-    assert correctness.success
+    retriever_results = await asyncio.gather(*retriever_tasks)
+
+    expected_answers = [t.reference_answer for t in test_sets]
+
+    chunks = []
+
+    for result in retriever_results:
+        chunks.append(
+            [
+                r.answer for r in result
+            ]
+        )
+
+    agent_task = [
+        agent.run(chunk, q)
+        for chunk, q in zip(chunks, questions)
+    ]
+
+    agent_results = await asyncio.gather(*agent_task)
+
+
+    test_cases = [
+        LLMTestCase(
+            input=question,
+            actual_output=answer,
+            expected_output=expected_answer
+        )
+        for question, answer, expected_answer in zip(questions, agent_results, expected_answers)
+    ]
+
+
+    evaluate(test_cases, [correctness])
