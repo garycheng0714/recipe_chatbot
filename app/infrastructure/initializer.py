@@ -1,6 +1,6 @@
 from app.infrastructure.elasticsearch.config.config import ElasticSearchConfig
 from app.infrastructure.elasticsearch.config.recipe import RecipeConfig
-from app.infrastructure.qdrant.config import RecipeQdrantSetting, QdrantSettings
+from app.infrastructure.qdrant.config import RecipeQdrantSetting, QdrantSettings, YtQdrantSettingAnswer
 from qdrant_client.models import VectorParams, Distance
 
 
@@ -19,8 +19,8 @@ class InfrastructureInitializer:
 
     async def run_all(self):
         print("🚀 開始初始化基礎設施...")
-        await self.init_postgresql()
-        await self.init_elasticsearch()
+        # await self.init_postgresql()
+        # await self.init_elasticsearch()
         await self.init_qdrant()
         print("✅ 所有資料庫已就緒")
 
@@ -43,7 +43,7 @@ class InfrastructureInitializer:
             await self.es_client.indices.create(index=config.index_name, body=config.index_config)
             print("  - Elasticsearch: Index 建立完成")
 
-    async def init_qdrant(self, setting: QdrantSettings = RecipeQdrantSetting()):
+    async def init_qdrant(self, setting: QdrantSettings = YtQdrantSettingAnswer()):
         # 建立 Collection 並設定向量維度 (例如 OpenAI embedding 是 1536)
         if not await self.qdrant_client.collection_exists(setting.collection_name):
             await self.qdrant_client.create_collection(
