@@ -57,7 +57,7 @@ Evaluation-driven RAG Pipeline。
 
 ## Retrieval
 
-### 動態 RRF 權重
+### 1. 動態 RRF 權重
 
 #### V1 — Query-based heuristic
 
@@ -72,7 +72,7 @@ Evaluation-driven RAG Pipeline。
 當 BM25 confidence 較高時提高 BM25 權重，
 否則提高 Dense Retrieval 權重。
 
-### 未採用 Rerank 的原因
+### 2. 未採用 Rerank 的原因
 
 ```aiignore
 曾測試多個 Cross-Encoder Reranker。
@@ -88,7 +88,7 @@ Evaluation-driven RAG Pipeline。
 會重新評估 Reranking 的效益。
 ```
 
-### Regression Test
+### 3. Regression Test
 * 用 golden set + pytest regression harness (自己寫 Recall / MRR 函式、顯示 diff report 並 assert)
 
 ![image](./report_screenshot.png)
@@ -97,11 +97,11 @@ Evaluation-driven RAG Pipeline。
 
 ## Generation
 
-### Prompt Injection 防護
+### 1. Prompt Injection 防護
 
 用 Pydantic AI 的 InputGuardrail 做關鍵字比對以防 prompt injection。Query 內如包含特定關鍵字則直接 block 不讓 LLM 接手。
 
-### LLM Evaluation
+### 2. LLM Evaluation
 
 使用 DeepEval 建立 LLM 層的自動化評估：
 
@@ -114,7 +114,7 @@ Evaluation-driven RAG Pipeline。
 其中 Answer Correctness 使用 GEval 自訂評估準則，
 比較 Actual Output 與 Expected Output。
 
-### Evaluation Results
+### 3. Evaluation Results
 
 目前使用 15 組 Golden QA 進行 LLM Evaluation。
 
@@ -126,7 +126,7 @@ Evaluation-driven RAG Pipeline。
 
 ![llm_evaluation](llm_evaluation.png)
 
-### Failure Analysis
+### 4. Failure Analysis
 
 #### Case: Easy Run Pace
 
@@ -162,7 +162,7 @@ Reason: The score is 0.00 because the actual output incorrectly stated Eliud Kip
 
 **Analysis**
 
-Faithfulness evaluator 也可能有 semantic interpretation 問題
+Faithfulness evaluator 也可能有 semantic interpretation 問題。因為「2:10/km」不是 easy run pace，而是 pace difference。
 
 ---------
 
