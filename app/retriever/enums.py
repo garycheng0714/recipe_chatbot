@@ -1,6 +1,6 @@
 from enum import Enum
 
-from app.client import get_yt_es_retriever, get_yt_qdr_retriever, get_yt_hybrid_retriever, get_yt_rerank_retriever
+from app.client import get_yt_es_retriever, get_yt_qdr_retriever, get_yt_hybrid_retriever, get_yt_retrieval_service
 
 
 class Retriever(str, Enum):
@@ -15,6 +15,6 @@ class Retriever(str, Enum):
             Retriever.BM25: get_yt_es_retriever,
             Retriever.VECTORS: get_yt_qdr_retriever,
             Retriever.HYBRID: get_yt_hybrid_retriever,
-            Retriever.RERANK: get_yt_rerank_retriever,
+            Retriever.RERANK: get_yt_retrieval_service,
         }
         return factories[self]()

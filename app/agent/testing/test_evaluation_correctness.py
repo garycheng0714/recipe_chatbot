@@ -11,7 +11,7 @@ from pydantic import TypeAdapter
 from app.agent.generation import GenerationAgent
 from deepeval.models import OllamaModel
 
-from app.client import get_yt_rerank_retriever
+from app.client import get_yt_retrieval_service
 from app.retriever.model import TestSet
 
 
@@ -29,8 +29,8 @@ def judge_model():
 
 
 @pytest.fixture
-def retriever():
-    return get_yt_rerank_retriever()
+def retrieval_service():
+    return get_yt_retrieval_service()
 
 
 @pytest.fixture(scope="class")
@@ -45,7 +45,7 @@ def data_test_set_reader():
 
 
 @pytest.mark.asyncio
-async def test_evaluation_correctness(judge_model, data_test_set_reader, retriever, agent):
+async def test_evaluation_correctness(judge_model, data_test_set_reader, retrieval_service, agent):
     correctness = GEval(
         name="Correctness",
         evaluation_steps=[
@@ -84,7 +84,7 @@ async def test_evaluation_correctness(judge_model, data_test_set_reader, retriev
     questions = [t.question for t in test_sets]
 
     retriever_tasks = [
-        retriever.retrieve(q, 5)
+        retrieval_service.retrieve(q, 5)
         for q in questions
     ]
 

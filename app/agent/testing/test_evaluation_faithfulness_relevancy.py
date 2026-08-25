@@ -12,7 +12,7 @@ from pydantic import TypeAdapter
 from pydantic_ai import capture_run_messages
 
 from app.agent.generation import GenerationAgent
-from app.client import get_yt_rerank_retriever
+from app.client import get_yt_retrieval_service
 from app.retriever.model import TestSet
 
 
@@ -22,7 +22,7 @@ def agent():
 
 @pytest.fixture
 def retriever():
-    return get_yt_rerank_retriever()
+    return get_yt_retrieval_service()
 
 @pytest.fixture
 def judge_model():

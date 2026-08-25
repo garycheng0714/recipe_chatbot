@@ -116,7 +116,7 @@ def get_yt_hybrid_retriever():
     return hybrid_retriever
 
 
-def get_yt_rerank_retriever():
+def get_yt_retrieval_service():
     hydrator = YtHydrator(YtRepository())
     return RetrievalService(get_yt_hybrid_retriever(), hydrator)
 
