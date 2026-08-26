@@ -1,6 +1,9 @@
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Depends, HTTPException
+from pydantic import BaseModel
+from starlette.middleware.cors import CORSMiddleware
+
 from app.hydrator.recipe.recipe_hydrator import RecipeHydrator
 from app.hydrator.yt.yt_hydrator import YtHydrator
 from app.retriever.hybrid_retriever import HybridRetriever
@@ -59,6 +62,17 @@ async def get_yt_retrieval_service(
     return RetrievalService(hybrid_retriever, hydrator)
 
 
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "http://localhost:5173",
+    ],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+
 # 3. 定義一個帶有參數的路徑
 @app.get("/recipe/{query_text}")
 async def search_recipe(
@@ -73,9 +87,18 @@ async def search_recipe(
 
     return obj_list
 
-@app.get("/yt/search/{query_text}")
-async def search_yt(
-    query_text: str,
+
+class ChatRequest(BaseModel):
+    message: str
+
+
+class ChatResponse(BaseModel):
+    answer: str
+
+
+@app.post("/chat", response_model=ChatResponse)
+async def chat(
+    request: ChatRequest,
     translate_agent=Depends(get_translate_agent),
     generation_agent=Depends(get_generation_agent),
     translator=Depends(get_translator),
@@ -83,9 +106,9 @@ async def search_yt(
 ):
     rag_service = RagService(translate_agent, generation_agent, retrieval_service, translator)
 
-    result = await rag_service.execute(query_text)
+    result = await rag_service.execute(request.message)
 
-    return result
+    return ChatResponse(answer=result)
 
 
 @app.get("/yt/es/{query}")

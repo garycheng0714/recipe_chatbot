@@ -16,7 +16,7 @@ class ValidityResult(BaseModel):
 
 class QueryAnalysis(BaseModel):
     question: str = Field(description="translated question")
-    topic: Literal['training', 'recovery', 'nutrition', 'gear', 'mental-prep', 'career', 'personal-life', 'racing-strategy']  # 之後可以換成 enum
+    # topic: Literal['training', 'recovery', 'nutrition', 'gear', 'mental-prep', 'career', 'personal-life', 'racing-strategy']  # 之後可以換成 enum
 
 
 
