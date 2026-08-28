@@ -4,6 +4,7 @@ from unittest.mock import MagicMock, AsyncMock
 import pytest
 from googletrans.models import Translated
 
+from app.domain.api_chat import ChatResponse, RetrievalContext
 from app.retriever.model import RerankResult
 from app.services.rag_service import RagService
 
@@ -67,12 +68,17 @@ async def test_rag_service(retrieval_response, translator_response):
         translator=translator,
     )
 
-    await rag_service.execute("hello")
+    result = await rag_service.execute("hello")
 
     translation_agent.run.assert_awaited_once_with("hello")
     retrieval_service.retrieve.assert_awaited_once_with("天氣如何？", 5)
     translator.translate.assert_awaited_once_with(["I'm name is Gary", "Gary"], dest='zh-tw')
     generation_agent.run.assert_awaited_once_with(["你好", "天氣"], "天氣如何？")
+
+    assert isinstance(result, ChatResponse)
+    assert len(result.contexts) == len(retrieval_response)
+    assert result.contexts[0] == RetrievalContext(id="test", answer="I'm name is Gary", topic="weather")
+    assert result.contexts[1] == RetrievalContext(id="test2", answer="Gary", topic="weather")
 
 
 @pytest.mark.asyncio

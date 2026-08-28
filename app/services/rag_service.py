@@ -3,6 +3,7 @@ from fastapi import HTTPException
 
 from app.agent.generation import GenerationAgent
 from app.agent.translate import TranslateAgent
+from app.domain.api_chat import RetrievalContext, ChatResponse
 from app.services.retriever_service import RetrievalService
 
 
@@ -19,7 +20,7 @@ class RagService:
         self.retrieval_service = retrieval_service
         self.translator = translator
 
-    async def execute(self, query_text: str) -> str:
+    async def execute(self, query_text: str) -> ChatResponse:
         question = await self.translate_agent.run(query_text)
 
         retrieval_results = await self.retrieval_service.retrieve(question, 5)
@@ -40,6 +41,12 @@ class RagService:
             question
         )
 
-        return result
+        return ChatResponse(
+            answer=result,
+            contexts=[
+                RetrievalContext(**r.model_dump())
+                for r in retrieval_results
+            ]
+        )
 
 

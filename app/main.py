@@ -1,9 +1,9 @@
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Depends, HTTPException
-from pydantic import BaseModel
 from starlette.middleware.cors import CORSMiddleware
 
+from app.domain.api_chat import ChatResponse, ChatRequest
 from app.hydrator.recipe.recipe_hydrator import RecipeHydrator
 from app.hydrator.yt.yt_hydrator import YtHydrator
 from app.retriever.hybrid_retriever import HybridRetriever
@@ -88,14 +88,6 @@ async def search_recipe(
     return obj_list
 
 
-class ChatRequest(BaseModel):
-    message: str
-
-
-class ChatResponse(BaseModel):
-    answer: str
-
-
 @app.post("/chat", response_model=ChatResponse)
 async def chat(
     request: ChatRequest,
@@ -103,12 +95,12 @@ async def chat(
     generation_agent=Depends(get_generation_agent),
     translator=Depends(get_translator),
     retrieval_service: RetrievalService = Depends(get_yt_retrieval_service)
-):
+) -> ChatResponse:
     rag_service = RagService(translate_agent, generation_agent, retrieval_service, translator)
 
     result = await rag_service.execute(request.message)
 
-    return ChatResponse(answer=result)
+    return result
 
 
 @app.get("/yt/es/{query}")
