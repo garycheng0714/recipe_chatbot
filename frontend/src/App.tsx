@@ -38,6 +38,13 @@ const adapter: ChatModelAdapter = {
           type: "text",
           text: data.answer,
         },
+        {
+          type: "data",
+          data: {
+            type: "retrieval",
+            contexts: data.contexts,
+          },
+        }
       ],
     };
   },

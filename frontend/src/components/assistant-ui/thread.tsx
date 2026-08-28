@@ -1,5 +1,7 @@
 "use client";
 
+import { RetrievalPanel } from "@/components/assistant-ui/retrieval-panel";
+
 import {
   ComposerAddAttachment,
   ComposerAttachments,
@@ -361,7 +363,8 @@ const AssistantMessage: FC = () => {
               case "tool-call":
                 return part.toolUI ?? <ToolFallbackComponent {...part} />;
               case "data":
-                return part.dataRendererUI;
+                return <RetrievalPanel contexts={part.data.contexts} />;
+//                 return part.dataRendererUI;
               case "file":
                 return (
                   <div data-slot="aui_assistant-message-file" className="py-1">
