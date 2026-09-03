@@ -3,6 +3,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, Depends, HTTPException
 from starlette.middleware.cors import CORSMiddleware
 
+from app.agent.main_agent import MainAgentDeps
 from app.domain.api_chat import ChatResponse, ChatRequest
 from app.hydrator.recipe.recipe_hydrator import RecipeHydrator
 from app.hydrator.yt.yt_hydrator import YtHydrator
@@ -16,7 +17,8 @@ from app.client import (
     get_hybrid_retriever,
     es_client,
     get_yt_hybrid_retriever,
-    get_yt_db, get_yt_es_retriever, get_yt_qdr_retriever, get_translate_agent, get_generation_agent, get_translator
+    get_yt_db, get_yt_es_retriever, get_yt_qdr_retriever, get_translate_agent, get_generation_agent, get_translator,
+    get_agent
 )
 
 import app.database as database
@@ -91,16 +93,18 @@ async def search_recipe(
 @app.post("/chat", response_model=ChatResponse)
 async def chat(
     request: ChatRequest,
+    agent=Depends(get_agent),
     translate_agent=Depends(get_translate_agent),
     generation_agent=Depends(get_generation_agent),
     translator=Depends(get_translator),
     retrieval_service: RetrievalService = Depends(get_yt_retrieval_service)
 ) -> ChatResponse:
     rag_service = RagService(translate_agent, generation_agent, retrieval_service, translator)
+    deps = MainAgentDeps(retrieval_service=rag_service)
 
-    result = await rag_service.execute(request.message)
+    result = await agent.run(request.message, deps=deps)
 
-    return result
+    return result.output
 
 
 @app.get("/yt/es/{query}")
