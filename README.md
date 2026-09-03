@@ -2,6 +2,50 @@
 
 針對 Eliud Kipchoge YouTube 訪談逐字稿建置的 Hybrid RAG（Retrieval-Augmented Generation）系統。使用者以中文提問，系統翻譯、檢索、生成後回傳基於原始逐字稿內容的英文答案。
 
+## 流程圖
+
+                    ┌──────────────────┐
+                    │    FastAPI       │
+                    │    /chat         │
+                    └────────┬─────────┘
+                             │
+                             ▼
+                    ┌──────────────────┐
+                    │    Main Agent    │
+                    │                  │
+                    │ Decide / Answer  │
+                    └───────┬──────────┘
+                            │
+                 ┌──────────┴──────────┐
+                 │                     │
+              Answer              Tool Call
+                                       │
+                                       ▼
+                              search_knowledge()
+                                       │
+                                       ▼
+                              RetrievalService
+                                       │
+                              ┌────────┴────────┐
+                              ▼                 ▼
+                             BM25             Qdrant
+                              └────────┬────────┘
+                                       ▼
+                                      RRF
+                                       │
+                                       ▼
+                               Retrieved Context
+                                       │
+                                       └──────► Main Agent
+                                                   │
+                                                   ▼
+                                                 Answer
+
+
+## Demo
+
+![demo](./demo.gif)
+
 ## Project Goals
 
 本專案的目的不只是建立一個可以回答問題的 RAG，
