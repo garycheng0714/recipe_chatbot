@@ -11,4 +11,4 @@ class RetrievalContext(BaseModel):
 
 class ChatResponse(BaseModel):
     answer: str
-    contexts: list[RetrievalContext]
+    contexts: list[RetrievalContext] | None
