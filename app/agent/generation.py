@@ -44,6 +44,6 @@ class GenerationAgent:
         return zh_tw_text
 
     def build_user_prompt(self, chunks: list[str], query: str) -> str:
-        context = "\n\n".join(f"* {c}" for _, c in enumerate(chunks))
+        context = "\n\n".join(f"* {c}" for c in chunks)
         return f"以下是檢索到的相關內容片段:\n\n---\n{context}\n---\n\n問題:{query}"
 
