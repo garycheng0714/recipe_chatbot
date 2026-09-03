@@ -58,7 +58,7 @@ class TranslateAgent:
             # TODO: handle the topic
             return QueryAnalysis.model_validate_json(result.output).question
         except Exception as e:
-            return result.output.question
+            return result.output
 
     def check_query_validity(self, text: str, min_length: int = 2) -> ValidityResult:
         text = text.strip()

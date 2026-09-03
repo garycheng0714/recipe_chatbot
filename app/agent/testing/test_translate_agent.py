@@ -32,7 +32,7 @@ def agent():
 async def test_translate_agent(query, agent):
     output = await agent.run(query)
 
-    assert output.question == query
+    assert output == query
 
 
 @pytest.mark.asyncio
@@ -45,7 +45,7 @@ async def test_translate_mixed_language_sentence(agent, query, keyword):
 
     output = await agent.run(query)
 
-    assert keyword in output.question.lower()
+    assert keyword in output.lower()
 
 
 @pytest.mark.asyncio
@@ -108,4 +108,4 @@ async def test_translate_with_prompt_injection(agent, query):
     output = await agent.run(query)
     print(output)
 
-    assert is_english_sentence(output.question)
+    assert is_english_sentence(output)
