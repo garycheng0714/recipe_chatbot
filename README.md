@@ -116,9 +116,19 @@ Evaluation-driven RAG Pipeline。
 當 BM25 confidence 較高時提高 BM25 權重，
 否則提高 Dense Retrieval 權重。
 
-### 2. 未採用 Rerank 的原因
+### 2. 具體除錯案例
 
-```aiignore
+#### Chunk 內容稀釋（answer dilution）
+
+一個 chunk 同時包含「訓練一致性」（主要內容）與「享受過程是心理驅動力」（次要，僅一句話）兩個概念，導致這個 chunk 在 BM25、向量、Hybrid 三種方法下都沒有被檢索到對應「心理層面」的查詢命中。
+
+手動把那句次要內容單獨 embedding 成一個測試 chunk 後，它在向量搜尋中直接排到第一名——證實原本的 chunk embedding 被主要概念稀釋了
+
+
+
+### 3. 未採用 Rerank 的原因
+
+
 曾測試多個 Cross-Encoder Reranker。
 
 實驗結果顯示，在目前的 Golden Dataset 上，
@@ -128,11 +138,8 @@ Evaluation-driven RAG Pipeline。
 因此目前版本暫不使用 Reranker，而是讓 LLM
 直接從高 Recall 的候選 Context 中生成答案。
 
-未來若 Candidate Pool 擴大或 Recall 提升後仍不足，
-會重新評估 Reranking 的效益。
-```
 
-### 3. Regression Test
+### 4. Regression Test
 * 用 golden set + pytest regression harness (自己寫 Recall / MRR 函式、顯示 diff report 並 assert)
 
 ![image](./report_screenshot.png)
