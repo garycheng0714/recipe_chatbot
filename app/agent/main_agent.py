@@ -1,8 +1,8 @@
 from dataclasses import dataclass
 
 import logfire
-from pydantic import BaseModel
-from pydantic_ai import Agent, RunContext, ModelSettings
+from pydantic import BaseModel, Field
+from pydantic_ai import Agent, RunContext, ModelSettings, UsageLimits
 from pydantic_ai_harness import InputGuardrail
 from pydantic_ai_harness.guardrails.detectors import blocked_keywords
 
@@ -16,9 +16,18 @@ logfire.instrument_system_metrics()
 logfire.instrument_pydantic_ai()
 
 
+class RouteSearchRequest(BaseModel):
+    location: str = Field(description="Location of the route.")
+    distance_min_km: float | None = Field(description="Minimum distance in km.")
+    distance_max_km: float | None = Field(description="Maximum distance in km.")
+    elevation_gain_m: float | None = Field(description="Elevation gain in m.")
+
+
 class RouteService:
-    async def search(self, query: str) -> str:
+    async def search(self, query: RouteSearchRequest) -> str:
         return "陽明山十連峰"
+
+
 
 @dataclass
 class MainAgentDeps:
@@ -45,7 +54,7 @@ main_agent = Agent(
 )
 
 
-@main_agent.tool
+@main_agent.tool(retries=1)
 async def get_interview_information(ctx: RunContext[MainAgentDeps], query: str) -> str:
     """獲取 Eliud Kipchoge 的相關資訊
 
@@ -55,8 +64,8 @@ async def get_interview_information(ctx: RunContext[MainAgentDeps], query: str) 
     return result.answer
 
 
-@main_agent.tool
-async def get_trail_route_information(ctx: RunContext[MainAgentDeps], query: str) -> str:
+@main_agent.tool(retries=1)
+async def get_trail_route_information(ctx: RunContext[MainAgentDeps], query: RouteSearchRequest) -> str:
     """查詢具體的越野跑路線與步道資訊
 
     【適用情境】當使用者詢問特定地點、距離（km）、爬升量（m）、路線規劃或具體步道名稱時

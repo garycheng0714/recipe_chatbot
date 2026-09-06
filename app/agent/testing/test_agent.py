@@ -1,10 +1,10 @@
 from unittest.mock import MagicMock, AsyncMock
 
 import pytest
-from pydantic_ai import ModelResponse, ThinkingPart
+from pydantic_ai import ModelResponse, ThinkingPart, UsageLimits
 from pydantic_ai.models.test import TestModel
 
-from app.agent.main_agent import main_agent, MainAgentDeps, RouteService
+from app.agent.main_agent import main_agent, MainAgentDeps, RouteService, RouteSearchRequest
 from app.domain.api_chat import ChatResponse, RetrievalContext
 from app.services.rag_service import RagService
 
@@ -54,17 +54,25 @@ async def test_agent_call_search_knowledge(agent, agent_deps, mock_rag_service):
 
 
 @pytest.mark.asyncio
-async def test_agent_call_search_route(agent, agent_deps, mock_route_service, mock_rag_service):
+async def test_agent_selects_search_route_with_correct_arguments(agent, agent_deps, mock_route_service, mock_rag_service):
     prompt = "台北 20~25 Km 爬升 1500m 的越野跑路線有哪些？"
-    # prompt = "台北陽明山有越野跑路線嗎？"
+
+    expected_search_args = RouteSearchRequest(
+        location="台北",
+        distance_min_km=20,
+        distance_max_km=25,
+        elevation_gain_m=1500
+    )
 
     assert isinstance(agent_deps, MainAgentDeps)
 
-    result = await agent.run(prompt, deps=agent_deps)
+    result = await agent.run(
+        prompt,
+        deps=agent_deps,
+        usage_limits=UsageLimits(tool_calls_limit=2)
+    )
 
-    print(result.output)
-
-    mock_route_service.search.assert_called_once()
+    mock_route_service.search.assert_called_once_with(expected_search_args)
     mock_rag_service.execute.assert_not_called()
 
     assert "陽明山十連峰" in result.output
