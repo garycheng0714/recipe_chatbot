@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class ChatRequest(BaseModel):
@@ -10,5 +10,5 @@ class RetrievalContext(BaseModel):
     topic: str
 
 class ChatResponse(BaseModel):
-    answer: str
-    contexts: list[RetrievalContext] | None
+    answer: str = Field(description="使用工具獲得的資訊")
+    contexts: list[RetrievalContext] | None = Field(description="附帶檢索到的條列資訊")

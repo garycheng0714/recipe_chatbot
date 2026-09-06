@@ -3,7 +3,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, Depends, HTTPException
 from starlette.middleware.cors import CORSMiddleware
 
-from app.agent.main_agent import MainAgentDeps
+from app.agent.main_agent import MainAgentDeps, RouteService
 from app.domain.api_chat import ChatResponse, ChatRequest
 from app.hydrator.recipe.recipe_hydrator import RecipeHydrator
 from app.hydrator.yt.yt_hydrator import YtHydrator
@@ -100,7 +100,7 @@ async def chat(
     retrieval_service: RetrievalService = Depends(get_yt_retrieval_service)
 ) -> ChatResponse:
     rag_service = RagService(translate_agent, generation_agent, retrieval_service, translator)
-    deps = MainAgentDeps(retrieval_service=rag_service)
+    deps = MainAgentDeps(retrieval_service=rag_service, route_service=RouteService())
 
     result = await agent.run(request.message, deps=deps)
 

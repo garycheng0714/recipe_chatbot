@@ -5,23 +5,30 @@ from pydantic_ai.models.openai import OpenAIChatModel
 from pydantic_ai.providers.google import GoogleProvider
 from pydantic_ai.providers.openai import OpenAIProvider
 
+OPENAI_PROVIDER=OpenAIProvider(base_url='http://localhost:11434/v1')
+
 generation_model = OpenAIChatModel(
     model_name='ornith-1.5:9b',
-    provider=OpenAIProvider(base_url='http://localhost:11434/v1'),
+    provider=OPENAI_PROVIDER,
 )
 
 translate_model = OpenAIChatModel(
     model_name='llama3:8b',
-    provider=OpenAIProvider(base_url='http://localhost:11434/v1'),
+    provider=OPENAI_PROVIDER,
 )
 
-main_model = OpenAIChatModel(
+ORNITH_MODEL = OpenAIChatModel(
     model_name='ornith-1.5:9b',
-    provider=OpenAIProvider(base_url='http://localhost:11434/v1'),
+    provider=OPENAI_PROVIDER,
+)
+
+QWEN_MODEL = OpenAIChatModel(
+    model_name='qwen3.5:2b',
+    provider=OPENAI_PROVIDER,
 )
 
 provider = GoogleProvider(api_key=os.environ['GOOGLE_API_KEY'])
-gemini_model = GoogleModel('gemini-2.5-flash-lite', provider=provider)
+GEMINI_MODEL = GoogleModel('gemini-2.5-flash-lite', provider=provider)
 
 INJECTION_MARKERS = [
     "忽略以上", "忽略上面", "ignore previous", "ignore above", "ignore all",

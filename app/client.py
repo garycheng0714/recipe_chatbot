@@ -7,7 +7,7 @@ from qdrant_client import AsyncQdrantClient
 from typing import AsyncGenerator
 
 from app.agent.generation import GenerationAgent
-from app.agent.main_agent import agent
+from app.agent.main_agent import main_agent
 from app.agent.translate import TranslateAgent
 from app.database import ES_URL, QDRANT_URL, EMBED_URL
 from app.hydrator.yt.yt_hydrator import YtHydrator
@@ -135,4 +135,4 @@ def get_generation_agent():
 
 @lru_cache()
 def get_agent():
-    return agent
+    return main_agent
