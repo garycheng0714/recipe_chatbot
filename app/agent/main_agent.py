@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from typing import Union
 
 import logfire
 from pydantic import BaseModel, Field
@@ -8,6 +9,7 @@ from pydantic_ai_harness.guardrails.detectors import blocked_keywords
 
 from app.agent.chat_model import INJECTION_MARKERS, GEMINI_MODEL, ORNITH_MODEL, QWEN_MODEL
 from app.domain.api_chat import ChatResponse
+from app.route.domain.model import RouteSearchRequest, NeedsClarification
 from app.services.rag_service import RagService
 
 
@@ -16,11 +18,7 @@ logfire.instrument_system_metrics()
 logfire.instrument_pydantic_ai()
 
 
-class RouteSearchRequest(BaseModel):
-    location: str = Field(description="Location of the route.")
-    distance_min_km: float | None = Field(description="Minimum distance in km.")
-    distance_max_km: float | None = Field(description="Maximum distance in km.")
-    elevation_gain_m: float | None = Field(description="Elevation gain in m.")
+
 
 
 class RouteService:
@@ -38,7 +36,7 @@ class MainAgentDeps:
 main_agent = Agent(
     model=QWEN_MODEL,
     deps_type=MainAgentDeps,
-    output_type=str,
+    output_type=Union[str, NeedsClarification],
     model_settings=ModelSettings(temperature=0.0),
     capabilities=[
         InputGuardrail(guard=blocked_keywords(INJECTION_MARKERS))
@@ -49,6 +47,7 @@ main_agent = Agent(
 
         1. 如果您無需透過工具獲取資訊即可回答問題，請直接回答。
         2. 使用檢索獲得資訊時，請直接使用檢索到的資料回答，切勿捏造事實或額外補充。
+        3. 資訊不足時不要猜測數字、不要假設,回傳 NeedsClarification 詢問使用者。
         """
     )
 )

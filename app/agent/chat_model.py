@@ -23,7 +23,7 @@ ORNITH_MODEL = OpenAIChatModel(
 )
 
 QWEN_MODEL = OpenAIChatModel(
-    model_name='qwen3.5:2b',
+    model_name='qwen3.5:4b',
     provider=OPENAI_PROVIDER,
 )
 

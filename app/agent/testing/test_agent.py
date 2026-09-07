@@ -6,6 +6,7 @@ from pydantic_ai.models.test import TestModel
 
 from app.agent.main_agent import main_agent, MainAgentDeps, RouteService, RouteSearchRequest
 from app.domain.api_chat import ChatResponse, RetrievalContext
+from app.route.domain.model import NeedsClarification
 from app.services.rag_service import RagService
 
 
@@ -70,6 +71,64 @@ async def test_agent_selects_search_route_with_correct_arguments(agent, agent_de
         prompt,
         deps=agent_deps,
         usage_limits=UsageLimits(tool_calls_limit=2)
+    )
+
+    mock_route_service.search.assert_called_once_with(expected_search_args)
+    mock_rag_service.execute.assert_not_called()
+
+    assert "陽明山十連峰" in result.output
+
+
+@pytest.mark.asyncio
+async def test_agent_ask_user_the_ambiguous_concept(agent, agent_deps, mock_route_service, mock_rag_service):
+    prompt = "台北 20~25 Km 大爬升的越野跑路線有哪些？"
+
+    assert isinstance(agent_deps, MainAgentDeps)
+
+    result = await agent.run(
+        prompt,
+        deps=agent_deps,
+        usage_limits=UsageLimits(tool_calls_limit=2)
+    )
+
+    mock_route_service.search.assert_not_called()
+    mock_rag_service.execute.assert_not_called()
+
+    assert isinstance(result.output, NeedsClarification)
+
+
+@pytest.mark.asyncio
+async def test_agent_ask_user_the_ambiguous_concept_then_selects_search_route_with_correct_arguments(agent, agent_deps, mock_route_service, mock_rag_service):
+    user_input_1 = "台北 20~25 Km 大爬升的越野跑路線有哪些？"
+
+    assert isinstance(agent_deps, MainAgentDeps)
+
+    result = await agent.run(
+        user_input_1,
+        deps=agent_deps,
+        usage_limits=UsageLimits(tool_calls_limit=2)
+    )
+
+    mock_route_service.search.assert_not_called()
+    mock_rag_service.execute.assert_not_called()
+
+    assert isinstance(result.output, NeedsClarification)
+
+    # 模擬使用者第二次回答（補充條件）
+    user_input_2 = "希望累計爬升至少在 1500 公尺以上"
+
+    result = await agent.run(
+        user_input_2,
+        deps=agent_deps,
+        usage_limits=UsageLimits(tool_calls_limit=2),
+        message_history=result.new_messages()
+    )
+
+    expected_search_args = RouteSearchRequest(
+        location="台北",
+        distance_min_km=20,
+        distance_max_km=25,
+        elevation_gain_m=1500
     )
 
     mock_route_service.search.assert_called_once_with(expected_search_args)
