@@ -30,11 +30,11 @@ export function RetrievalPanel({
       <CollapsibleTrigger className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
         <span>{open ? "▼" : "▶"}</span>
 
-        Retrieved Context ({contexts.length})
+        Retrieved Context ({contexts?.length ?? 0})
       </CollapsibleTrigger>
 
       <CollapsibleContent className="mt-2 space-y-2">
-        {contexts.map((context, index) => (
+        {contexts?.map((context, index) => (
           <div
             key={context.id}
             className="rounded-lg border bg-muted/30 p-3 text-sm"

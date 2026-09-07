@@ -6,6 +6,8 @@ import {
 
 import { Thread } from "@/components/assistant-ui/thread";
 
+const sessionId = crypto.randomUUID();
+
 const adapter: ChatModelAdapter = {
   async *run({ messages }) {
     console.log("messages:", messages);
@@ -22,7 +24,8 @@ const adapter: ChatModelAdapter = {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        message,
+        message: message,
+        session_id: sessionId
       })
     });
 

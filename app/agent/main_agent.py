@@ -34,10 +34,11 @@ class MainAgentDeps:
 
 
 main_agent = Agent(
-    model=QWEN_MODEL,
+    model=GEMINI_MODEL,
     deps_type=MainAgentDeps,
-    output_type=Union[str, NeedsClarification],
-    model_settings=ModelSettings(temperature=0.0),
+    output_type=Union[ChatResponse, NeedsClarification],
+    # output_type=ChatResponse,
+    # model_settings=ModelSettings(temperature=0.0),
     capabilities=[
         InputGuardrail(guard=blocked_keywords(INJECTION_MARKERS))
     ],
@@ -54,13 +55,13 @@ main_agent = Agent(
 
 
 @main_agent.tool(retries=1)
-async def get_interview_information(ctx: RunContext[MainAgentDeps], query: str) -> str:
+async def get_interview_information(ctx: RunContext[MainAgentDeps], query: str) -> ChatResponse:
     """獲取 Eliud Kipchoge 的相關資訊
 
     【適用情境】當使用者詢問有關 Eliud Kipchoge 的相關問題時
     """
     result = await ctx.deps.retrieval_service.execute(query)
-    return result.answer
+    return result
 
 
 @main_agent.tool(retries=1)

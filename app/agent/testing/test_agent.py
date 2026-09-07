@@ -48,10 +48,10 @@ async def test_agent_call_search_knowledge(agent, agent_deps, mock_rag_service):
     # 斷言 1: 驗證 RagService 的 execute 是否有被呼叫
     mock_rag_service.execute.assert_called_once()
 
-    print(result.output)
+    print(result.output.answer)
 
     # 斷言 2: 驗證回覆是否包含正確資訊
-    assert "1:59:40" in result.output
+    assert "1:59:40" in result.output.answer
 
 
 @pytest.mark.asyncio
@@ -76,7 +76,7 @@ async def test_agent_selects_search_route_with_correct_arguments(agent, agent_de
     mock_route_service.search.assert_called_once_with(expected_search_args)
     mock_rag_service.execute.assert_not_called()
 
-    assert "陽明山十連峰" in result.output
+    assert "陽明山十連峰" in result.output.answer
 
 
 @pytest.mark.asyncio
@@ -134,7 +134,7 @@ async def test_agent_ask_user_the_ambiguous_concept_then_selects_search_route_wi
     mock_route_service.search.assert_called_once_with(expected_search_args)
     mock_rag_service.execute.assert_not_called()
 
-    assert "陽明山十連峰" in result.output
+    assert "陽明山十連峰" in result.output.answer
 
 
 @pytest.mark.asyncio
@@ -158,7 +158,7 @@ async def test_direct_answer_without_tool(agent, agent_deps, mock_route_service,
     #                 print(part.content)
     #                 print("======================================\n")
 
-    print(result.output)
+    print(result.output.answer)
 
 
 @pytest.mark.asyncio

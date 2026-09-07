@@ -1,5 +1,6 @@
 import os
 
+from pydantic_ai import ModelSettings
 from pydantic_ai.models.google import GoogleModel
 from pydantic_ai.models.openai import OpenAIChatModel
 from pydantic_ai.providers.google import GoogleProvider
@@ -28,7 +29,7 @@ QWEN_MODEL = OpenAIChatModel(
 )
 
 provider = GoogleProvider(api_key=os.environ['GOOGLE_API_KEY'])
-GEMINI_MODEL = GoogleModel('gemini-2.5-flash-lite', provider=provider)
+GEMINI_MODEL = GoogleModel('gemini-2.5-flash', provider=provider, settings=ModelSettings(temperature=0.0))
 
 INJECTION_MARKERS = [
     "忽略以上", "忽略上面", "ignore previous", "ignore above", "ignore all",

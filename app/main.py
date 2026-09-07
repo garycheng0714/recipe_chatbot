@@ -1,6 +1,7 @@
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Depends, HTTPException
+from pydantic_ai import ModelMessagesTypeAdapter
 from starlette.middleware.cors import CORSMiddleware
 
 from app.agent.main_agent import MainAgentDeps, RouteService
@@ -22,6 +23,7 @@ from app.client import (
 )
 
 import app.database as database
+from app.route.domain.model import NeedsClarification
 from app.services.rag_service import RagService
 from app.services.retriever_service import RetrievalService
 
@@ -89,6 +91,9 @@ async def search_recipe(
 
     return obj_list
 
+# demo 用,正式環境要換成 Redis 或資料庫,否則重啟伺服器/多台機器就會失效
+sessions: dict[str, bytes] = {}
+
 
 @app.post("/chat", response_model=ChatResponse)
 async def chat(
@@ -99,10 +104,25 @@ async def chat(
     translator=Depends(get_translator),
     retrieval_service: RetrievalService = Depends(get_yt_retrieval_service)
 ) -> ChatResponse:
+    session_id = request.session_id
+
+    # 撈出這個 session 之前的對話(bytes -> list[ModelMessage])
+    history_bytes = sessions.get(session_id)
+    message_history = (
+        ModelMessagesTypeAdapter.validate_json(history_bytes)
+        if history_bytes else []
+    )
+
     rag_service = RagService(translate_agent, generation_agent, retrieval_service, translator)
     deps = MainAgentDeps(retrieval_service=rag_service, route_service=RouteService())
 
-    result = await agent.run(request.message, deps=deps)
+    result = await agent.run(request.message, deps=deps, message_history=message_history)
+
+    # 序列化存回去,下一次 request 才找得到
+    sessions[session_id] = result.all_messages_json()
+
+    if isinstance(result.output, NeedsClarification):
+        return ChatResponse(answer=result.output.question)
 
     return result.output
 
